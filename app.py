@@ -38,10 +38,11 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 print("Creating FingerprintProcessor instance...")
 fingerprint_processor = FingerprintProcessor()
 
-# Create fingerprint database directory if it doesn't exist
+# إنشاء مجلد قاعدة بيانات البصمات إذا لم يكن موجوداً
 FINGERPRINT_DB_DIR = 'fingerprint_database'
 if not os.path.exists(FINGERPRINT_DB_DIR):
     os.makedirs(FINGERPRINT_DB_DIR)
+    print(f"Created fingerprint database directory: {FINGERPRINT_DB_DIR}")
 
 def allowed_file(filename):
     """التحقق من امتداد الملف"""
@@ -311,74 +312,88 @@ def cross_compare_fingerprints():
 
 @app.route('/upload_to_database', methods=['POST'])
 def upload_to_database():
+    """رفع بصمة إلى قاعدة البيانات"""
     if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
+        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
+        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
     
-    if file:
-        # Generate unique filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'fingerprint_{timestamp}_{file.filename}'
-        filepath = os.path.join(FINGERPRINT_DB_DIR, filename)
-        
-        # Save the file
-        file.save(filepath)
-        
-        return jsonify({
-            'message': 'File uploaded successfully',
-            'filename': filename
-        })
+    if file and allowed_file(file.filename):
+        try:
+            # إنشاء اسم فريد للملف باستخدام التاريخ والوقت
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'fingerprint_{timestamp}_{secure_filename(file.filename)}'
+            filepath = os.path.join(FINGERPRINT_DB_DIR, filename)
+            
+            # حفظ الملف
+            file.save(filepath)
+            
+            return jsonify({
+                'message': 'تم رفع الملف بنجاح',
+                'filename': filename,
+                'path': filepath
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'نوع الملف غير مدعوم'}), 400
 
 @app.route('/search_fingerprint', methods=['POST'])
 def search_fingerprint():
+    """البحث عن تطابق في قاعدة البيانات"""
     if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
+        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
+        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
     
-    # Save uploaded file temporarily
-    temp_path = 'temp_search_fingerprint.jpg'
-    file.save(temp_path)
-    
-    # Load the search fingerprint
-    search_img = cv2.imread(temp_path)
-    search_img = cv2.cvtColor(search_img, cv2.COLOR_BGR2GRAY)
-    
-    matches = []
-    # Search through all files in the database
-    for filename in os.listdir(FINGERPRINT_DB_DIR):
-        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-            db_img_path = os.path.join(FINGERPRINT_DB_DIR, filename)
-            db_img = cv2.imread(db_img_path)
-            db_img = cv2.cvtColor(db_img, cv2.COLOR_BGR2GRAY)
+    if file and allowed_file(file.filename):
+        try:
+            # حفظ الملف المؤقت للبحث
+            temp_path = 'temp_search_fingerprint.jpg'
+            file.save(temp_path)
             
-            # Perform template matching
-            result = cv2.matchTemplate(search_img, db_img, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            # تحميل صورة البحث
+            search_img = cv2.imread(temp_path)
+            search_img = cv2.cvtColor(search_img, cv2.COLOR_BGR2GRAY)
             
-            # If match is found (threshold can be adjusted)
-            if max_val > 0.8:
-                matches.append({
-                    'filename': filename,
-                    'confidence': float(max_val),
-                    'path': db_img_path
-                })
-    
-    # Clean up temporary file
-    os.remove(temp_path)
-    
-    # Sort matches by confidence
-    matches.sort(key=lambda x: x['confidence'], reverse=True)
-    
-    return jsonify({
-        'matches': matches,
-        'total_matches': len(matches)
-    })
+            matches = []
+            # البحث في جميع الملفات في قاعدة البيانات
+            for filename in os.listdir(FINGERPRINT_DB_DIR):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    db_img_path = os.path.join(FINGERPRINT_DB_DIR, filename)
+                    db_img = cv2.imread(db_img_path)
+                    db_img = cv2.cvtColor(db_img, cv2.COLOR_BGR2GRAY)
+                    
+                    # إجراء مقارنة البصمات
+                    result = fingerprint_processor.compare_fingerprints(search_img, db_img)
+                    
+                    # إذا وجد تطابق (يمكن تعديل العتبة حسب الحاجة)
+                    if result['match_score'] > 0.6:
+                        matches.append({
+                            'filename': filename,
+                            'confidence': result['match_score'],
+                            'path': db_img_path
+                        })
+            
+            # حذف الملف المؤقت
+            os.remove(temp_path)
+            
+            # ترتيب النتائج حسب نسبة التطابق
+            matches.sort(key=lambda x: x['confidence'], reverse=True)
+            
+            return jsonify({
+                'matches': matches,
+                'total_matches': len(matches)
+            })
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'نوع الملف غير مدعوم'}), 400
 
 if __name__ == '__main__':
     print("Starting Flask development server...")
