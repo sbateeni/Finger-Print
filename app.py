@@ -1,8 +1,15 @@
 import os
 import logging
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file
 from werkzeug.utils import secure_filename
 from utils.fingerprint_processor import FingerprintProcessor
+import cv2
+import numpy as np
+from PIL import Image
+import io
+import base64
+from datetime import datetime
+import shutil
 
 print("Starting application...")
 
@@ -30,6 +37,11 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
 print("Creating FingerprintProcessor instance...")
 fingerprint_processor = FingerprintProcessor()
+
+# Create fingerprint database directory if it doesn't exist
+FINGERPRINT_DB_DIR = 'fingerprint_database'
+if not os.path.exists(FINGERPRINT_DB_DIR):
+    os.makedirs(FINGERPRINT_DB_DIR)
 
 def allowed_file(filename):
     """التحقق من امتداد الملف"""
@@ -296,6 +308,77 @@ def cross_compare_fingerprints():
     except Exception as e:
         logger.error(f"خطأ في مقارنة البصمات المتعددة: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/upload_to_database', methods=['POST'])
+def upload_to_database():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if file:
+        # Generate unique filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'fingerprint_{timestamp}_{file.filename}'
+        filepath = os.path.join(FINGERPRINT_DB_DIR, filename)
+        
+        # Save the file
+        file.save(filepath)
+        
+        return jsonify({
+            'message': 'File uploaded successfully',
+            'filename': filename
+        })
+
+@app.route('/search_fingerprint', methods=['POST'])
+def search_fingerprint():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Save uploaded file temporarily
+    temp_path = 'temp_search_fingerprint.jpg'
+    file.save(temp_path)
+    
+    # Load the search fingerprint
+    search_img = cv2.imread(temp_path)
+    search_img = cv2.cvtColor(search_img, cv2.COLOR_BGR2GRAY)
+    
+    matches = []
+    # Search through all files in the database
+    for filename in os.listdir(FINGERPRINT_DB_DIR):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            db_img_path = os.path.join(FINGERPRINT_DB_DIR, filename)
+            db_img = cv2.imread(db_img_path)
+            db_img = cv2.cvtColor(db_img, cv2.COLOR_BGR2GRAY)
+            
+            # Perform template matching
+            result = cv2.matchTemplate(search_img, db_img, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            
+            # If match is found (threshold can be adjusted)
+            if max_val > 0.8:
+                matches.append({
+                    'filename': filename,
+                    'confidence': float(max_val),
+                    'path': db_img_path
+                })
+    
+    # Clean up temporary file
+    os.remove(temp_path)
+    
+    # Sort matches by confidence
+    matches.sort(key=lambda x: x['confidence'], reverse=True)
+    
+    return jsonify({
+        'matches': matches,
+        'total_matches': len(matches)
+    })
 
 if __name__ == '__main__':
     print("Starting Flask development server...")
