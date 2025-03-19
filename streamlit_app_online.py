@@ -8,9 +8,12 @@ import logging
 import traceback
 import tempfile
 import os
-from PIL import Image
+from PIL import Image, ImageDraw
 import io
 from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import math
 
 # تكوين التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -213,8 +216,9 @@ with col1:
             original_img = np.array(original_pil.convert('L'))
             
             if validate_image(original_img):
-                # عرض الصورة الأصلية
-                if not display_image(original_pil, "البصمة الأصلية"):
+                # إضافة المسطرة إلى الصورة الأصلية
+                original_with_ruler = add_ruler_to_image(original_pil)
+                if not display_image(original_with_ruler, "البصمة الأصلية مع المسطرة"):
                     st.error("فشل في عرض الصورة الأصلية")
                 
                 # معالجة البصمة الأصلية
@@ -251,8 +255,9 @@ with col2:
             partial_img = np.array(partial_pil.convert('L'))
             
             if validate_image(partial_img):
-                # عرض الصورة الجزئية
-                if not display_image(partial_pil, "البصمة الجزئية"):
+                # إضافة المسطرة إلى الصورة الجزئية
+                partial_with_ruler = add_ruler_to_image(partial_pil)
+                if not display_image(partial_with_ruler, "البصمة الجزئية مع المسطرة"):
                     st.error("فشل في عرض الصورة الجزئية")
                 
                 # معالجة البصمة الجزئية
@@ -282,6 +287,10 @@ if st.button("بدء المطابقة", type="primary"):
         if processed_original is not None and processed_partial is not None:
             with st.spinner("جاري مطابقة البصمات..."):
                 try:
+                    # حساب عامل التكبير/التصغير
+                    scale_factor = calculate_scale_factor(original_img, partial_img)
+                    st.info(f"عامل التكبير/التصغير: {scale_factor:.2f}")
+                    
                     # مطابقة البصمات
                     match_result = match_fingerprints(minutiae_original, minutiae_partial)
                     
@@ -328,6 +337,13 @@ if st.button("بدء المطابقة", type="primary"):
                             st.write(f"الفرق في الزاوية: {analysis['angle_difference']:.2f}")
                             st.write(f"تطابق النوع: {'نعم' if analysis['type_match'] else 'لا'}")
                     
+                    # عرض البصمة الأصلية مع مربعات التطابق
+                    if 'match_regions' in match_result:
+                        st.subheader("مناطق التطابق في البصمة الأصلية")
+                        matched_image = draw_matching_boxes(original_img, match_result['match_regions'], original_img.shape)
+                        if not display_image(matched_image, "مناطق التطابق"):
+                            st.error("فشل في عرض مناطق التطابق")
+                    
                 except Exception as e:
                     logger.error(f"Error in matching: {str(e)}")
                     logger.error(traceback.format_exc())
@@ -344,4 +360,108 @@ try:
             os.unlink(temp_file)
             logger.info(f"Cleaned up temporary file: {temp_file}")
 except Exception as e:
-    logger.warning(f"Error removing temporary files: {str(e)}") 
+    logger.warning(f"Error removing temporary files: {str(e)}")
+
+def add_ruler_to_image(image, dpi=100):
+    """إضافة مسطرة مرقمة إلى الصورة"""
+    # تحويل الصورة إلى مصفوفة NumPy إذا كانت PIL Image
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+    
+    # إنشاء صورة جديدة مع مساحة إضافية للمساطر
+    height, width = image.shape[:2]
+    ruler_size = 50  # حجم المسطرة بالبكسل
+    new_width = width + ruler_size
+    new_height = height + ruler_size
+    
+    # إنشاء صورة جديدة مع خلفية بيضاء
+    new_image = np.ones((new_height, new_width), dtype=np.uint8) * 255
+    
+    # نسخ الصورة الأصلية إلى الموقع الصحيح
+    new_image[ruler_size:, ruler_size:] = image
+    
+    # إضافة المسطرة الأفقية
+    for i in range(0, width, int(dpi/2.54)):  # كل سنتيمتر
+        x = i + ruler_size
+        y = ruler_size - 10
+        cv2.line(new_image, (x, y), (x, ruler_size), 0, 1)
+        cv2.putText(new_image, f"{i/dpi*2.54:.1f}", (x-10, y-5),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.3, 0, 1)
+    
+    # إضافة المسطرة العمودية
+    for i in range(0, height, int(dpi/2.54)):  # كل سنتيمتر
+        x = ruler_size - 10
+        y = i + ruler_size
+        cv2.line(new_image, (x, y), (ruler_size, y), 0, 1)
+        cv2.putText(new_image, f"{i/dpi*2.54:.1f}", (x-25, y+5),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.3, 0, 1)
+    
+    return Image.fromarray(new_image)
+
+def draw_matching_boxes(image, match_regions, original_size):
+    """رسم مربعات حول المناطق المتطابقة"""
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
+    
+    # إنشاء نسخة من الصورة للرسم عليها
+    draw_image = image.copy()
+    draw = ImageDraw.Draw(draw_image)
+    
+    # تحويل الصورة إلى RGB إذا كانت رمادية
+    if draw_image.mode != 'RGB':
+        draw_image = draw_image.convert('RGB')
+    
+    # رسم المربعات حول المناطق المتطابقة
+    for region in match_regions:
+        x, y, w, h = region['box']
+        score = region['score']
+        
+        # تحديد اللون حسب نسبة التطابق
+        if score > 0.75:
+            color = (0, 255, 0)  # أخضر للتطابق العالي
+        elif score > 0.5:
+            color = (255, 255, 0)  # أصفر للتطابق المتوسط
+        else:
+            color = (255, 0, 0)  # أحمر للتطابق المنخفض
+        
+        # رسم المربع
+        draw.rectangle([x, y, x+w, y+h], outline=color, width=2)
+        
+        # إضافة النسبة
+        draw.text((x, y-20), f"{score*100:.1f}%", fill=color, font=None, font_size=12)
+    
+    return draw_image
+
+def calculate_scale_factor(original_img, partial_img):
+    """حساب عامل التكبير/التصغير بناءً على قياسات الخطوط"""
+    # استخراج الخطوط من كلا الصورتين
+    original_ridges = detect_ridges(original_img)
+    partial_ridges = detect_ridges(partial_img)
+    
+    if not original_ridges or not partial_ridges:
+        return 1.0
+    
+    # حساب متوسط المسافة بين الخطوط
+    original_distances = []
+    partial_distances = []
+    
+    for ridge in original_ridges:
+        if len(ridge) > 1:
+            for i in range(len(ridge)-1):
+                dist = np.linalg.norm(ridge[i] - ridge[i+1])
+                original_distances.append(dist)
+    
+    for ridge in partial_ridges:
+        if len(ridge) > 1:
+            for i in range(len(ridge)-1):
+                dist = np.linalg.norm(ridge[i] - ridge[i+1])
+                partial_distances.append(dist)
+    
+    if not original_distances or not partial_distances:
+        return 1.0
+    
+    # حساب عامل التكبير/التصغير
+    original_avg = np.mean(original_distances)
+    partial_avg = np.mean(partial_distances)
+    
+    return original_avg / partial_avg 
