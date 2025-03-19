@@ -52,7 +52,7 @@ def remove_noise(image):
         return None
 
 def skeletonize(image):
-    """Simple skeletonization algorithm"""
+    """Improved skeletonization algorithm"""
     try:
         if image is None:
             print("Error in skeletonize: Input image is None")
@@ -69,6 +69,9 @@ def skeletonize(image):
         max_iterations = 100  # Prevent infinite loop
         
         while iteration < max_iterations:
+            # Store the previous skeleton
+            prev_skeleton = skeleton.copy()
+            
             # Erode the image
             eroded = cv2.erode(skeleton, kernel)
             
@@ -78,15 +81,22 @@ def skeletonize(image):
             # Subtract opened from skeleton
             temp = cv2.subtract(skeleton, opened)
             
-            # If no more changes, break
-            if cv2.countNonZero(temp) == 0:
-                break
-                
             # Update skeleton
             skeleton = eroded
+            
+            # If no more changes, break
+            if cv2.countNonZero(cv2.subtract(prev_skeleton, skeleton)) == 0:
+                break
+                
             iteration += 1
             
         print(f"Skeletonization completed in {iteration} iterations")
+        
+        # Ensure skeleton is not empty
+        if cv2.countNonZero(skeleton) == 0:
+            print("Error: Skeleton is empty after processing")
+            return None
+            
         return skeleton
     except Exception as e:
         print(f"Error in skeletonize: {str(e)}")
@@ -136,12 +146,9 @@ def preprocess_image(image):
         magnitude, direction = detect_ridges(enhanced)
         print("Detected ridge direction")
 
-        # Apply adaptive thresholding
-        binary = cv2.adaptiveThreshold(
-            enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            cv2.THRESH_BINARY_INV, 11, 2
-        )
-        print("Applied adaptive thresholding")
+        # Apply Otsu's thresholding
+        _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        print("Applied Otsu's thresholding")
 
         # Apply morphological operations
         kernel = np.ones((3,3), np.uint8)
