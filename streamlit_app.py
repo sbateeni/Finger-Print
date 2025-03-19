@@ -10,6 +10,7 @@ import tempfile
 import os
 from PIL import Image
 import io
+from datetime import datetime
 
 # تكوين التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -76,7 +77,12 @@ def display_image(image, caption):
     try:
         if isinstance(image, np.ndarray):
             # Convert numpy array to PIL Image
-            image = Image.fromarray(image)
+            if len(image.shape) == 3:
+                # If it's a color image
+                image = Image.fromarray(image)
+            else:
+                # If it's a grayscale image
+                image = Image.fromarray(image.astype(np.uint8))
         elif not isinstance(image, Image.Image):
             logger.error(f"Unsupported image type: {type(image)}")
             return False
@@ -85,16 +91,12 @@ def display_image(image, caption):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Save to bytes buffer
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format='PNG')
-        img_byte_arr.seek(0)
-        
         # Display using Streamlit
-        st.image(img_byte_arr, caption=caption, use_container_width=True)
+        st.image(image, caption=caption, use_container_width=True)
         return True
     except Exception as e:
         logger.error(f"Error displaying image: {str(e)}")
+        logger.error(traceback.format_exc())
         return False
 
 # تصميم عرض النتائج
@@ -171,6 +173,39 @@ def display_summary_results(original_count, partial_count, matched_points, match
     
     st.markdown('</div>', unsafe_allow_html=True)
 
+def write_results_to_file(match_result):
+    try:
+        # إنشاء مجلد النتائج إذا لم يكن موجوداً
+        if not os.path.exists('results'):
+            os.makedirs('results')
+        
+        # إنشاء اسم الملف باستخدام التاريخ والوقت
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f'results/match_result_{timestamp}.txt'
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write("=== نتائج مطابقة البصمات ===\n\n")
+            f.write(f"تاريخ ووقت المطابقة: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write("=== إحصائيات المطابقة ===\n")
+            f.write(f"نسبة التطابق: {match_result['match_score']:.2f}%\n")
+            f.write(f"عدد النقاط في البصمة الأصلية: {match_result['total_original']}\n")
+            f.write(f"عدد النقاط في البصمة الجزئية: {match_result['total_partial']}\n")
+            f.write(f"عدد النقاط المتطابقة: {match_result['matched_points']}\n")
+            f.write(f"حالة المطابقة: {match_result['status']}\n\n")
+            
+            f.write("=== تفاصيل تحليل الخطوط ===\n")
+            if match_result['details']['ridge_analysis']:
+                for i, analysis in enumerate(match_result['details']['ridge_analysis'], 1):
+                    f.write(f"\nتحليل الخط {i}:\n")
+                    f.write(f"المسافة: {analysis['distance']:.2f}\n")
+                    f.write(f"الفرق في الزاوية: {analysis['angle_difference']:.2f}\n")
+                    f.write(f"تطابق النوع: {'نعم' if analysis['type_match'] else 'لا'}\n")
+            
+        return filename
+    except Exception as e:
+        logger.error(f"Error writing results to file: {str(e)}")
+        return None
+
 # Initialize session state to track temporary files
 if 'temp_files' not in st.session_state:
     st.session_state.temp_files = []
@@ -200,7 +235,7 @@ with col1:
                     processed_original, minutiae_original, ridge_patterns_original = process_image(original_img)
                     if processed_original is not None:
                         # تحويل الصورة المعالجة إلى صيغة PIL
-                        processed_pil = convert_cv2_to_pil(processed_original)
+                        processed_pil = Image.fromarray(processed_original.astype(np.uint8))
                         if processed_pil is not None:
                             if not display_image(processed_pil, "البصمة المعالجة"):
                                 st.error("فشل في عرض الصورة المعالجة")
@@ -213,6 +248,7 @@ with col1:
                 st.error("الصورة غير صالحة")
         except Exception as e:
             logger.error(f"Error processing original image: {str(e)}")
+            logger.error(traceback.format_exc())
             st.error("حدث خطأ أثناء معالجة الصورة الأصلية")
 
 # البصمة الجزئية
@@ -237,7 +273,7 @@ with col2:
                     processed_partial, minutiae_partial, ridge_patterns_partial = process_image(partial_img)
                     if processed_partial is not None:
                         # تحويل الصورة المعالجة إلى صيغة PIL
-                        processed_pil = convert_cv2_to_pil(processed_partial)
+                        processed_pil = Image.fromarray(processed_partial.astype(np.uint8))
                         if processed_pil is not None:
                             if not display_image(processed_pil, "البصمة المعالجة"):
                                 st.error("فشل في عرض الصورة المعالجة")
@@ -250,6 +286,7 @@ with col2:
                 st.error("الصورة غير صالحة")
         except Exception as e:
             logger.error(f"Error processing partial image: {str(e)}")
+            logger.error(traceback.format_exc())
             st.error("حدث خطأ أثناء معالجة الصورة الجزئية")
 
 # زر المطابقة
@@ -260,6 +297,11 @@ if st.button("بدء المطابقة", type="primary"):
                 try:
                     # مطابقة البصمات
                     match_result = match_fingerprints(minutiae_original, minutiae_partial)
+                    
+                    # كتابة النتائج إلى ملف
+                    result_file = write_results_to_file(match_result)
+                    if result_file:
+                        st.success(f"تم حفظ النتائج في الملف: {result_file}")
                     
                     # عرض النتائج
                     st.subheader("نتائج المطابقة")
