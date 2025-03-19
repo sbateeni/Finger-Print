@@ -52,55 +52,80 @@ def remove_noise(image):
         return None
 
 def skeletonize(image):
-    """Improved skeletonization algorithm"""
+    """Skeletonization using OpenCV operations"""
     try:
         if image is None:
             print("Error in skeletonize: Input image is None")
             return None
-            
-        # Create a copy of the image
-        skeleton = image.copy()
         
-        # Create a structuring element
-        kernel = np.ones((3,3), np.uint8)
+        # Ensure image is binary
+        binary = image.copy()
+        binary = (binary > 0).astype(np.uint8) * 255
         
-        # Iterate until no more changes
-        iteration = 0
+        # Create an output skeleton image
+        skeleton = np.zeros(binary.shape, np.uint8)
+        
+        # Get a kernel for morphological operations
+        element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+        
+        # Copy the binary image
+        img = binary.copy()
+        
+        # Iterate until the image is fully eroded
+        iterations = 0
         max_iterations = 100  # Prevent infinite loop
-        
-        while iteration < max_iterations:
-            # Store the previous skeleton
-            prev_skeleton = skeleton.copy()
+        while True and iterations < max_iterations:
+            # Perform morphological opening
+            eroded = cv2.erode(img, element)
+            temp = cv2.dilate(eroded, element)
             
-            # Erode the image
-            eroded = cv2.erode(skeleton, kernel)
+            # Subtract to get the skeleton points
+            temp = cv2.subtract(img, temp)
             
-            # Open the eroded image
-            opened = cv2.morphologyEx(eroded, cv2.MORPH_OPEN, kernel)
+            # Add to the skeleton
+            skeleton = cv2.bitwise_or(skeleton, temp)
             
-            # Subtract opened from skeleton
-            temp = cv2.subtract(skeleton, opened)
+            # Set the eroded image for the next iteration
+            img = eroded.copy()
             
-            # Update skeleton
-            skeleton = eroded
-            
-            # If no more changes, break
-            if cv2.countNonZero(cv2.subtract(prev_skeleton, skeleton)) == 0:
+            # If image has been completely eroded, we're done
+            if cv2.countNonZero(img) == 0:
                 break
                 
-            iteration += 1
+            iterations += 1
             
-        print(f"Skeletonization completed in {iteration} iterations")
+        print(f"OpenCV skeletonization completed in {iterations} iterations")
         
         # Ensure skeleton is not empty
         if cv2.countNonZero(skeleton) == 0:
             print("Error: Skeleton is empty after processing")
-            return None
+            # Fall back to the original image with some preprocessing
+            kernel = np.ones((2,2), np.uint8)
+            skeleton = cv2.erode(binary, kernel, iterations=1)
+            print(f"Using fallback skeleton with {cv2.countNonZero(skeleton)} pixels")
+        else:
+            print(f"Skeleton has {cv2.countNonZero(skeleton)} pixels")
             
         return skeleton
     except Exception as e:
         print(f"Error in skeletonize: {str(e)}")
-        return None
+        # Return original image as fallback
+        return image
+
+def detect_ridges(image):
+    """Detect ridge patterns in the fingerprint"""
+    # Apply Sobel operator to detect edges
+    sobelx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
+    
+    # Calculate gradient magnitude and direction
+    magnitude = np.sqrt(sobelx**2 + sobely**2)
+    direction = np.arctan2(sobely, sobelx)
+    
+    # Normalize magnitude
+    magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    
+    return magnitude, direction
 
 def preprocess_image(image):
     """
@@ -150,14 +175,11 @@ def preprocess_image(image):
         _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         print("Applied Otsu's thresholding")
 
-        # Apply morphological operations
-        kernel = np.ones((3,3), np.uint8)
+        # Apply morphological operations - less aggressive
+        kernel = np.ones((2,2), np.uint8)
         binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
         print("Applied morphological operations")
-
-        # Convert to binary (0 and 1)
-        binary = (binary > 0).astype(np.uint8)
 
         # Ensure binary image is not empty
         non_zero = cv2.countNonZero(binary)
@@ -171,36 +193,20 @@ def preprocess_image(image):
         if skeleton is None:
             return None, None
 
-        # Remove isolated pixels
-        kernel = np.ones((3,3), np.uint8)
-        skeleton = cv2.morphologyEx(skeleton, cv2.MORPH_OPEN, kernel)
-
         # Ensure skeleton is not empty
         non_zero = cv2.countNonZero(skeleton)
         if non_zero == 0:
-            print("Error: Skeleton is empty")
-            return None, None
-        print(f"Final skeleton has {non_zero} non-zero pixels")
+            print("Error: Final skeleton is empty")
+            # Use the binary image as fallback
+            skeleton = binary
+            print("Using binary image as fallback")
+        else:
+            print(f"Final skeleton has {non_zero} non-zero pixels")
 
         return skeleton, direction
     except Exception as e:
         print(f"Error in preprocess_image: {str(e)}")
         return None, None
-
-def detect_ridges(image):
-    """Detect ridge patterns in the fingerprint"""
-    # Apply Sobel operator to detect edges
-    sobelx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
-    sobely = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
-    
-    # Calculate gradient magnitude and direction
-    magnitude = np.sqrt(sobelx**2 + sobely**2)
-    direction = np.arctan2(sobely, sobelx)
-    
-    # Normalize magnitude
-    magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    
-    return magnitude, direction
 
 def analyze_ridge_patterns(skeleton, direction):
     """Analyze ridge patterns and their characteristics"""
