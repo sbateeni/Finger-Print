@@ -19,39 +19,40 @@ def remove_noise(image):
 
 def preprocess_image(image):
     """
-    Enhanced preprocessing of fingerprint image:
-    1. Resize to standard size
-    2. Convert to grayscale
-    3. Remove noise
-    4. Enhance contrast
-    5. Binarize
-    6. Skeletonize
+    Preprocess fingerprint image for feature extraction
     """
-    # Convert to grayscale if image is in color
-    if len(image.shape) == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image
+    try:
+        # Convert to grayscale if needed
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
 
-    # Resize image to standard size
-    gray = resize_image(gray)
+        # Apply adaptive thresholding
+        binary = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY_INV, 11, 2
+        )
 
-    # Remove noise
-    denoised = remove_noise(gray)
+        # Apply morphological operations
+        kernel = np.ones((3,3), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
 
-    # Enhance contrast
-    enhanced = enhance_contrast(denoised)
+        # Skeletonize the image
+        skeleton = skeletonize(binary)
 
-    # Binarize using Otsu's method
-    _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # Convert to binary (0 and 1)
+        skeleton = (skeleton > 0).astype(np.uint8)
 
-    # Skeletonize
-    skeleton = cv2.ximgproc.thinning(binary)
+        # Remove isolated pixels
+        kernel = np.ones((3,3), np.uint8)
+        skeleton = cv2.morphologyEx(skeleton, cv2.MORPH_OPEN, kernel)
 
-    # Detect ridge patterns and get direction
-    magnitude, direction = detect_ridges(binary)
-
-    return skeleton, direction
+        return skeleton
+    except Exception as e:
+        print(f"Error in preprocess_image: {str(e)}")
+        return None
 
 def detect_ridges(image):
     """Detect ridge patterns in the fingerprint"""
