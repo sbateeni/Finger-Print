@@ -181,33 +181,15 @@
                 analyzeBtn.disabled = true;
                 analyzeBtn.innerHTML = 'جاري التحليل...';
 
-                // First upload both files
-                const originalFormData = new FormData();
-                originalFormData.append('file', originalFile);
-                const originalResponse = await fetch('/upload', {
-                    method: 'POST',
-                    body: originalFormData
-                });
-                const originalResult = await originalResponse.json();
+                // Create form data with both files
+                const formData = new FormData();
+                formData.append('file1', originalFile);
+                formData.append('file2', partialFile);
 
-                const partialFormData = new FormData();
-                partialFormData.append('file', partialFile);
-                const partialResponse = await fetch('/upload', {
+                // Send request
+                const response = await fetch('/upload', {
                     method: 'POST',
-                    body: partialFormData
-                });
-                const partialResult = await partialResponse.json();
-
-                // Then send analysis request with filenames
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        original: originalResult.filename,
-                        partial: partialResult.filename
-                    })
+                    body: formData
                 });
                 
                 const result = await response.json();

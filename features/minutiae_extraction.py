@@ -25,8 +25,13 @@ def get_minutiae_angle(neighbors):
     # Find the direction of the ridge
     y, x = np.where(neighbors == 1)
     if len(x) > 0:
+        # Calculate angle based on the position of the neighbor
         angle = np.arctan2(y[0] - 1, x[0] - 1)
-        return np.degrees(angle)
+        # Convert to degrees and normalize to 0-360 range
+        angle = np.degrees(angle)
+        if angle < 0:
+            angle += 360
+        return angle
     return 0
 
 def detect_dots(skeleton):
@@ -60,43 +65,61 @@ def detect_dots(skeleton):
 
 def extract_minutiae(skeleton):
     """
-    Enhanced minutiae extraction with ridge pattern analysis and dots detection
+    Extract minutiae points from skeletonized fingerprint image
     """
-    # Detect ridge patterns
-    magnitude, direction = detect_ridges(skeleton)
-    
-    # Analyze ridge patterns
-    features = analyze_ridge_patterns(skeleton, direction)
-    
-    # Create a padded version of the skeleton for easier neighbor checking
-    padded = np.pad(skeleton, 1, mode='constant')
-    rows, cols = skeleton.shape
-    
-    minutiae = []
-    
-    # Process each feature
-    for feature in features:
-        x, y = feature['x'], feature['y']
-        if 0 <= x < cols and 0 <= y < rows:
-            # Get 3x3 neighborhood
-            neighborhood = padded[y:y+3, x:x+3]
-            neighborhood[1, 1] = 0  # Ignore center point
-            
-            # Add feature with additional information
-            minutiae.append({
-                'x': x,
-                'y': y,
-                'type': feature['type'],
-                'angle': feature['angle'],
-                'magnitude': feature['magnitude'],
-                'neighborhood': neighborhood.tolist()
-            })
-    
-    # Detect and add dots
-    dots = detect_dots(skeleton)
-    minutiae.extend(dots)
-    
-    return minutiae
+    try:
+        # Create a padded version of the skeleton for easier neighbor checking
+        padded = np.pad(skeleton, 1, mode='constant')
+        rows, cols = skeleton.shape
+        
+        minutiae = []
+        
+        # Process each pixel in the skeleton
+        for y in range(1, rows+1):
+            for x in range(1, cols+1):
+                if padded[y, x] == 1:
+                    # Get 3x3 neighborhood
+                    neighborhood = padded[y-1:y+2, x-1:x+2]
+                    neighborhood[1, 1] = 0  # Ignore center point
+                    
+                    # Count neighbors
+                    count = np.sum(neighborhood)
+                    
+                    # Determine minutiae type
+                    if count == 1:  # Ridge ending
+                        minutiae.append({
+                            'x': x-1,  # Adjust for padding
+                            'y': y-1,
+                            'type': 'ending',
+                            'angle': get_minutiae_angle(neighborhood),
+                            'magnitude': 1.0
+                        })
+                    elif count == 3:  # Bifurcation
+                        minutiae.append({
+                            'x': x-1,
+                            'y': y-1,
+                            'type': 'bifurcation',
+                            'angle': get_minutiae_angle(neighborhood),
+                            'magnitude': 1.0
+                        })
+        
+        # Detect and add dots
+        dots = detect_dots(skeleton)
+        minutiae.extend(dots)
+        
+        # Remove duplicate minutiae points
+        unique_minutiae = []
+        seen = set()
+        for m in minutiae:
+            key = (m['x'], m['y'])
+            if key not in seen:
+                seen.add(key)
+                unique_minutiae.append(m)
+        
+        return unique_minutiae
+    except Exception as e:
+        print(f"Error in extract_minutiae: {str(e)}")
+        return []
 
 def analyze_ridge_characteristics(skeleton, minutiae):
     """

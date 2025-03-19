@@ -48,7 +48,10 @@ def preprocess_image(image):
     # Skeletonize
     skeleton = cv2.ximgproc.thinning(binary)
 
-    return skeleton
+    # Detect ridge patterns and get direction
+    magnitude, direction = detect_ridges(binary)
+
+    return skeleton, direction
 
 def detect_ridges(image):
     """Detect ridge patterns in the fingerprint"""
@@ -67,40 +70,44 @@ def detect_ridges(image):
 
 def analyze_ridge_patterns(skeleton, direction):
     """Analyze ridge patterns and their characteristics"""
-    # Find ridge endings and bifurcations
-    kernel = np.ones((3,3), np.uint8)
-    dilated = cv2.dilate(skeleton, kernel, iterations=1)
-    eroded = cv2.erode(skeleton, kernel, iterations=1)
-    
-    # Ridge endings
-    endings = cv2.subtract(skeleton, eroded)
-    # Bifurcations
-    bifurcations = cv2.subtract(dilated, skeleton)
-    
-    # Find coordinates of features
-    ending_points = np.where(endings > 0)
-    bifurcation_points = np.where(bifurcations > 0)
-    
-    features = []
-    
-    # Add ridge endings
-    for y, x in zip(*ending_points):
-        features.append({
-            'x': x,
-            'y': y,
-            'type': 'ending',
-            'angle': direction[y, x],
-            'magnitude': 1.0
-        })
-    
-    # Add bifurcations
-    for y, x in zip(*bifurcation_points):
-        features.append({
-            'x': x,
-            'y': y,
-            'type': 'bifurcation',
-            'angle': direction[y, x],
-            'magnitude': 1.0
-        })
-    
-    return features 
+    try:
+        # Find ridge endings and bifurcations
+        kernel = np.ones((3,3), np.uint8)
+        dilated = cv2.dilate(skeleton, kernel, iterations=1)
+        eroded = cv2.erode(skeleton, kernel, iterations=1)
+        
+        # Ridge endings
+        endings = cv2.subtract(skeleton, eroded)
+        # Bifurcations
+        bifurcations = cv2.subtract(dilated, skeleton)
+        
+        # Find coordinates of features
+        ending_points = np.where(endings > 0)
+        bifurcation_points = np.where(bifurcations > 0)
+        
+        features = []
+        
+        # Add ridge endings
+        for y, x in zip(*ending_points):
+            features.append({
+                'x': int(x),
+                'y': int(y),
+                'type': 'ending',
+                'angle': float(direction[y, x]),
+                'magnitude': 1.0
+            })
+        
+        # Add bifurcations
+        for y, x in zip(*bifurcation_points):
+            features.append({
+                'x': int(x),
+                'y': int(y),
+                'type': 'bifurcation',
+                'angle': float(direction[y, x]),
+                'magnitude': 1.0
+            })
+        
+        return features
+    except Exception as e:
+        print(f"Error in analyze_ridge_patterns: {str(e)}")
+        return [] 
