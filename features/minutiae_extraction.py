@@ -116,7 +116,21 @@ def extract_minutiae(skeleton):
                 seen.add(key)
                 unique_minutiae.append(m)
         
-        return unique_minutiae
+        # Filter out minutiae points that are too close to each other
+        filtered_minutiae = []
+        min_distance = 5  # Minimum distance between minutiae points
+        
+        for i, m1 in enumerate(unique_minutiae):
+            is_valid = True
+            for m2 in unique_minutiae[i+1:]:
+                distance = np.sqrt((m1['x'] - m2['x'])**2 + (m1['y'] - m2['y'])**2)
+                if distance < min_distance:
+                    is_valid = False
+                    break
+            if is_valid:
+                filtered_minutiae.append(m1)
+        
+        return filtered_minutiae
     except Exception as e:
         print(f"Error in extract_minutiae: {str(e)}")
         return []
