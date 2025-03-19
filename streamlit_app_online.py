@@ -1,12 +1,20 @@
-import streamlit as st
-import cv2
-import numpy as np
-import logging
 import os
+import sys
+import logging
 import tempfile
 from datetime import datetime
 
-# استيراد الوحدات الجديدة
+# إضافة المسار الحالي إلى مسارات Python
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# استيراد المكتبات الخارجية أولاً
+import streamlit as st
+import cv2
+import numpy as np
+
+# استيراد الوحدات الداخلية بعد المكتبات الخارجية
 from utils.helpers import validate_image, display_image
 from ui.display import display_summary_results, write_results_to_file
 from processing.image_processor import (
