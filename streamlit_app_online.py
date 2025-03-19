@@ -8,11 +8,9 @@ import logging
 import traceback
 import tempfile
 import os
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import io
 from datetime import datetime
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import math
 
 # تكوين التسجيل
@@ -428,7 +426,14 @@ def draw_matching_boxes(image, match_regions, original_size):
         draw.rectangle([x, y, x+w, y+h], outline=color, width=2)
         
         # إضافة النسبة
-        draw.text((x, y-20), f"{score*100:.1f}%", fill=color, font=None, font_size=12)
+        try:
+            # محاولة تحميل خط عربي
+            font = ImageFont.truetype("arial.ttf", 12)
+        except:
+            # استخدام الخط الافتراضي إذا لم يتم العثور على الخط العربي
+            font = ImageFont.load_default()
+        
+        draw.text((x, y-20), f"{score*100:.1f}%", fill=color, font=font)
     
     return draw_image
 
