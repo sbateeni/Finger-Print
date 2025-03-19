@@ -321,35 +321,74 @@ with col1:
         try:
             # قراءة الصورة مباشرة باستخدام PIL
             original_pil = Image.open(original_file)
+            
+            # التحقق من صحة الصورة
+            if original_pil is None:
+                st.error("فشل في قراءة الصورة")
+                return
+                
+            # التحقق من حجم الصورة
+            if original_pil.size[0] < 100 or original_pil.size[1] < 100:
+                st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
+                return
+                
             # تحويل إلى مصفوفة NumPy
-            original_img = np.array(original_pil.convert('L'))
+            try:
+                original_img = np.array(original_pil.convert('L'))
+            except Exception as e:
+                logger.error(f"Error converting image to numpy array: {str(e)}")
+                st.error("فشل في تحويل الصورة إلى الصيغة المطلوبة")
+                return
             
             if validate_image(original_img):
-                # إضافة المسطرة إلى الصورة الأصلية
-                original_with_ruler = add_ruler_to_image(original_pil)
-                if not display_image(original_with_ruler, "البصمة الأصلية مع المسطرة"):
-                    st.error("فشل في عرض الصورة الأصلية")
-                
-                # معالجة البصمة الأصلية
-                with st.spinner("جاري معالجة البصمة الأصلية..."):
-                    processed_original, minutiae_original, ridge_patterns_original = process_image(original_img)
-                    if processed_original is not None:
+                try:
+                    # إضافة المسطرة إلى الصورة الأصلية
+                    original_with_ruler = add_ruler_to_image(original_pil)
+                    if original_with_ruler is None:
+                        st.error("فشل في إضافة المسطرة للصورة")
+                        return
+                        
+                    if not display_image(original_with_ruler, "البصمة الأصلية مع المسطرة"):
+                        st.error("فشل في عرض الصورة الأصلية")
+                        return
+                    
+                    # معالجة البصمة الأصلية
+                    with st.spinner("جاري معالجة البصمة الأصلية..."):
+                        processed_original, minutiae_original, ridge_patterns_original = process_image(original_img)
+                        
+                        if processed_original is None:
+                            st.error("فشل في معالجة البصمة الأصلية")
+                            return
+                            
+                        if minutiae_original is None or len(minutiae_original) == 0:
+                            st.error("لم يتم العثور على نقاط مميزة في البصمة")
+                            return
+                            
                         # تحويل الصورة المعالجة إلى صيغة PIL
-                        processed_pil = Image.fromarray(processed_original.astype(np.uint8))
-                        if processed_pil is not None:
-                            if not display_image(processed_pil, "البصمة المعالجة"):
-                                st.error("فشل في عرض الصورة المعالجة")
-                            st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
-                        else:
+                        try:
+                            processed_pil = Image.fromarray(processed_original.astype(np.uint8))
+                            if processed_pil is not None:
+                                if not display_image(processed_pil, "البصمة المعالجة"):
+                                    st.error("فشل في عرض الصورة المعالجة")
+                                    return
+                                st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
+                            else:
+                                st.error("فشل في تحويل الصورة المعالجة")
+                                return
+                        except Exception as e:
+                            logger.error(f"Error converting processed image to PIL: {str(e)}")
                             st.error("فشل في تحويل الصورة المعالجة")
-                    else:
-                        st.error("فشل في معالجة البصمة الأصلية")
+                            return
+                except Exception as e:
+                    logger.error(f"Error in image processing pipeline: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    st.error(f"حدث خطأ أثناء معالجة الصورة: {str(e)}")
             else:
-                st.error("الصورة غير صالحة")
+                st.error("الصورة غير صالحة. تأكد من أن الصورة بتنسيق صحيح")
         except Exception as e:
             logger.error(f"Error processing original image: {str(e)}")
             logger.error(traceback.format_exc())
-            st.error("حدث خطأ أثناء معالجة الصورة الأصلية")
+            st.error(f"حدث خطأ أثناء معالجة الصورة الأصلية: {str(e)}")
 
 # البصمة الجزئية
 with col2:
