@@ -5,7 +5,7 @@ from preprocessing.image_processing import detect_ridges, analyze_ridge_patterns
 def get_minutiae_type(pixel, neighbors):
     """
     Determine the type of minutiae point based on its neighborhood
-    Returns: 'ending', 'bifurcation', or None
+    Returns: 'ending', 'bifurcation', 'dot', or None
     """
     # Count the number of 1's in the neighborhood
     count = np.sum(neighbors)
@@ -14,6 +14,8 @@ def get_minutiae_type(pixel, neighbors):
         return 'ending'
     elif count == 3:
         return 'bifurcation'
+    elif count == 0 and pixel == 1:
+        return 'dot'
     return None
 
 def get_minutiae_angle(neighbors):
@@ -27,9 +29,38 @@ def get_minutiae_angle(neighbors):
         return np.degrees(angle)
     return 0
 
+def detect_dots(skeleton):
+    """
+    Detect isolated dots in the fingerprint
+    """
+    dots = []
+    rows, cols = skeleton.shape
+    
+    # Create a padded version for easier neighbor checking
+    padded = np.pad(skeleton, 1, mode='constant')
+    
+    for y in range(1, rows+1):
+        for x in range(1, cols+1):
+            if padded[y, x] == 1:
+                # Get 3x3 neighborhood
+                neighborhood = padded[y-1:y+2, x-1:x+2]
+                neighborhood[1, 1] = 0  # Ignore center point
+                
+                # Check if it's a dot (isolated point)
+                if np.sum(neighborhood) == 0:
+                    dots.append({
+                        'x': x-1,  # Adjust for padding
+                        'y': y-1,
+                        'type': 'dot',
+                        'angle': 0,  # Dots don't have orientation
+                        'magnitude': 1.0
+                    })
+    
+    return dots
+
 def extract_minutiae(skeleton):
     """
-    Enhanced minutiae extraction with ridge pattern analysis
+    Enhanced minutiae extraction with ridge pattern analysis and dots detection
     """
     # Detect ridge patterns
     magnitude, direction = detect_ridges(skeleton)
@@ -60,6 +91,10 @@ def extract_minutiae(skeleton):
                 'magnitude': feature['magnitude'],
                 'neighborhood': neighborhood.tolist()
             })
+    
+    # Detect and add dots
+    dots = detect_dots(skeleton)
+    minutiae.extend(dots)
     
     return minutiae
 
