@@ -42,16 +42,20 @@ except Exception as e:
     logger.error(f"Error in page configuration: {str(e)}")
 
 # تهيئة متغيرات الحالة
-if 'temp_files' not in st.session_state:
-    st.session_state.temp_files = []
-if 'processed_original' not in st.session_state:
-    st.session_state.processed_original = None
-if 'processed_partial' not in st.session_state:
-    st.session_state.processed_partial = None
-if 'original_minutiae' not in st.session_state:
-    st.session_state.original_minutiae = None
-if 'partial_minutiae' not in st.session_state:
-    st.session_state.partial_minutiae = None
+def init_session_state():
+    if 'temp_files' not in st.session_state:
+        st.session_state.temp_files = []
+    if 'processed_original' not in st.session_state:
+        st.session_state.processed_original = None
+    if 'processed_partial' not in st.session_state:
+        st.session_state.processed_partial = None
+    if 'original_minutiae' not in st.session_state:
+        st.session_state.original_minutiae = None
+    if 'partial_minutiae' not in st.session_state:
+        st.session_state.partial_minutiae = None
+
+# تهيئة متغيرات الحالة عند بدء التطبيق
+init_session_state()
 
 # العنوان الرئيسي
 st.title("🔍 نظام مطابقة البصمات")
@@ -147,12 +151,21 @@ if partial_file:
 
 # زر المطابقة
 if st.button("🔍 بدء المطابقة"):
-    if not all([st.session_state.processed_original, st.session_state.processed_partial,
-                st.session_state.original_minutiae, st.session_state.partial_minutiae]):
-        st.error("يرجى تحميل كلا البصمتين أولاً")
-        st.stop()
-    
     try:
+        # التحقق من وجود جميع البيانات المطلوبة
+        if st.session_state.processed_original is None:
+            st.error("يرجى تحميل البصمة الأصلية أولاً")
+            st.stop()
+        if st.session_state.processed_partial is None:
+            st.error("يرجى تحميل البصمة الجزئية أولاً")
+            st.stop()
+        if st.session_state.original_minutiae is None:
+            st.error("لم يتم العثور على نقاط مميزة في البصمة الأصلية")
+            st.stop()
+        if st.session_state.partial_minutiae is None:
+            st.error("لم يتم العثور على نقاط مميزة في البصمة الجزئية")
+            st.stop()
+        
         # حساب عامل التحجيم
         scale_factor = calculate_scale_factor(
             st.session_state.processed_original,
