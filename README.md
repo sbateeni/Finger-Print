@@ -1,110 +1,79 @@
-# نظام مطابقة البصمات الجنائي
+# نظام تحليل البصمات الجنائي
 
-نظام متكامل لمطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي وتحليل الصور. يستخدم النظام في مجال الطب الشرعي والتحقيقات الجنائية.
+نظام متقدم لتحليل ومطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي.
 
-## المميزات
+## المتطلبات الأساسية
 
-- تحليل النقاط الدقيقة في البصمات (Minutiae Points)
-- تحليل أنماط الخطوط (Ridge Patterns)
-- تقييم جودة الصور
-- مطابقة جزئية للبصمات
-- واجهة مراجعة بشرية
-- تخزين وتتبع نتائج المطابقة
-
-## المتطلبات
-
-- Python 3.8+
-- OpenCV
-- NumPy
-- SciPy
-- scikit-image
-- Flask
-- SQLAlchemy
+- Python 3.8 أو أحدث
+- pip (مدير حزم Python)
 
 ## التثبيت
 
-1. استنساخ المستودع:
+1. قم بنسخ المستودع:
 ```bash
-git clone https://github.com/yourusername/fingerprint-matching.git
-cd fingerprint-matching
+git clone https://github.com/yourusername/Finger-Print.git
+cd Finger-Print
 ```
 
-2. إنشاء بيئة افتراضية:
+2. قم بإنشاء بيئة افتراضية وتفعيلها:
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+source venv/bin/activate  # على Linux/Mac
+venv\Scripts\activate     # على Windows
 ```
 
-3. تثبيت المتطلبات:
+3. قم بتثبيت المتطلبات:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. إعداد ملف البيئة:
+## كيفية الاستخدام
+
+### النسخة المحلية
+
+لتشغيل النسخة المحلية (مع دعم `use_container_width`):
 ```bash
-cp .env.example .env
-# تعديل المتغيرات في ملف .env
+streamlit run streamlit_app_local.py
 ```
 
-5. تهيئة قاعدة البيانات:
+### النسخة الإلكترونية
+
+لتشغيل النسخة الإلكترونية (بدون `use_container_width`):
 ```bash
-flask db init
-flask db migrate
-flask db upgrade
+streamlit run streamlit_app_online.py
 ```
 
-## التشغيل
+## الميزات
 
-1. تشغيل الخادم المحلي:
-```bash
-python app.py
-```
-
-2. فتح المتصفح على العنوان:
-```
-http://localhost:5000
-```
-
-## النشر على Render.com
-
-1. إنشاء حساب على Render.com
-2. ربط المستودع مع Render
-3. إنشاء خدمة Web Service جديدة
-4. تكوين المتغيرات البيئية
-5. نشر التطبيق
+- تحليل البصمات باستخدام تقنيات الذكاء الاصطناعي
+- استخراج النقاط المميزة من البصمات
+- مطابقة البصمات الجزئية مع البصمات الكاملة
+- عرض نتائج مفصلة للمطابقة
+- حفظ نتائج المطابقة في ملفات نصية
 
 ## هيكل المشروع
 
 ```
-fingerprint-matching/
-├── app.py                 # التطبيق الرئيسي
-├── requirements.txt       # متطلبات المشروع
-├── Procfile              # ملف تكوين Render
-├── .env                  # متغيرات البيئة
-├── .gitignore           # ملفات Git المستثناة
-├── database/            # نماذج قاعدة البيانات
-├── features/            # استخراج الميزات
-├── matching/            # خوارزميات المطابقة
-├── preprocessing/       # معالجة الصور
-├── static/             # الملفات الثابتة
-├── templates/          # قوالب HTML
-└── uploads/            # مجلد التحميلات
+Finger-Print/
+├── streamlit_app_local.py    # النسخة المحلية
+├── streamlit_app_online.py   # النسخة الإلكترونية
+├── requirements.txt          # المتطلبات
+├── preprocessing/            # معالجة الصور
+├── features/                 # استخراج الميزات
+├── matching/                 # مطابقة البصمات
+└── results/                  # نتائج المطابقة
 ```
 
 ## المساهمة
 
-1. Fork المشروع
-2. إنشاء فرع جديد (`git checkout -b feature/amazing-feature`)
-3. Commit التغييرات (`git commit -m 'Add amazing feature'`)
-4. Push إلى الفرع (`git push origin feature/amazing-feature`)
-5. فتح Pull Request
+نرحب بمساهماتكم! يرجى اتباع الخطوات التالية:
+
+1. قم بعمل Fork للمشروع
+2. قم بإنشاء فرع جديد (`git checkout -b feature/AmazingFeature`)
+3. قم بعمل Commit للتغييرات (`git commit -m 'Add some AmazingFeature'`)
+4. قم بعمل Push للفرع (`git push origin feature/AmazingFeature`)
+5. قم بفتح Pull Request
 
 ## الترخيص
 
-هذا المشروع مرخص تحت رخصة MIT - انظر ملف [LICENSE](LICENSE) للمزيد من التفاصيل.
-
-## الاتصال
-
-- البريد الإلكتروني: your.email@example.com
-- الموقع: https://your-website.com 
+هذا المشروع مرخص تحت رخصة MIT - انظر ملف [LICENSE](LICENSE) للمزيد من التفاصيل. 

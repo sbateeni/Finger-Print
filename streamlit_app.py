@@ -91,8 +91,8 @@ def display_image(image, caption):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Display using Streamlit
-        st.image(image, caption=caption, use_container_width=True)
+        # Display using Streamlit without use_container_width parameter
+        st.image(image, caption=caption)
         return True
     except Exception as e:
         logger.error(f"Error displaying image: {str(e)}")
