@@ -1,37 +1,41 @@
 import cv2
 import numpy as np
-from skimage.metrics import structural_similarity as ssim
+from PIL import Image, ImageChops
 from scipy import ndimage
 import logging
+from scipy.spatial import distance
 
 logger = logging.getLogger('fingerprint_processor')
 
 class FingerprintProcessor:
     def __init__(self):
         # Initialize parameters for fingerprint processing
-        self.target_size = (400, 400)  # حجم موحد للصور
-        self.block_size = 16  # حجم الكتلة لحساب التوجيه
-        self.min_quality_threshold = 0.4  # الحد الأدنى لجودة البصمة
+        self.target_size = (400, 400)  # Standard size for images
+        self.block_size = 16  # Block size for orientation calculation
+        self.min_quality_threshold = 0.4  # Minimum quality threshold
+        self.minutiae_threshold = 0.6  # Threshold for minutiae matching
+        self.ridge_threshold = 0.5  # Threshold for ridge pattern matching
+        self.partial_match_threshold = 0.7  # Threshold for partial fingerprint matching
 
     def preprocess_image(self, image_path):
-        """معالجة أولية لصورة البصمة"""
+        """Preprocess fingerprint image"""
         try:
-            # قراءة الصورة
+            # Read image
             img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
             if img is None:
-                raise ValueError("فشل في قراءة الصورة")
+                raise ValueError("Failed to read image")
 
-            # تغيير حجم الصورة
+            # Resize image
             img = cv2.resize(img, self.target_size)
 
-            # تحسين التباين
+            # Enhance contrast
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
             img = clahe.apply(img)
 
-            # إزالة الضوضاء
+            # Remove noise
             img = cv2.GaussianBlur(img, (5,5), 0)
 
-            # تحسين حواف البصمة
+            # Enhance fingerprint edges
             img = cv2.adaptiveThreshold(
                 img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
                 cv2.THRESH_BINARY_INV, 11, 2
@@ -40,19 +44,19 @@ class FingerprintProcessor:
             return img
 
         except Exception as e:
-            logger.error(f"خطأ في معالجة الصورة: {str(e)}")
+            logger.error(f"Error in image preprocessing: {str(e)}")
             raise
 
     def extract_features(self, img):
-        """استخراج الميزات من صورة البصمة"""
-        # استخراج النقاط المميزة
+        """Extract features from fingerprint image"""
+        # Extract keypoints using SIFT
         sift = cv2.SIFT_create()
         keypoints, descriptors = sift.detectAndCompute(img, None)
         
         return keypoints, descriptors
 
     def calculate_orientation_field(self, img):
-        """حساب حقل التوجيه للبصمة"""
+        """Calculate orientation field of fingerprint"""
         sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
         sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
         
@@ -60,29 +64,29 @@ class FingerprintProcessor:
         return orientation
 
     def detect_core_point(self, img):
-        """اكتشاف نقطة المركز في البصمة"""
-        # تطبيق مرشح بويندينج بوكس
+        """Detect core point in fingerprint"""
+        # Apply gradient filters
         gradient_y = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
         gradient_x = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
         
-        # حساب نقطة المركز
+        # Calculate core point
         magnitude = cv2.magnitude(gradient_x, gradient_y)
         core_y, core_x = np.unravel_index(magnitude.argmax(), magnitude.shape)
         
         return (core_x, core_y)
 
     def calculate_quality_score(self, img):
-        """حساب درجة جودة البصمة"""
-        # تقسيم الصورة إلى كتل وحساب التباين لكل كتلة
+        """Calculate fingerprint quality score"""
+        # Divide image into blocks and calculate variance for each block
         blocks = []
         for i in range(0, img.shape[0], self.block_size):
             for j in range(0, img.shape[1], self.block_size):
                 block = img[i:min(i+self.block_size, img.shape[0]), 
                           j:min(j+self.block_size, img.shape[1])]
-                if block.size > 0:  # تجنب الكتل الفارغة
+                if block.size > 0:  # Avoid empty blocks
                     blocks.append(np.var(block))
         
-        # حساب متوسط التباين المحلي
+        # Calculate average local variance
         if blocks:
             quality_score = np.mean(blocks) / 255.0
         else:
@@ -90,13 +94,98 @@ class FingerprintProcessor:
         
         return min(max(quality_score, 0), 1)
 
-    def compare_fingerprints(self, img1, img2):
-        """مقارنة بصمتين وإرجاع درجة التطابق والتفاصيل"""
-        try:
-            # حساب تشابه الصور
-            ssim_score, _ = ssim(img1, img2, full=True)
+    def extract_minutiae(self, img):
+        """Extract minutiae points from fingerprint"""
+        # Apply skeletonization
+        skeleton = cv2.ximgproc.thinning(img)
+        
+        # Find endpoints and bifurcations
+        kernel = np.ones((3,3), np.uint8)
+        endpoints = cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, kernel)
+        bifurcations = cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, np.rot90(kernel))
+        
+        # Get coordinates of minutiae points
+        endpoint_coords = np.where(endpoints > 0)
+        bifurcation_coords = np.where(bifurcations > 0)
+        
+        minutiae = {
+            'endpoints': list(zip(endpoint_coords[1], endpoint_coords[0])),
+            'bifurcations': list(zip(bifurcation_coords[1], bifurcation_coords[0]))
+        }
+        
+        return minutiae
 
-            # استخراج وتطابق الميزات
+    def analyze_ridge_pattern(self, img):
+        """Analyze ridge pattern using Gabor filters"""
+        # Apply Gabor filters at different orientations
+        orientations = []
+        for theta in np.arange(0, np.pi, np.pi/8):
+            # Create Gabor kernel
+            kern = cv2.getGaborKernel((15, 15), 5, theta, 10, 1, 0, cv2.CV_32F)
+            # Apply filter
+            filtered = cv2.filter2D(img, cv2.CV_8UC3, kern)
+            # Measure response
+            orientations.append((theta, np.sum(filtered)))
+        
+        # Calculate pattern histogram
+        hist = np.array([o[1] for o in orientations])
+        hist = hist / (hist.sum() + 1e-7)  # Normalize
+        
+        return hist
+
+    def calculate_ridge_frequency(self, img):
+        """Calculate ridge frequency in different regions"""
+        # Divide image into blocks
+        h, w = img.shape
+        block_h = h // 8
+        block_w = w // 8
+        
+        frequencies = []
+        for i in range(0, h, block_h):
+            for j in range(0, w, block_w):
+                block = img[i:i+block_h, j:j+block_w]
+                if block.size > 0:
+                    # Calculate FFT
+                    fft = np.fft.fft2(block)
+                    # Get dominant frequency
+                    freq = np.max(np.abs(fft))
+                    frequencies.append(freq)
+        
+        return np.mean(frequencies)
+
+    def match_minutiae(self, minutiae1, minutiae2):
+        """Match minutiae points between two fingerprints"""
+        # Combine endpoints and bifurcations
+        points1 = minutiae1['endpoints'] + minutiae1['bifurcations']
+        points2 = minutiae2['endpoints'] + minutiae2['bifurcations']
+        
+        if not points1 or not points2:
+            return 0.0
+        
+        # Calculate distances between all points
+        distances = distance.cdist(points1, points2)
+        
+        # Find matching points
+        matches = []
+        for i in range(len(points1)):
+            min_dist = np.min(distances[i])
+            if min_dist < self.minutiae_threshold:
+                matches.append(min_dist)
+        
+        return len(matches) / max(len(points1), len(points2))
+
+    def compare_fingerprints(self, img1, img2):
+        """Compare two fingerprints and return match score and details"""
+        try:
+            # Convert images to PIL format
+            pil_img1 = Image.fromarray(img1)
+            pil_img2 = Image.fromarray(img2)
+
+            # Calculate structural similarity
+            diff = ImageChops.difference(pil_img1, pil_img2)
+            ssim_score = 1 - (np.sum(np.array(diff)) / (img1.size * 255))
+
+            # Extract and match features
             kp1, des1 = self.extract_features(img1)
             kp2, des2 = self.extract_features(img2)
 
@@ -104,7 +193,7 @@ class FingerprintProcessor:
                 bf = cv2.BFMatcher()
                 matches = bf.knnMatch(des1, des2, k=2)
                 
-                # تطبيق اختبار لوي للمطابقة
+                # Apply Lowe's ratio test
                 good_matches = []
                 for m, n in matches:
                     if m.distance < 0.75 * n.distance:
@@ -114,58 +203,75 @@ class FingerprintProcessor:
             else:
                 feature_score = 0
 
-            # حساب تشابه النقاط المميزة
-            minutiae_score = feature_score
+            # Extract and match minutiae
+            minutiae1 = self.extract_minutiae(img1)
+            minutiae2 = self.extract_minutiae(img2)
+            minutiae_score = self.match_minutiae(minutiae1, minutiae2)
 
-            # حساب تشابه التوجيه
+            # Analyze ridge patterns
+            ridge_pattern1 = self.analyze_ridge_pattern(img1)
+            ridge_pattern2 = self.analyze_ridge_pattern(img2)
+            ridge_score = 1 - np.sum(np.abs(ridge_pattern1 - ridge_pattern2))
+
+            # Calculate ridge frequency similarity
+            freq1 = self.calculate_ridge_frequency(img1)
+            freq2 = self.calculate_ridge_frequency(img2)
+            frequency_score = 1 - min(abs(freq1 - freq2) / max(freq1, freq2), 1)
+
+            # Calculate orientation similarity
             orientation1 = self.calculate_orientation_field(img1)
             orientation2 = self.calculate_orientation_field(img2)
             orientation_score = 1 - np.mean(np.abs(orientation1 - orientation2)) / np.pi
 
-            # حساب تشابه نقاط المركز
+            # Calculate core point similarity
             core1 = self.detect_core_point(img1)
             core2 = self.detect_core_point(img2)
             core_distance = np.sqrt((core1[0] - core2[0])**2 + (core1[1] - core2[1])**2)
             core_score = max(0, 1 - core_distance / (self.target_size[0] / 4))
 
-            # حساب تشابه التردد
-            frequency_score = ssim_score
-
-            # حساب جودة البصمات
+            # Calculate quality scores
             quality_score1 = self.calculate_quality_score(img1)
             quality_score2 = self.calculate_quality_score(img2)
 
-            # حساب الدرجة النهائية
+            # Calculate final score with updated weights
             weights = {
-                'ssim': 0.2,
-                'feature': 0.25,
-                'minutiae': 0.2,
-                'orientation': 0.15,
-                'core': 0.1,
-                'frequency': 0.1
+                'ssim': 0.15,
+                'feature': 0.15,
+                'minutiae': 0.25,
+                'ridge': 0.15,
+                'frequency': 0.1,
+                'orientation': 0.1,
+                'core': 0.1
             }
 
             final_score = (
                 weights['ssim'] * ssim_score +
                 weights['feature'] * feature_score +
                 weights['minutiae'] * minutiae_score +
+                weights['ridge'] * ridge_score +
+                weights['frequency'] * frequency_score +
                 weights['orientation'] * orientation_score +
-                weights['core'] * core_score +
-                weights['frequency'] * frequency_score
+                weights['core'] * core_score
             )
 
-            # تطبيق معامل الجودة
+            # Apply quality factor
             quality_factor = min(quality_score1, quality_score2)
             if quality_factor < self.min_quality_threshold:
                 final_score *= (quality_factor / self.min_quality_threshold)
+
+            # Handle partial fingerprints
+            if min(quality_score1, quality_score2) < self.partial_match_threshold:
+                # Adjust weights for partial matches
+                final_score *= 1.2  # Boost score for partial matches
 
             details = {
                 'ssim_score': ssim_score,
                 'feature_score': feature_score,
                 'minutiae_score': minutiae_score,
+                'ridge_score': ridge_score,
+                'frequency_score': frequency_score,
                 'orientation_score': orientation_score,
                 'core_score': core_score,
-                'frequency_score': frequency_score,
                 'quality_score1': quality_score1,
                 'quality_score2': quality_score2
             }
@@ -173,59 +279,59 @@ class FingerprintProcessor:
             return final_score, details
 
         except Exception as e:
-            logger.error(f"خطأ في مقارنة البصمات: {str(e)}")
-            raise 
+            logger.error(f"Error in fingerprint comparison: {str(e)}")
+            raise
 
     def detect_multiple_fingerprints(self, image_path):
-        """اكتشاف واستخراج البصمات المتعددة من صورة واحدة"""
+        """Detect and extract multiple fingerprints from a single image"""
         try:
-            # قراءة الصورة
+            # Read image
             img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
             if img is None:
-                raise ValueError("فشل في قراءة الصورة")
+                raise ValueError("Failed to read image")
 
-            # تحسين التباين
+            # Enhance contrast
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
             img = clahe.apply(img)
 
-            # تطبيق عتبة تكيفية للحصول على صورة ثنائية
+            # Apply adaptive thresholding
             binary = cv2.adaptiveThreshold(
                 img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV, 11, 2
             )
 
-            # تطبيق عمليات مورفولوجية لتحسين الصورة
+            # Apply morphological operations
             kernel = np.ones((5,5), np.uint8)
             binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
             binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
 
-            # العثور على المكونات المتصلة (البصمات المحتملة)
+            # Find connected components
             num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
 
-            # تجميع البصمات المكتشفة
+            # Collect detected fingerprints
             fingerprints = []
-            min_area = 1000  # الحد الأدنى لمساحة البصمة
+            min_area = 1000  # Minimum area for fingerprint
             
-            # تجاهل المكون الأول (الخلفية)
+            # Skip first component (background)
             for i in range(1, num_labels):
-                # الحصول على إحصائيات المكون
+                # Get component statistics
                 x = stats[i, cv2.CC_STAT_LEFT]
                 y = stats[i, cv2.CC_STAT_TOP]
                 w = stats[i, cv2.CC_STAT_WIDTH]
                 h = stats[i, cv2.CC_STAT_HEIGHT]
                 area = stats[i, cv2.CC_STAT_AREA]
 
-                # تجاهل المكونات الصغيرة جداً
+                # Skip too small components
                 if area < min_area:
                     continue
 
-                # استخراج منطقة البصمة
+                # Extract fingerprint region
                 roi = img[y:y+h, x:x+w]
                 
-                # تغيير حجم البصمة إلى الحجم القياسي
+                # Resize to standard size
                 roi_resized = cv2.resize(roi, self.target_size)
                 
-                # معالجة البصمة
+                # Process fingerprint
                 processed_roi = cv2.GaussianBlur(roi_resized, (5,5), 0)
                 processed_roi = cv2.adaptiveThreshold(
                     processed_roi, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -241,5 +347,5 @@ class FingerprintProcessor:
             return fingerprints
 
         except Exception as e:
-            logger.error(f"خطأ في اكتشاف البصمات المتعددة: {str(e)}")
+            logger.error(f"Error in multiple fingerprint detection: {str(e)}")
             raise 
