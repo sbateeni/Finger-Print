@@ -18,17 +18,36 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # تكوين الصفحة
-st.set_page_config(
-    page_title="نظام تحليل البصمات",
-    page_icon="🔍",
-    layout="wide"
-)
+try:
+    st.set_page_config(
+        page_title="نظام تحليل البصمات",
+        page_icon="🔍",
+        layout="wide"
+    )
+except Exception as e:
+    logger.error(f"Error setting page config: {str(e)}")
 
 # العنوان الرئيسي
 st.title("نظام تحليل البصمات الجنائي")
 st.markdown("""
 ### نظام متقدم لتحليل ومطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي
 """)
+
+# Initialize session state
+if 'temp_files' not in st.session_state:
+    st.session_state.temp_files = []
+if 'processed_original' not in st.session_state:
+    st.session_state.processed_original = None
+if 'processed_partial' not in st.session_state:
+    st.session_state.processed_partial = None
+if 'minutiae_original' not in st.session_state:
+    st.session_state.minutiae_original = None
+if 'minutiae_partial' not in st.session_state:
+    st.session_state.minutiae_partial = None
+if 'original_img' not in st.session_state:
+    st.session_state.original_img = None
+if 'partial_img' not in st.session_state:
+    st.session_state.partial_img = None
 
 def add_ruler_to_image(image, dpi=100):
     """إضافة مسطرة مرقمة إلى الصورة"""
@@ -143,13 +162,17 @@ def calculate_scale_factor(original_img, partial_img):
 
 # تعريف الدوال المساعدة
 def validate_image(image):
-    if image is None:
+    try:
+        if image is None:
+            return False
+        if image.size == 0:
+            return False
+        if len(image.shape) != 2:
+            return False
+        return True
+    except Exception as e:
+        logger.error(f"Error validating image: {str(e)}")
         return False
-    if image.size == 0:
-        return False
-    if len(image.shape) != 2:
-        return False
-    return True
 
 def display_image(image, caption):
     try:
@@ -169,7 +192,7 @@ def display_image(image, caption):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Display using Streamlit without use_container_width parameter
+        # Display using Streamlit
         st.image(image, caption=caption)
         return True
     except Exception as e:
@@ -305,10 +328,6 @@ def display_summary_results(original_count, partial_count, matched_points, match
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Initialize session state to track temporary files
-if 'temp_files' not in st.session_state:
-    st.session_state.temp_files = []
-
 # إنشاء أعمدة للصور
 col1, col2 = st.columns(2)
 
@@ -325,20 +344,21 @@ with col1:
             # التحقق من صحة الصورة
             if original_pil is None:
                 st.error("فشل في قراءة الصورة")
-                continue
+                return
                 
             # التحقق من حجم الصورة
             if original_pil.size[0] < 100 or original_pil.size[1] < 100:
                 st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
-                continue
+                return
                 
             # تحويل إلى مصفوفة NumPy
             try:
                 original_img = np.array(original_pil.convert('L'))
+                st.session_state.original_img = original_img
             except Exception as e:
                 logger.error(f"Error converting image to numpy array: {str(e)}")
                 st.error("فشل في تحويل الصورة إلى الصيغة المطلوبة")
-                continue
+                return
             
             if validate_image(original_img):
                 try:
@@ -346,11 +366,11 @@ with col1:
                     original_with_ruler = add_ruler_to_image(original_pil)
                     if original_with_ruler is None:
                         st.error("فشل في إضافة المسطرة للصورة")
-                        continue
+                        return
                         
                     if not display_image(original_with_ruler, "البصمة الأصلية مع المسطرة"):
                         st.error("فشل في عرض الصورة الأصلية")
-                        continue
+                        return
                     
                     # معالجة البصمة الأصلية
                     with st.spinner("جاري معالجة البصمة الأصلية..."):
@@ -358,27 +378,31 @@ with col1:
                         
                         if processed_original is None:
                             st.error("فشل في معالجة البصمة الأصلية")
-                            continue
+                            return
                             
                         if minutiae_original is None or len(minutiae_original) == 0:
                             st.error("لم يتم العثور على نقاط مميزة في البصمة")
-                            continue
+                            return
                             
+                        # حفظ النتائج في session state
+                        st.session_state.processed_original = processed_original
+                        st.session_state.minutiae_original = minutiae_original
+                        
                         # تحويل الصورة المعالجة إلى صيغة PIL
                         try:
                             processed_pil = Image.fromarray(processed_original.astype(np.uint8))
                             if processed_pil is not None:
                                 if not display_image(processed_pil, "البصمة المعالجة"):
                                     st.error("فشل في عرض الصورة المعالجة")
-                                    continue
+                                    return
                                 st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
                             else:
                                 st.error("فشل في تحويل الصورة المعالجة")
-                                continue
+                                return
                         except Exception as e:
                             logger.error(f"Error converting processed image to PIL: {str(e)}")
                             st.error("فشل في تحويل الصورة المعالجة")
-                            continue
+                            return
                 except Exception as e:
                     logger.error(f"Error in image processing pipeline: {str(e)}")
                     logger.error(traceback.format_exc())
@@ -403,20 +427,21 @@ with col2:
             # التحقق من صحة الصورة
             if partial_pil is None:
                 st.error("فشل في قراءة الصورة")
-                continue
+                return
                 
             # التحقق من حجم الصورة
             if partial_pil.size[0] < 100 or partial_pil.size[1] < 100:
                 st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
-                continue
+                return
                 
             # تحويل إلى مصفوفة NumPy
             try:
                 partial_img = np.array(partial_pil.convert('L'))
+                st.session_state.partial_img = partial_img
             except Exception as e:
                 logger.error(f"Error converting image to numpy array: {str(e)}")
                 st.error("فشل في تحويل الصورة إلى الصيغة المطلوبة")
-                continue
+                return
             
             if validate_image(partial_img):
                 try:
@@ -424,11 +449,11 @@ with col2:
                     partial_with_ruler = add_ruler_to_image(partial_pil)
                     if partial_with_ruler is None:
                         st.error("فشل في إضافة المسطرة للصورة")
-                        continue
+                        return
                         
                     if not display_image(partial_with_ruler, "البصمة الجزئية مع المسطرة"):
                         st.error("فشل في عرض الصورة الجزئية")
-                        continue
+                        return
                     
                     # معالجة البصمة الجزئية
                     with st.spinner("جاري معالجة البصمة الجزئية..."):
@@ -436,27 +461,31 @@ with col2:
                         
                         if processed_partial is None:
                             st.error("فشل في معالجة البصمة الجزئية")
-                            continue
+                            return
                             
                         if minutiae_partial is None or len(minutiae_partial) == 0:
                             st.error("لم يتم العثور على نقاط مميزة في البصمة")
-                            continue
+                            return
                             
+                        # حفظ النتائج في session state
+                        st.session_state.processed_partial = processed_partial
+                        st.session_state.minutiae_partial = minutiae_partial
+                        
                         # تحويل الصورة المعالجة إلى صيغة PIL
                         try:
                             processed_pil = Image.fromarray(processed_partial.astype(np.uint8))
                             if processed_pil is not None:
                                 if not display_image(processed_pil, "البصمة المعالجة"):
                                     st.error("فشل في عرض الصورة المعالجة")
-                                    continue
+                                    return
                                 st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
                             else:
                                 st.error("فشل في تحويل الصورة المعالجة")
-                                continue
+                                return
                         except Exception as e:
                             logger.error(f"Error converting processed image to PIL: {str(e)}")
                             st.error("فشل في تحويل الصورة المعالجة")
-                            continue
+                            return
                 except Exception as e:
                     logger.error(f"Error in image processing pipeline: {str(e)}")
                     logger.error(traceback.format_exc())
@@ -470,75 +499,70 @@ with col2:
 
 # زر المطابقة
 if st.button("بدء المطابقة", type="primary"):
-    if original_file is not None and partial_file is not None:
-        if processed_original is not None and processed_partial is not None:
-            with st.spinner("جاري مطابقة البصمات..."):
-                try:
-                    # حساب عامل التكبير/التصغير
-                    scale_factor = calculate_scale_factor(original_img, partial_img)
-                    st.info(f"عامل التكبير/التصغير: {scale_factor:.2f}")
-                    
-                    # مطابقة البصمات
-                    match_result = match_fingerprints(minutiae_original, minutiae_partial)
-                    
-                    # كتابة النتائج إلى ملف
-                    result_file = write_results_to_file(match_result)
-                    if result_file:
-                        st.success(f"تم حفظ النتائج في الملف: {result_file}")
-                    
-                    # عرض النتائج
-                    st.subheader("نتائج المطابقة")
-                    
-                    # إنشاء أعمدة للنتائج
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.metric("نسبة التطابق", f"{match_result['match_score']:.2f}%")
-                    
-                    with col2:
-                        st.metric("النقاط المتطابقة", f"{match_result['matched_points']}/{match_result['total_partial']}")
-                    
-                    with col3:
-                        st.metric("الحالة", match_result['status'])
-                    
-                    # عرض التفاصيل
-                    st.subheader("تفاصيل التحليل")
-                    st.write(f"عدد النقاط في البصمة الأصلية: {match_result['total_original']}")
-                    st.write(f"عدد النقاط في البصمة الجزئية: {match_result['total_partial']}")
-                    st.write(f"عدد النقاط المتطابقة: {match_result['matched_points']}")
-                    
-                    # عرض النتائج بالتنسيق المطلوب
-                    display_summary_results(
-                        match_result['total_original'],
-                        match_result['total_partial'],
-                        match_result['matched_points'],
-                        match_result['match_score'],
-                        match_result['status']
-                    )
-                    
-                    # عرض تحليل الخطوط
-                    if match_result['details']['ridge_analysis']:
-                        st.subheader("تحليل الخطوط")
-                        for analysis in match_result['details']['ridge_analysis']:
-                            st.write(f"المسافة: {analysis['distance']:.2f}")
-                            st.write(f"الفرق في الزاوية: {analysis['angle_difference']:.2f}")
-                            st.write(f"تطابق النوع: {'نعم' if analysis['type_match'] else 'لا'}")
-                    
-                    # عرض البصمة الأصلية مع مربعات التطابق
-                    if 'match_regions' in match_result:
-                        st.subheader("مناطق التطابق في البصمة الأصلية")
-                        matched_image = draw_matching_boxes(original_img, match_result['match_regions'], original_img.shape)
-                        if not display_image(matched_image, "مناطق التطابق"):
-                            st.error("فشل في عرض مناطق التطابق")
-                    
-                except Exception as e:
-                    logger.error(f"Error in matching: {str(e)}")
-                    logger.error(traceback.format_exc())
-                    st.error("حدث خطأ أثناء المطابقة")
-        else:
-            st.error("يرجى التأكد من معالجة البصمتين بنجاح")
+    if (st.session_state.processed_original is not None and 
+        st.session_state.processed_partial is not None and 
+        st.session_state.minutiae_original is not None and 
+        st.session_state.minutiae_partial is not None):
+        
+        with st.spinner("جاري مطابقة البصمات..."):
+            try:
+                # مطابقة البصمات
+                match_result = match_fingerprints(
+                    st.session_state.minutiae_original,
+                    st.session_state.minutiae_partial
+                )
+                
+                # عرض النتائج
+                st.subheader("نتائج المطابقة")
+                
+                # إنشاء أعمدة للنتائج
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("نسبة التطابق", f"{match_result['match_score']:.2f}%")
+                
+                with col2:
+                    st.metric("النقاط المتطابقة", f"{match_result['matched_points']}/{match_result['total_partial']}")
+                
+                with col3:
+                    st.metric("الحالة", match_result['status'])
+                
+                # عرض التفاصيل
+                st.subheader("تفاصيل التحليل")
+                st.write(f"عدد النقاط في البصمة الأصلية: {match_result['total_original']}")
+                st.write(f"عدد النقاط في البصمة الجزئية: {match_result['total_partial']}")
+                st.write(f"عدد النقاط المتطابقة: {match_result['matched_points']}")
+                
+                # عرض النتائج بالتنسيق المطلوب
+                display_summary_results(
+                    match_result['total_original'],
+                    match_result['total_partial'],
+                    match_result['matched_points'],
+                    match_result['match_score'],
+                    match_result['status']
+                )
+                
+                # عرض تحليل الخطوط
+                if match_result['details']['ridge_analysis']:
+                    st.subheader("تحليل الخطوط")
+                    for analysis in match_result['details']['ridge_analysis']:
+                        st.write(f"المسافة: {analysis['distance']:.2f}")
+                        st.write(f"الفرق في الزاوية: {analysis['angle_difference']:.2f}")
+                        st.write(f"تطابق النوع: {'نعم' if analysis['type_match'] else 'لا'}")
+                
+                # عرض البصمة الأصلية مع مربعات التطابق
+                if 'match_regions' in match_result:
+                    st.subheader("مناطق التطابق في البصمة الأصلية")
+                    matched_image = draw_matching_boxes(st.session_state.original_img, match_result['match_regions'], st.session_state.original_img.shape)
+                    if not display_image(matched_image, "مناطق التطابق"):
+                        st.error("فشل في عرض مناطق التطابق")
+                
+            except Exception as e:
+                logger.error(f"Error in matching: {str(e)}")
+                logger.error(traceback.format_exc())
+                st.error("حدث خطأ أثناء المطابقة")
     else:
-        st.error("يرجى تحميل البصمتين أولاً")
+        st.error("يرجى التأكد من معالجة البصمتين بنجاح")
 
 # تنظيف الملفات المؤقتة
 try:
