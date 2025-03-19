@@ -175,11 +175,6 @@ def display_summary_results(original_count, partial_count, matched_points, match
 if 'temp_files' not in st.session_state:
     st.session_state.temp_files = []
 
-# إذا كانت هذه زيارة أولى، اعرض النتائج المطلوبة مباشرة في المثال
-if 'initialized_results' not in st.session_state:
-    st.session_state.initialized_results = True
-    st.session_state.show_demo_results = True
-
 # إنشاء أعمدة للصور
 col1, col2 = st.columns(2)
 
@@ -256,13 +251,6 @@ with col2:
         except Exception as e:
             logger.error(f"Error processing partial image: {str(e)}")
             st.error("حدث خطأ أثناء معالجة الصورة الجزئية")
-
-# عرض النتائج النموذجية إذا تم التحميل بنجاح
-if st.session_state.get('show_demo_results', False) and 'initialized_results' in st.session_state:
-    # عرض النتائج المطلوبة
-    display_summary_results(150, 60, 47, 78.33, "HIGH MATCH")
-    # إيقاف العرض التلقائي بعد المرة الأولى
-    st.session_state.show_demo_results = False
 
 # زر المطابقة
 if st.button("بدء المطابقة", type="primary"):
