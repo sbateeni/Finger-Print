@@ -325,12 +325,12 @@ with col1:
             # التحقق من صحة الصورة
             if original_pil is None:
                 st.error("فشل في قراءة الصورة")
-                return
+                continue
                 
             # التحقق من حجم الصورة
             if original_pil.size[0] < 100 or original_pil.size[1] < 100:
                 st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
-                return
+                continue
                 
             # تحويل إلى مصفوفة NumPy
             try:
@@ -338,7 +338,7 @@ with col1:
             except Exception as e:
                 logger.error(f"Error converting image to numpy array: {str(e)}")
                 st.error("فشل في تحويل الصورة إلى الصيغة المطلوبة")
-                return
+                continue
             
             if validate_image(original_img):
                 try:
@@ -346,11 +346,11 @@ with col1:
                     original_with_ruler = add_ruler_to_image(original_pil)
                     if original_with_ruler is None:
                         st.error("فشل في إضافة المسطرة للصورة")
-                        return
+                        continue
                         
                     if not display_image(original_with_ruler, "البصمة الأصلية مع المسطرة"):
                         st.error("فشل في عرض الصورة الأصلية")
-                        return
+                        continue
                     
                     # معالجة البصمة الأصلية
                     with st.spinner("جاري معالجة البصمة الأصلية..."):
@@ -358,11 +358,11 @@ with col1:
                         
                         if processed_original is None:
                             st.error("فشل في معالجة البصمة الأصلية")
-                            return
+                            continue
                             
                         if minutiae_original is None or len(minutiae_original) == 0:
                             st.error("لم يتم العثور على نقاط مميزة في البصمة")
-                            return
+                            continue
                             
                         # تحويل الصورة المعالجة إلى صيغة PIL
                         try:
@@ -370,15 +370,15 @@ with col1:
                             if processed_pil is not None:
                                 if not display_image(processed_pil, "البصمة المعالجة"):
                                     st.error("فشل في عرض الصورة المعالجة")
-                                    return
+                                    continue
                                 st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
                             else:
                                 st.error("فشل في تحويل الصورة المعالجة")
-                                return
+                                continue
                         except Exception as e:
                             logger.error(f"Error converting processed image to PIL: {str(e)}")
                             st.error("فشل في تحويل الصورة المعالجة")
-                            return
+                            continue
                 except Exception as e:
                     logger.error(f"Error in image processing pipeline: {str(e)}")
                     logger.error(traceback.format_exc())
@@ -399,35 +399,74 @@ with col2:
         try:
             # قراءة الصورة مباشرة باستخدام PIL
             partial_pil = Image.open(partial_file)
+            
+            # التحقق من صحة الصورة
+            if partial_pil is None:
+                st.error("فشل في قراءة الصورة")
+                continue
+                
+            # التحقق من حجم الصورة
+            if partial_pil.size[0] < 100 or partial_pil.size[1] < 100:
+                st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
+                continue
+                
             # تحويل إلى مصفوفة NumPy
-            partial_img = np.array(partial_pil.convert('L'))
+            try:
+                partial_img = np.array(partial_pil.convert('L'))
+            except Exception as e:
+                logger.error(f"Error converting image to numpy array: {str(e)}")
+                st.error("فشل في تحويل الصورة إلى الصيغة المطلوبة")
+                continue
             
             if validate_image(partial_img):
-                # إضافة المسطرة إلى الصورة الجزئية
-                partial_with_ruler = add_ruler_to_image(partial_pil)
-                if not display_image(partial_with_ruler, "البصمة الجزئية مع المسطرة"):
-                    st.error("فشل في عرض الصورة الجزئية")
-                
-                # معالجة البصمة الجزئية
-                with st.spinner("جاري معالجة البصمة الجزئية..."):
-                    processed_partial, minutiae_partial, ridge_patterns_partial = process_image(partial_img)
-                    if processed_partial is not None:
+                try:
+                    # إضافة المسطرة إلى الصورة الجزئية
+                    partial_with_ruler = add_ruler_to_image(partial_pil)
+                    if partial_with_ruler is None:
+                        st.error("فشل في إضافة المسطرة للصورة")
+                        continue
+                        
+                    if not display_image(partial_with_ruler, "البصمة الجزئية مع المسطرة"):
+                        st.error("فشل في عرض الصورة الجزئية")
+                        continue
+                    
+                    # معالجة البصمة الجزئية
+                    with st.spinner("جاري معالجة البصمة الجزئية..."):
+                        processed_partial, minutiae_partial, ridge_patterns_partial = process_image(partial_img)
+                        
+                        if processed_partial is None:
+                            st.error("فشل في معالجة البصمة الجزئية")
+                            continue
+                            
+                        if minutiae_partial is None or len(minutiae_partial) == 0:
+                            st.error("لم يتم العثور على نقاط مميزة في البصمة")
+                            continue
+                            
                         # تحويل الصورة المعالجة إلى صيغة PIL
-                        processed_pil = Image.fromarray(processed_partial.astype(np.uint8))
-                        if processed_pil is not None:
-                            if not display_image(processed_pil, "البصمة المعالجة"):
-                                st.error("فشل في عرض الصورة المعالجة")
-                            st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
-                        else:
+                        try:
+                            processed_pil = Image.fromarray(processed_partial.astype(np.uint8))
+                            if processed_pil is not None:
+                                if not display_image(processed_pil, "البصمة المعالجة"):
+                                    st.error("فشل في عرض الصورة المعالجة")
+                                    continue
+                                st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
+                            else:
+                                st.error("فشل في تحويل الصورة المعالجة")
+                                continue
+                        except Exception as e:
+                            logger.error(f"Error converting processed image to PIL: {str(e)}")
                             st.error("فشل في تحويل الصورة المعالجة")
-                    else:
-                        st.error("فشل في معالجة البصمة الجزئية")
+                            continue
+                except Exception as e:
+                    logger.error(f"Error in image processing pipeline: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    st.error(f"حدث خطأ أثناء معالجة الصورة: {str(e)}")
             else:
-                st.error("الصورة غير صالحة")
+                st.error("الصورة غير صالحة. تأكد من أن الصورة بتنسيق صحيح")
         except Exception as e:
             logger.error(f"Error processing partial image: {str(e)}")
             logger.error(traceback.format_exc())
-            st.error("حدث خطأ أثناء معالجة الصورة الجزئية")
+            st.error(f"حدث خطأ أثناء معالجة الصورة الجزئية: {str(e)}")
 
 # زر المطابقة
 if st.button("بدء المطابقة", type="primary"):
