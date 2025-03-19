@@ -8,6 +8,8 @@ import logging
 import traceback
 import tempfile
 import os
+from PIL import Image
+import io
 
 # تكوين التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +37,15 @@ def validate_image(image):
     if len(image.shape) != 2:
         return False
     return True
+
+def convert_cv2_to_pil(cv2_image):
+    if cv2_image is None:
+        return None
+    # Convert from BGR to RGB
+    if len(cv2_image.shape) == 3:
+        cv2_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
+    # Convert to PIL Image
+    return Image.fromarray(cv2_image)
 
 def process_image(image):
     try:
@@ -149,24 +160,26 @@ with col1:
     original_file = st.file_uploader("اختر البصمة الأصلية", type=['png', 'jpg', 'jpeg', 'bmp', 'tiff'], key="original")
     
     if original_file is not None:
-        # حفظ الملف مؤقتاً
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(original_file.name)[1]) as tmp_file:
-            tmp_file.write(original_file.getvalue())
-            original_tmp_path = tmp_file.name
-            # Add to session state for cleanup
-            st.session_state.temp_files.append(original_tmp_path)
-
-        # قراءة الصورة
-        original_img = cv2.imread(original_tmp_path, cv2.IMREAD_GRAYSCALE)
+        # قراءة الصورة مباشرة باستخدام PIL
+        original_pil = Image.open(original_file).convert('L')
+        # تحويل إلى مصفوفة NumPy
+        original_img = np.array(original_pil)
+        
         if validate_image(original_img):
-            st.image(original_img, caption="البصمة الأصلية", use_container_width=True)
+            # عرض الصورة الأصلية
+            st.image(original_pil, caption="البصمة الأصلية", use_container_width=True)
             
             # معالجة البصمة الأصلية
             with st.spinner("جاري معالجة البصمة الأصلية..."):
                 processed_original, minutiae_original, ridge_patterns_original = process_image(original_img)
                 if processed_original is not None:
-                    st.image(processed_original, caption="البصمة المعالجة", use_container_width=True)
-                    st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
+                    # تحويل الصورة المعالجة إلى صيغة PIL
+                    processed_pil = convert_cv2_to_pil(processed_original)
+                    if processed_pil is not None:
+                        st.image(processed_pil, caption="البصمة المعالجة", use_container_width=True)
+                        st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
+                    else:
+                        st.error("فشل في تحويل الصورة المعالجة")
                 else:
                     st.error("فشل في معالجة البصمة الأصلية")
         else:
@@ -178,24 +191,26 @@ with col2:
     partial_file = st.file_uploader("اختر البصمة الجزئية", type=['png', 'jpg', 'jpeg', 'bmp', 'tiff'], key="partial")
     
     if partial_file is not None:
-        # حفظ الملف مؤقتاً
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(partial_file.name)[1]) as tmp_file:
-            tmp_file.write(partial_file.getvalue())
-            partial_tmp_path = tmp_file.name
-            # Add to session state for cleanup
-            st.session_state.temp_files.append(partial_tmp_path)
-
-        # قراءة الصورة
-        partial_img = cv2.imread(partial_tmp_path, cv2.IMREAD_GRAYSCALE)
+        # قراءة الصورة مباشرة باستخدام PIL
+        partial_pil = Image.open(partial_file).convert('L')
+        # تحويل إلى مصفوفة NumPy
+        partial_img = np.array(partial_pil)
+        
         if validate_image(partial_img):
-            st.image(partial_img, caption="البصمة الجزئية", use_container_width=True)
+            # عرض الصورة الجزئية
+            st.image(partial_pil, caption="البصمة الجزئية", use_container_width=True)
             
             # معالجة البصمة الجزئية
             with st.spinner("جاري معالجة البصمة الجزئية..."):
                 processed_partial, minutiae_partial, ridge_patterns_partial = process_image(partial_img)
                 if processed_partial is not None:
-                    st.image(processed_partial, caption="البصمة المعالجة", use_container_width=True)
-                    st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
+                    # تحويل الصورة المعالجة إلى صيغة PIL
+                    processed_pil = convert_cv2_to_pil(processed_partial)
+                    if processed_pil is not None:
+                        st.image(processed_pil, caption="البصمة المعالجة", use_container_width=True)
+                        st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
+                    else:
+                        st.error("فشل في تحويل الصورة المعالجة")
                 else:
                     st.error("فشل في معالجة البصمة الجزئية")
         else:
