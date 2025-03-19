@@ -63,24 +63,24 @@ if original_file:
         
         if original_img is None:
             st.error("فشل في قراءة الصورة")
-            return
+            st.stop()
         
         # التحقق من حجم الصورة
         if original_img.shape[0] < 100 or original_img.shape[1] < 100:
             st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
-            return
+            st.stop()
         
         # معالجة الصورة
         processed_img, edges = preprocess_image(original_img)
         if processed_img is None:
             st.error("فشل في معالجة الصورة")
-            return
+            st.stop()
         
         # استخراج النقاط المميزة
         minutiae = extract_minutiae(processed_img)
         if not minutiae:
             st.error("لم يتم العثور على نقاط مميزة في البصمة")
-            return
+            st.stop()
         
         # حفظ النتائج في حالة الجلسة
         st.session_state.processed_original = processed_img
@@ -106,24 +106,24 @@ if partial_file:
         
         if partial_img is None:
             st.error("فشل في قراءة الصورة")
-            return
+            st.stop()
         
         # التحقق من حجم الصورة
         if partial_img.shape[0] < 100 or partial_img.shape[1] < 100:
             st.error("الصورة صغيرة جداً. الحد الأدنى للحجم هو 100×100 بكسل")
-            return
+            st.stop()
         
         # معالجة الصورة
         processed_img, edges = preprocess_image(partial_img)
         if processed_img is None:
             st.error("فشل في معالجة الصورة")
-            return
+            st.stop()
         
         # استخراج النقاط المميزة
         minutiae = extract_minutiae(processed_img)
         if not minutiae:
             st.error("لم يتم العثور على نقاط مميزة في البصمة")
-            return
+            st.stop()
         
         # حفظ النتائج في حالة الجلسة
         st.session_state.processed_partial = processed_img
@@ -142,7 +142,7 @@ if st.button("🔍 بدء المطابقة"):
     if not all([st.session_state.processed_original, st.session_state.processed_partial,
                 st.session_state.original_minutiae, st.session_state.partial_minutiae]):
         st.error("يرجى تحميل كلا البصمتين أولاً")
-        return
+        st.stop()
     
     try:
         # حساب عامل التحجيم
