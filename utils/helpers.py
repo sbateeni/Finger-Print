@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import cv2
 import numpy as np
@@ -11,43 +12,38 @@ logger = logging.getLogger(__name__)
 
 def validate_image(image):
     """التحقق من صحة الصورة"""
-    try:
-        if image is None:
-            return False
-        if image.size == 0:
-            return False
-        if len(image.shape) != 2:
-            return False
-        return True
-    except Exception as e:
-        logger.error(f"Error validating image: {str(e)}")
+    if image is None:
         return False
+    if image.size == 0:
+        return False
+    if len(image.shape) != 2:
+        return False
+    return True
 
 def display_image(image, caption):
-    """عرض الصورة في Streamlit"""
+    """عرض الصورة في واجهة المستخدم"""
     try:
         if isinstance(image, np.ndarray):
-            # Convert numpy array to PIL Image
+            # تحويل مصفوفة NumPy إلى صورة PIL
             if len(image.shape) == 3:
-                # If it's a color image
+                # إذا كانت صورة ملونة
                 image = Image.fromarray(image)
             else:
-                # If it's a grayscale image
+                # إذا كانت صورة رمادية
                 image = Image.fromarray(image.astype(np.uint8))
         elif not isinstance(image, Image.Image):
-            logger.error(f"Unsupported image type: {type(image)}")
+            logger.error(f"نوع صورة غير مدعوم: {type(image)}")
             return False
         
-        # Convert to RGB if necessary
+        # تحويل إلى RGB إذا لزم الأمر
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Display using Streamlit
-        st.image(image, caption=caption)
+        # عرض الصورة باستخدام Streamlit
+        st.image(image, caption=caption, use_container_width=True)
         return True
     except Exception as e:
-        logger.error(f"Error displaying image: {str(e)}")
-        logger.error(traceback.format_exc())
+        logger.error(f"خطأ في عرض الصورة: {str(e)}")
         return False
 
 def add_ruler_to_image(image, dpi=100):
@@ -125,4 +121,26 @@ def draw_matching_boxes(image, match_regions, original_size):
         
         draw.text((x, y-20), f"{score*100:.1f}%", fill=color, font=font)
     
-    return draw_image 
+    return draw_image
+
+def init_session_state():
+    """تهيئة متغيرات الحالة"""
+    if 'temp_files' not in st.session_state:
+        st.session_state.temp_files = []
+    if 'processed_original' not in st.session_state:
+        st.session_state.processed_original = None
+    if 'processed_partial' not in st.session_state:
+        st.session_state.processed_partial = None
+    if 'original_minutiae' not in st.session_state:
+        st.session_state.original_minutiae = None
+    if 'partial_minutiae' not in st.session_state:
+        st.session_state.partial_minutiae = None
+
+def cleanup_temp_files():
+    """تنظيف الملفات المؤقتة"""
+    for temp_file in st.session_state.temp_files:
+        try:
+            os.remove(temp_file)
+        except Exception as e:
+            logger.error(f"خطأ في حذف الملف المؤقت {temp_file}: {str(e)}")
+    st.session_state.temp_files = [] 
