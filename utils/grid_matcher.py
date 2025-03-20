@@ -74,68 +74,107 @@ def match_normalized_grids(partial_image, full_image):
     Returns:
         dict: نتائج المطابقة
     """
-    print("\nبدء عملية المطابقة باستخدام المربعات المعدلة...")
-    
-    # حساب متوسط المسافة بين الخطوط في البصمة الجزئية
-    partial_freq = estimate_ridge_frequency(partial_image)
-    target_distance = 1.0 / np.mean(partial_freq[partial_freq > 0])
-    print(f"المسافة المستهدفة بين الخطوط: {target_distance:.2f} بكسل")
-    
-    # تقسيم البصمة الكاملة إلى مربعات
-    grid_size = max(partial_image.shape)
-    grids = divide_into_grids(full_image, grid_size)
-    print(f"\nتم تقسيم البصمة الكاملة إلى {len(grids)} مربع")
-    
-    # تخزين نتائج كل المربعات
-    all_matches = []
-    best_match = {
-        'score': 0,
-        'position': None,
-        'grid_image': None,
-        'scale_factor': None
-    }
-    
-    # مطابقة كل مربع
-    for i, grid in enumerate(grids):
-        print(f"\nمعالجة المربع {i+1}/{len(grids)}")
-        print(f"الموقع: {grid['position']}")
+    try:
+        print("\nبدء عملية المطابقة باستخدام المربعات المعدلة...")
         
-        # تعديل حجم المربع
-        normalized_grid, scale_factor = normalize_ridge_distance(grid['image'], target_distance)
+        # حساب متوسط المسافة بين الخطوط في البصمة الجزئية
+        partial_freq = estimate_ridge_frequency(partial_image)
+        if np.any(partial_freq > 0):
+            target_distance = 1.0 / np.mean(partial_freq[partial_freq > 0])
+            print(f"المسافة المستهدفة بين الخطوط: {target_distance:.2f} بكسل")
+        else:
+            print("تحذير: لم يتم العثور على خطوط في البصمة الجزئية")
+            target_distance = 15.0  # قيمة افتراضية
         
-        # استخراج النقاط المميزة
-        grid_minutiae = extract_minutiae(normalized_grid)
-        partial_minutiae = extract_minutiae(partial_image)
+        # تحديد حجم المربع بناءً على حجم البصمة الجزئية
+        grid_size = max(partial_image.shape)
+        print(f"حجم المربع المستخدم: {grid_size}x{grid_size} بكسل")
         
-        # حساب درجة التطابق
-        match_score = calculate_grid_match_score(
-            partial_minutiae, grid_minutiae,
-            partial_image, normalized_grid
-        )
+        # تقسيم البصمة الكاملة إلى مربعات
+        grids = divide_into_grids(full_image, grid_size)
+        if not grids:
+            raise ValueError("لم يتم العثور على مربعات صالحة")
+            
+        print(f"\nتم تقسيم البصمة الكاملة إلى {len(grids)} مربع")
         
-        # تخزين نتيجة هذا المربع
-        current_match = {
-            'score': match_score,
-            'position': grid['position'],
-            'grid_image': normalized_grid,
-            'scale_factor': scale_factor
+        # تخزين نتائج كل المربعات
+        all_matches = []
+        best_match = {
+            'score': 0,
+            'position': (0, 0),  # قيمة افتراضية
+            'grid_image': None,
+            'scale_factor': 1.0  # قيمة افتراضية
         }
-        all_matches.append(current_match)
         
-        print(f"درجة التطابق: {match_score:.2f}%")
+        # مطابقة كل مربع
+        for i, grid in enumerate(grids):
+            print(f"\nمعالجة المربع {i+1}/{len(grids)}")
+            print(f"الموقع: {grid['position']}")
+            
+            try:
+                # تعديل حجم المربع ليتناسب مع المسافة بين الخطوط في البصمة الجزئية
+                normalized_grid, scale_factor = normalize_ridge_distance(grid['image'], target_distance)
+                print(f"معامل تغيير الحجم للمربع: {scale_factor:.2f}")
+                
+                # تعديل حجم المربع ليطابق حجم البصمة الجزئية
+                if normalized_grid.shape != partial_image.shape:
+                    normalized_grid = cv2.resize(normalized_grid, (partial_image.shape[1], partial_image.shape[0]))
+                    print(f"تم تعديل حجم المربع إلى: {normalized_grid.shape}")
+                
+                # استخراج النقاط المميزة
+                grid_minutiae = extract_minutiae(normalized_grid)
+                partial_minutiae = extract_minutiae(partial_image)
+                
+                # حساب درجة التطابق
+                match_score = calculate_grid_match_score(
+                    partial_minutiae, grid_minutiae,
+                    partial_image, normalized_grid
+                )
+                
+                # تخزين نتيجة هذا المربع
+                current_match = {
+                    'score': match_score,
+                    'position': grid['position'],
+                    'grid_image': normalized_grid,
+                    'scale_factor': scale_factor
+                }
+                all_matches.append(current_match)
+                
+                print(f"درجة التطابق: {match_score:.2f}%")
+                
+                if match_score > best_match['score']:
+                    best_match = current_match
+                    print("تم تحديث أفضل تطابق!")
+            
+            except Exception as e:
+                print(f"خطأ في معالجة المربع: {str(e)}")
+                continue
         
-        if match_score > best_match['score']:
-            best_match = current_match
-    
-    print(f"\nأفضل درجة تطابق: {best_match['score']:.2f}%")
-    print(f"موقع أفضل تطابق: {best_match['position']}")
-    print(f"معامل تغيير الحجم للمربع الأفضل: {best_match['scale_factor']:.2f}")
-    
-    return {
-        'best_match': best_match,
-        'all_matches': all_matches,
-        'grid_size': grid_size
-    }
+        if not all_matches:
+            raise ValueError("لم يتم العثور على أي تطابقات صالحة")
+        
+        print(f"\nأفضل درجة تطابق: {best_match['score']:.2f}%")
+        print(f"موقع أفضل تطابق: {best_match['position']}")
+        print(f"معامل تغيير الحجم للمربع الأفضل: {best_match['scale_factor']:.2f}")
+        
+        return {
+            'best_match': best_match,
+            'all_matches': all_matches,
+            'grid_size': grid_size
+        }
+        
+    except Exception as e:
+        print(f"خطأ في عملية المطابقة: {str(e)}")
+        return {
+            'best_match': {
+                'score': 0,
+                'position': (0, 0),
+                'grid_image': None,
+                'scale_factor': 1.0
+            },
+            'all_matches': [],
+            'grid_size': grid_size if 'grid_size' in locals() else max(partial_image.shape)
+        }
 
 def calculate_grid_match_score(minutiae1, minutiae2, img1, img2):
     """

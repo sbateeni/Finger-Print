@@ -3,7 +3,7 @@
 
 /* General Styles */
 body {
-    font-family: 'Cairo', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
 }
 
@@ -23,14 +23,12 @@ body {
 /* Card Styles */
 .card {
     border: none;
-    border-radius: 10px;
-    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .card-header {
     background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-    padding: 1rem;
+    border-bottom: 1px solid #eee;
 }
 
 .card-body {
@@ -39,40 +37,163 @@ body {
 
 /* Upload Area Styles */
 .upload-area {
-    border: 2px dashed #dee2e6;
+    border: 2px dashed #ccc;
     border-radius: 8px;
-    padding: 1rem;
+    padding: 2rem;
     text-align: center;
+    margin-bottom: 15px;
     transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    background-color: #f8f9fa;
 }
 
-.upload-area:hover {
+.upload-area:hover, .upload-area.dragover {
     border-color: #0d6efd;
+    background-color: #e9ecef;
 }
 
+.upload-area i {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+.upload-area:hover i {
+    color: #0d6efd;
+}
+
+.upload-area p {
+    margin-bottom: 0;
+    color: #495057;
+    font-size: 1rem;
+}
+
+.upload-area input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Preview Area Styles */
 .preview {
     margin-top: 1rem;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: none;
+}
+
+.preview.has-image {
+    opacity: 1;
+    display: block;
+}
+
+.preview-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .preview img {
-    max-height: 200px;
+    max-width: 100%;
+    display: block;
+}
+
+.success-message {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+    padding: 0.5rem;
+    border-radius: 0 0 8px 8px;
+    font-size: 0.9rem;
+}
+
+.success-message i {
+    margin-left: 0.5rem;
+}
+
+/* Loading Area Styles */
+#loadingArea {
+    text-align: center;
+    padding: 2rem;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: #0d6efd;
+}
+
+#loadingText {
+    margin-top: 1rem;
+    color: #6c757d;
+}
+
+/* Grid Display Styles */
+#gridSquares .card {
+    transition: transform 0.2s ease;
+}
+
+#gridSquares .card:hover {
+    transform: translateY(-5px);
+}
+
+#gridSquares .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Results Area Styles */
+#resultsArea .card {
+    margin-bottom: 20px;
+}
+
+#matchVisualization img {
+    max-width: 100%;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+#matchDetails {
+    padding: 15px;
+}
+
+#matchDetails ul {
+    padding-left: 0;
+}
+
+#matchDetails li {
+    margin-bottom: 8px;
+}
+
 /* Button Styles */
 .btn {
-    padding: 0.5rem 1.5rem;
-    font-weight: 600;
-    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 500;
 }
 
 .btn i {
-    margin-left: 8px;
+    margin-right: 8px;
+}
+
+/* Range Input Styles */
+.form-range {
+    height: 1.5rem;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: #0d6efd;
+}
+
+.form-range::-moz-range-thumb {
+    background: #0d6efd;
 }
 
 /* Alert Styles */
@@ -111,13 +232,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Loading Animation */
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
-}
-
-/* Responsive Adjustments */
+/* Responsive Styles */
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
@@ -127,12 +242,17 @@ body {
         padding: 1rem;
     }
     
-    .preview {
-        min-height: 150px;
+    #gridSquares .card-img-top {
+        height: 150px;
     }
     
-    .preview img {
-        max-height: 150px;
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    #matchingButtons .btn {
+        margin-right: 0 !important;
     }
 }
 

@@ -20,175 +20,114 @@
 
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <div class="card shadow">
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">مقارنة البصمات</h2>
+                        <h2 class="card-title text-center mb-4">مطابقة البصمات</h2>
                         
-                        <form action="{{ url_for('upload_fingerprint') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                        <form id="uploadForm" action="{{ url_for('cut_fingerprint') }}" method="POST" enctype="multipart/form-data">
                             <div class="row">
+                                <!-- البصمة الأولى -->
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="fingerprint1" class="form-label">البصمة الأولى</label>
-                                        <div class="upload-area" id="uploadArea1">
-                                            <input type="file" class="form-control" id="fingerprint1" name="fingerprint1" accept=".png,.jpg,.jpeg,.bmp,.tiff" required>
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">البصمة الكاملة</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="upload-area" id="fingerprint1Area">
+                                                <i class="bi bi-cloud-upload"></i>
+                                                <p>اختر صورة البصمة الكاملة أو اسحبها إلى هنا</p>
+                                                <input type="file" id="fingerprint1" name="fingerprint1" class="form-control" accept="image/*" required>
+                                            </div>
                                             <div class="preview" id="preview1"></div>
                                         </div>
                                     </div>
                                 </div>
                                 
+                                <!-- البصمة الثانية -->
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="fingerprint2" class="form-label">البصمة الثانية</label>
-                                        <div class="upload-area" id="uploadArea2">
-                                            <input type="file" class="form-control" id="fingerprint2" name="fingerprint2" accept=".png,.jpg,.jpeg,.bmp,.tiff" required>
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">البصمة الجزئية</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="upload-area" id="fingerprint2Area">
+                                                <i class="bi bi-cloud-upload"></i>
+                                                <p>اختر صورة البصمة الجزئية أو اسحبها إلى هنا</p>
+                                                <input type="file" id="fingerprint2" name="fingerprint2" class="form-control" accept="image/*" required>
+                                            </div>
                                             <div class="preview" id="preview2"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6 mx-auto">
-                                    <div class="form-group">
-                                        <label for="minutiaeCount" class="form-label">عدد النقاط المميزة المطلوبة</label>
-                                        <input type="number" class="form-control" id="minutiaeCount" name="minutiaeCount" 
-                                               min="50" max="500" value="100" 
-                                               placeholder="أدخل عدد النقاط المميزة">
-                                        <div class="form-text text-muted">
-                                            القيمة المقترحة: 100 نقطة. يمكن زيادتها للحصول على دقة أعلى.
+                            <!-- خيارات المطابقة -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">خيارات المطابقة</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="minutiaeCount" class="form-label">عدد النقاط المميزة</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="range" class="form-range flex-grow-1" id="minutiaeCount" name="minutiaeCount" min="50" max="200" value="100">
+                                            <span class="ms-2" id="minutiaeCountValue">100 نقطة</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6 mx-auto">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="matchingMode" name="matchingMode">
-                                        <label class="form-check-label" for="matchingMode">
-                                            تفعيل نمط مقارنة البصمة الجزئية
-                                        </label>
-                                        <div class="form-text text-muted">
-                                            استخدم هذا الخيار عند مقارنة بصمة جزئية مع بصمة كاملة
-                                        </div>
-                                    </div>
+                            <!-- منطقة التحميل -->
+                            <div id="loadingArea" class="d-none">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">جاري التحميل...</span>
                                 </div>
+                                <div id="loadingText" class="mt-3">جاري معالجة البصمات...</div>
                             </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6 mx-auto">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="useGridMatching" name="useGridMatching">
-                                        <label class="form-check-label" for="useGridMatching">
-                                            تفعيل المطابقة باستخدام المربعات المعدلة
-                                        </label>
-                                        <div class="form-text text-muted">
-                                            يقوم بتقسيم البصمة إلى مربعات وتعديل حجمها لتتناسب مع المسافة بين الخطوط
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg" id="compareBtn">
-                                    <i class="bi bi-search"></i>
-                                    مقارنة البصمات
+                            <!-- زر التقديم -->
+                            <div class="text-center mt-3">
+                                <button type="submit" id="submitButton" class="btn btn-primary" disabled>
+                                    <i class="bi bi-grid"></i>
+                                    تقطيع البصمة إلى مربعات
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
 
-                <!-- قسم عرض مراحل المعالجة -->
-                <div class="card mt-4 shadow d-none" id="processingSteps">
-                    <div class="card-body">
-                        <h3 class="card-title text-center mb-4">مراحل المعالجة</h3>
-                        
-                        <div class="processing-step" id="step1">
-                            <h5><i class="bi bi-1-circle"></i> المعالجة الأولية</h5>
-                            <div class="progress mb-2">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
-                            </div>
+                        <!-- منطقة عرض المربعات المقطعة -->
+                        <div id="gridCutArea" class="mt-4 d-none">
+                            <h4 class="mb-3">المربعات المقطعة</h4>
+                            <div class="row" id="gridSquares"></div>
+                        </div>
+
+                        <!-- أزرار المطابقة -->
+                        <div id="matchingButtons" class="text-center mt-4 d-none">
+                            <button type="button" class="btn btn-success me-2" id="normalizedGridsButton" disabled>
+                                <i class="bi bi-grid-3x3"></i>
+                                تفعيل المطابقة باستخدام المربعات المعدلة
+                            </button>
+                            <button type="button" class="btn btn-warning" id="gridCutMatchingButton" disabled>
+                                <i class="bi bi-grid-3x3"></i>
+                                تفعيل المطابقة مع المربعات المقطعة
+                            </button>
+                        </div>
+
+                        <!-- منطقة عرض النتائج -->
+                        <div id="resultsArea" class="mt-4 d-none">
+                            <h4 class="mb-3">نتائج المطابقة</h4>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <img id="processed1" class="img-fluid d-none" alt="البصمة الأولى المعالجة">
-                                </div>
-                                <div class="col-md-6">
-                                    <img id="processed2" class="img-fluid d-none" alt="البصمة الثانية المعالجة">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="processing-step mt-4" id="step2">
-                            <h5><i class="bi bi-2-circle"></i> استخراج النقاط المميزة</h5>
-                            <div class="progress mb-2">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <img id="minutiae1" class="img-fluid d-none" alt="نقاط البصمة الأولى">
-                                    <p id="minutiaeCount1" class="text-center mt-2"></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <img id="minutiae2" class="img-fluid d-none" alt="نقاط البصمة الثانية">
-                                    <p id="minutiaeCount2" class="text-center mt-2"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="processing-step mt-4" id="step3">
-                            <h5><i class="bi bi-3-circle"></i> مطابقة النقاط</h5>
-                            <div class="progress mb-2">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
-                            </div>
-                            <div class="text-center">
-                                <img id="matching" class="img-fluid d-none" alt="نتيجة المطابقة">
-                            </div>
-                        </div>
-
-                        <div class="processing-step mt-4" id="step4">
-                            <h5><i class="bi bi-4-circle"></i> النتيجة النهائية</h5>
-                            <div class="result-details d-none">
-                                <div class="alert" role="alert">
-                                    <h4 class="alert-heading" id="matchResult"></h4>
-                                    <p id="matchScore"></p>
-                                    <div id="partialMatchInfo" class="d-none">
-                                        <hr>
-                                        <p class="mb-0">موقع التطابق في البصمة الكاملة:</p>
-                                        <p id="matchLocation" class="mb-0"></p>
-                                    </div>
-                                    <div id="gridMatchInfo" class="d-none">
-                                        <hr>
-                                        <p class="mb-0">موقع المربع المطابق:</p>
-                                        <p id="gridPosition" class="mb-0"></p>
-                                        <p class="mb-0">درجة تطابق المربع:</p>
-                                        <p id="gridScore" class="mb-0"></p>
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="matchVisualization"></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <ul class="list-group">
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                درجة تطابق النقاط
-                                                <span class="badge bg-primary" id="minutiaeScore"></span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                درجة تطابق الاتجاهات
-                                                <span class="badge bg-primary" id="orientationScore"></span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                درجة تطابق الكثافة
-                                                <span class="badge bg-primary" id="densityScore"></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="quality-analysis">
-                                            <h6>تحليل الجودة</h6>
-                                            <p id="qualityLevel"></p>
-                                            <div id="issues"></div>
-                                            <div id="recommendations"></div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="matchDetails"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -205,260 +144,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Preview uploaded images
-        function previewImage(input, previewId) {
-            const preview = document.getElementById(previewId);
-            const file = input.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Preview">`;
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Add event listeners for file inputs
-        document.getElementById('fingerprint1').addEventListener('change', function() {
-            previewImage(this, 'preview1');
-        });
-
-        document.getElementById('fingerprint2').addEventListener('change', function() {
-            previewImage(this, 'preview2');
-        });
-
-        // Form submission handling
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Form submission started');
-            
-            // Disable submit button
-            const submitBtn = document.getElementById('compareBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري المعالجة...';
-            console.log('Submit button disabled');
-            
-            // Show processing steps
-            const processingSteps = document.getElementById('processingSteps');
-            processingSteps.classList.remove('d-none');
-            console.log('Processing steps section shown');
-            
-            // Reset previous results
-            document.querySelectorAll('.progress-bar').forEach(bar => {
-                bar.style.width = '0%';
-            });
-            document.querySelectorAll('.img-fluid').forEach(img => {
-                img.classList.add('d-none');
-            });
-            document.querySelector('.result-details').classList.add('d-none');
-            console.log('Previous results reset');
-            
-            // Create FormData
-            const formData = new FormData(this);
-            console.log('FormData created');
-            
-            // Log file information
-            const file1 = formData.get('fingerprint1');
-            const file2 = formData.get('fingerprint2');
-            console.log('Files to upload:', {
-                'fingerprint1': file1 ? { name: file1.name, size: file1.size, type: file1.type } : null,
-                'fingerprint2': file2 ? { name: file2.name, size: file2.size, type: file2.type } : null
-            });
-            
-            // Update progress bars
-            const steps = ['step1', 'step2', 'step3', 'step4'];
-            let currentStep = 0;
-            
-            function updateProgress() {
-                if (currentStep < steps.length) {
-                    console.log(`Updating progress for step ${currentStep + 1}`);
-                    const progressBar = document.querySelector(`#${steps[currentStep]} .progress-bar`);
-                    let width = 0;
-                    const interval = setInterval(() => {
-                        if (width >= 100) {
-                            clearInterval(interval);
-                            currentStep++;
-                            console.log(`Step ${currentStep} completed`);
-                            if (currentStep < steps.length) {
-                                updateProgress();
-                            }
-                        } else {
-                            width += 2;
-                            progressBar.style.width = width + '%';
-                        }
-                    }, 50);
-                }
-            }
-            
-            updateProgress();
-            
-            // Send request
-            console.log('Sending request to server...');
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                console.log('Server response received:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data received:', data);
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                // Complete all progress bars
-                document.querySelectorAll('.progress-bar').forEach(bar => {
-                    bar.style.width = '100%';
-                });
-                console.log('Updating UI with results...');
-                updateProcessingSteps(data);
-            })
-            .catch(error => {
-                console.error('Error during processing:', error);
-                alert('حدث خطأ أثناء معالجة البصمات: ' + error.message);
-            })
-            .finally(() => {
-                console.log('Request completed');
-                // Re-enable submit button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="bi bi-search"></i> مقارنة البصمات';
-            });
-        });
-
-        document.getElementById('matchingMode').addEventListener('change', function() {
-            const useGridMatching = document.getElementById('useGridMatching');
-            if (this.checked) {
-                useGridMatching.checked = false;
-            }
-        });
-        
-        document.getElementById('useGridMatching').addEventListener('change', function() {
-            const matchingMode = document.getElementById('matchingMode');
-            if (this.checked) {
-                matchingMode.checked = false;
-            }
-        });
-
-        function updateProcessingSteps(data) {
-            try {
-                console.log('Starting UI update with data:', data);
-                
-                // Update preprocessing results
-                console.log('Updating preprocessing results...');
-                const processed1 = document.getElementById('processed1');
-                const processed2 = document.getElementById('processed2');
-                processed1.src = data.processed_images.img1;
-                processed2.src = data.processed_images.img2;
-                processed1.classList.remove('d-none');
-                processed2.classList.remove('d-none');
-                
-                // Update minutiae results
-                console.log('Updating minutiae results...');
-                const minutiae1 = document.getElementById('minutiae1');
-                const minutiae2 = document.getElementById('minutiae2');
-                minutiae1.src = data.minutiae_images.img1;
-                minutiae2.src = data.minutiae_images.img2;
-                minutiae1.classList.remove('d-none');
-                minutiae2.classList.remove('d-none');
-                
-                document.getElementById('minutiaeCount1').textContent = `عدد النقاط: ${data.minutiae_count.img1}`;
-                document.getElementById('minutiaeCount2').textContent = `عدد النقاط: ${data.minutiae_count.img2}`;
-                
-                // Update matching results
-                console.log('Updating matching results...');
-                const matching = document.getElementById('matching');
-                matching.src = data.matching_image;
-                matching.classList.remove('d-none');
-                
-                // Update final results
-                console.log('Updating final results...');
-                const resultDetails = document.querySelector('.result-details');
-                resultDetails.classList.remove('d-none');
-                
-                // Update scores
-                document.getElementById('matchScore').textContent = `درجة التطابق الكلية: ${data.score.total.toFixed(2)}%`;
-                document.getElementById('minutiaeScore').textContent = `${data.score.minutiae.toFixed(2)}%`;
-                document.getElementById('orientationScore').textContent = `${data.score.orientation.toFixed(2)}%`;
-                document.getElementById('densityScore').textContent = `${data.score.density.toFixed(2)}%`;
-                
-                // Update match result alert
-                console.log('Updating match result alert...');
-                const matchResult = document.getElementById('matchResult');
-                const alertElement = matchResult.closest('.alert');
-                const partialMatchInfo = document.getElementById('partialMatchInfo');
-                const gridMatchInfo = document.getElementById('gridMatchInfo');
-                alertElement.classList.remove('alert-success', 'alert-danger');
-                
-                if (data.use_grid_matching) {
-                    document.getElementById('gridMatchInfo').classList.remove('d-none');
-                    document.getElementById('partialMatchInfo').classList.add('d-none');
-                    document.getElementById('gridPosition').textContent = 
-                        `الإحداثيات: (${data.grid_match.position[0]}, ${data.grid_match.position[1]})`;
-                    document.getElementById('gridScore').textContent = 
-                        `${data.grid_match.score.toFixed(2)}%`;
-
-                    // إضافة عرض المربعات المقصوصة
-                    const gridVisualization = document.getElementById('gridVisualization');
-                    gridVisualization.classList.remove('d-none');
-                    gridVisualization.innerHTML = `
-                        <h6 class="mt-3">المربعات المقصوصة والمعدلة:</h6>
-                        <img src="${data.grid_match.grids_visualization}" class="img-fluid" alt="المربعات المقصوصة">
-                        <p class="text-muted">درجة التطابق مكتوبة فوق كل مربع</p>
-                    `;
-                } else if (data.is_partial_mode) {
-                    document.getElementById('partialMatchInfo').classList.remove('d-none');
-                    document.getElementById('gridMatchInfo').classList.add('d-none');
-                    const location = data.partial_match.location;
-                    document.getElementById('matchLocation').textContent = 
-                        `الإحداثيات: (${location[0]}, ${location[1]})`;
-                } else {
-                    document.getElementById('partialMatchInfo').classList.add('d-none');
-                    document.getElementById('gridMatchInfo').classList.add('d-none');
-                }
-                
-                // Update quality analysis
-                console.log('Updating quality analysis...');
-                document.getElementById('qualityLevel').textContent = `مستوى الجودة: ${data.quality.level}`;
-                
-                // Update issues
-                const issuesDiv = document.getElementById('issues');
-                issuesDiv.innerHTML = '<h6>المشاكل المكتشفة:</h6>';
-                if (data.quality.issues && data.quality.issues.length > 0) {
-                    data.quality.issues.forEach(issue => {
-                        issuesDiv.innerHTML += `<p>• ${issue}</p>`;
-                    });
-                } else {
-                    issuesDiv.innerHTML += '<p>لا توجد مشاكل</p>';
-                }
-                
-                // Update recommendations
-                const recommendationsDiv = document.getElementById('recommendations');
-                recommendationsDiv.innerHTML = '<h6>التوصيات:</h6>';
-                if (data.quality.recommendations && data.quality.recommendations.length > 0) {
-                    data.quality.recommendations.forEach(rec => {
-                        recommendationsDiv.innerHTML += `<p>• ${rec}</p>`;
-                    });
-                } else {
-                    recommendationsDiv.innerHTML += '<p>لا توجد توصيات</p>';
-                }
-                
-                console.log('UI update completed successfully');
-                
-            } catch (error) {
-                console.error('Error in updateProcessingSteps:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    stack: error.stack
-                });
-                alert('حدث خطأ أثناء تحديث النتائج');
-            }
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

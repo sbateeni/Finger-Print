@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from config import *
+from .grid_matcher import calculate_grid_match_score
 
 # Constants for RANSAC algorithm
 RANSAC_ITERATIONS = 1000  # Number of iterations for RANSAC
@@ -20,116 +21,48 @@ def match_fingerprints(minutiae1, minutiae2, features1, features2):
         features2 (dict): Features from second fingerprint
         
     Returns:
-        dict: Matching results including matched points and scores
+        dict: Matching results
     """
     try:
-        print("\n=== Starting fingerprint matching process ===")
-        print(f"Initial minutiae counts - Image 1: {len(minutiae1)}, Image 2: {len(minutiae2)}")
+        # Match minutiae points
+        matched_pairs = match_minutiae_points(minutiae1, minutiae2, 
+                                            MINUTIAE_DISTANCE_THRESHOLD, 
+                                            ORIENTATION_TOLERANCE)
         
-        # Limit the number of minutiae points to improve performance
-        MAX_MINUTIAE = 100  # Reduced from 150 to 100 for better performance
-        if len(minutiae1) > MAX_MINUTIAE or len(minutiae2) > MAX_MINUTIAE:
-            print(f"\nLimiting minutiae points to {MAX_MINUTIAE} for better performance")
-            # Sort by quality and take top points
-            minutiae1 = sorted(minutiae1, key=lambda x: x.get('quality', 0), reverse=True)[:MAX_MINUTIAE]
-            minutiae2 = sorted(minutiae2, key=lambda x: x.get('quality', 0), reverse=True)[:MAX_MINUTIAE]
-            print(f"After limiting - Image 1: {len(minutiae1)}, Image 2: {len(minutiae2)}")
+        if not matched_pairs:
+            return {
+                'minutiae_score': 0,
+                'orientation_score': 0,
+                'density_score': 0,
+                'matched_minutiae': [],
+                'transformation': None
+            }
         
-        # Initialize result dictionary
-        result = {
-            'matched_minutiae': [],
-            'transformation': None,
-            'minutiae_score': 0,
-            'orientation_score': 0,
-            'density_score': 0,
-            'local_structure_score': 0,
-            'scale_factor': 1.0
-        }
+        # Calculate scores
+        minutiae_score = calculate_minutiae_score(matched_pairs, minutiae1, minutiae2)
+        orientation_score = compare_orientation_fields(features1['orientation_field'], 
+                                                    features2['orientation_field'])
+        density_score = compare_ridge_density(features1['ridge_density'], 
+                                            features2['ridge_density'])
         
-        try:
-            # Calculate and apply scale normalization
-            print("\n=== Calculating scale factor ===")
-            scale_factor = calculate_scale_factor(minutiae1, minutiae2)
-            print(f"Scale factor calculated: {scale_factor}")
-            
-            normalized_minutiae1 = normalize_scale(minutiae1, scale_factor)
-            result['scale_factor'] = scale_factor
-            print("Scale normalization applied successfully")
-            
-            # Find best transformation between fingerprints
-            print("\n=== Finding best transformation ===")
-            transformation = find_best_transformation(normalized_minutiae1, minutiae2)
-            result['transformation'] = transformation
-            
-            if transformation is not None:
-                print("\n=== Applying transformation to minutiae points ===")
-                # Transform minutiae points
-                transformed_minutiae1 = transform_minutiae(normalized_minutiae1, transformation)
-                print("Transformation applied successfully")
-                
-                # Match minutiae points using local structure matching
-                print("\n=== Matching local structures ===")
-                matched_pairs = match_local_structures(
-                    transformed_minutiae1,
-                    minutiae2,
-                    MINUTIAE_DISTANCE_THRESHOLD,
-                    ORIENTATION_TOLERANCE
-                )
-                result['matched_minutiae'] = matched_pairs
-                print(f"Found {len(matched_pairs)} matching pairs")
-                
-                # Calculate scores
-                print("\n=== Calculating scores ===")
-                print("1. Calculating minutiae score...")
-                result['minutiae_score'] = calculate_minutiae_score(matched_pairs, minutiae1, minutiae2)
-                print(f"   Minutiae score: {result['minutiae_score']:.2f}%")
-                
-                print("2. Calculating orientation score...")
-                result['orientation_score'] = compare_orientation_fields(
-                    features1['orientation_field'],
-                    features2['orientation_field']
-                )
-                print(f"   Orientation score: {result['orientation_score']:.2f}%")
-                
-                print("3. Calculating density score...")
-                result['density_score'] = compare_ridge_density(
-                    features1['ridge_density'],
-                    features2['ridge_density']
-                )
-                print(f"   Density score: {result['density_score']:.2f}%")
-                
-                print("4. Calculating local structure score...")
-                result['local_structure_score'] = calculate_local_structure_score(matched_pairs)
-                print(f"   Local structure score: {result['local_structure_score']:.2f}%")
-                
-                print("\n=== Matching process completed successfully ===")
-            else:
-                print("\n=== No valid transformation found ===")
-            
-            return result
-            
-        except Exception as e:
-            print(f"\nError during matching process: {str(e)}")
-            import traceback
-            print("Traceback:")
-            print(traceback.format_exc())
-            return result
-            
-    except Exception as e:
-        print(f"\nCritical error in match_fingerprints: {str(e)}")
-        import traceback
-        print("Traceback:")
-        print(traceback.format_exc())
+        # Find best transformation
+        transformation = find_best_transformation(minutiae1, minutiae2)
         
-        # Return default result in case of error
         return {
-            'matched_minutiae': [],
-            'transformation': None,
+            'minutiae_score': minutiae_score,
+            'orientation_score': orientation_score,
+            'density_score': density_score,
+            'matched_minutiae': matched_pairs,
+            'transformation': transformation
+        }
+    except Exception as e:
+        print(f"Error in match_fingerprints: {str(e)}")
+        return {
             'minutiae_score': 0,
             'orientation_score': 0,
             'density_score': 0,
-            'local_structure_score': 0,
-            'scale_factor': 1.0
+            'matched_minutiae': [],
+            'transformation': None
         }
 
 def find_best_transformation(minutiae1, minutiae2):
