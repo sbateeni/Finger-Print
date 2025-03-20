@@ -3,87 +3,95 @@ import numpy as np
 from scipy import ndimage
 from config import *
 
-def extract_minutiae(img):
+def extract_minutiae(image, max_points=100):
     """
     Extract minutiae points from a fingerprint image.
     
     Args:
-        img (numpy.ndarray): Preprocessed fingerprint image
+        image: Input fingerprint image
+        max_points: Maximum number of minutiae points to return (default: 100)
         
     Returns:
-        list: List of minutiae points with their type and orientation
+        list: List of minutiae points with their properties
     """
-    print("Starting minutiae extraction with improved filtering...")
-    
-    # Initialize list to store minutiae points
-    minutiae = []
-    
-    # Get image dimensions
-    height, width = img.shape
-    
-    # Create padded image for neighborhood operations
-    padded = np.pad(img, ((1,1), (1,1)), mode='constant')
-    
-    # Minimum distance between minutiae points (increased for better filtering)
-    MIN_DISTANCE = 20  # Increased from original value
-    
-    # Quality threshold for minutiae points
-    QUALITY_THRESHOLD = 0.4  # Minimum quality score to accept a minutia
-    
-    print("Processing image for minutiae extraction...")
-    
-    # Crossing number method for minutiae extraction
-    for i in range(1, height-1):
-        for j in range(1, width-1):
-            if img[i,j] == 255:  # Ridge pixel
-                # Get 8-neighborhood
-                neighbors = [
-                    padded[i-1,j-1], padded[i-1,j], padded[i-1,j+1],
-                    padded[i,j+1], padded[i+1,j+1], padded[i+1,j],
-                    padded[i+1,j-1], padded[i,j-1], padded[i-1,j-1]
-                ]
-                
-                # Calculate crossing number
-                crossings = sum(abs(int(neighbors[k]//255) - int(neighbors[k+1]//255)) for k in range(8))
-                crossings += abs(int(neighbors[8]//255) - int(neighbors[0]//255))
-                
-                # Calculate quality score for current point
-                quality = calculate_minutia_quality(img, i, j)
-                
-                # Only process high-quality points
-                if quality >= QUALITY_THRESHOLD:
-                    # Determine minutiae type
-                    if crossings == 2:  # Ridge ending
-                        orientation = calculate_orientation(img, i, j)
-                        if is_valid_minutia(i, j, minutiae, MIN_DISTANCE):
-                            minutiae.append({
-                                'type': 'ending',
-                                'x': j,
-                                'y': i,
-                                'orientation': orientation,
-                                'quality': quality
-                            })
-                    elif crossings == 6:  # Ridge bifurcation
-                        orientation = calculate_orientation(img, i, j)
-                        if is_valid_minutia(i, j, minutiae, MIN_DISTANCE):
-                            minutiae.append({
-                                'type': 'bifurcation',
-                                'x': j,
-                                'y': i,
-                                'orientation': orientation,
-                                'quality': quality
-                            })
-    
-    print(f"Initial minutiae count: {len(minutiae)}")
-    
-    # Sort minutiae by quality and keep only the top ones
-    MAX_MINUTIAE = 100  # Maximum number of minutiae to keep
-    minutiae.sort(key=lambda x: x['quality'], reverse=True)
-    minutiae = minutiae[:MAX_MINUTIAE]
-    
-    print(f"Final minutiae count after quality filtering: {len(minutiae)}")
-    
-    return minutiae
+    try:
+        print("Starting minutiae extraction with improved filtering...")
+        print(f"Maximum points requested: {max_points}")
+        
+        # Initialize list to store minutiae points
+        minutiae = []
+        
+        # Get image dimensions
+        height, width = image.shape
+        
+        # Create padded image for neighborhood operations
+        padded = np.pad(image, ((1,1), (1,1)), mode='constant')
+        
+        # Minimum distance between minutiae points (increased for better filtering)
+        MIN_DISTANCE = 20  # Increased from original value
+        
+        # Quality threshold for minutiae points
+        QUALITY_THRESHOLD = 0.4  # Minimum quality score to accept a minutia
+        
+        print("Processing image for minutiae extraction...")
+        
+        # Crossing number method for minutiae extraction
+        for i in range(1, height-1):
+            for j in range(1, width-1):
+                if image[i,j] == 255:  # Ridge pixel
+                    # Get 8-neighborhood
+                    neighbors = [
+                        padded[i-1,j-1], padded[i-1,j], padded[i-1,j+1],
+                        padded[i,j+1], padded[i+1,j+1], padded[i+1,j],
+                        padded[i+1,j-1], padded[i,j-1], padded[i-1,j-1]
+                    ]
+                    
+                    # Calculate crossing number
+                    crossings = sum(abs(int(neighbors[k]//255) - int(neighbors[k+1]//255)) for k in range(8))
+                    crossings += abs(int(neighbors[8]//255) - int(neighbors[0]//255))
+                    
+                    # Calculate quality score for current point
+                    quality = calculate_minutia_quality(image, i, j)
+                    
+                    # Only process high-quality points
+                    if quality >= QUALITY_THRESHOLD:
+                        # Determine minutiae type
+                        if crossings == 2:  # Ridge ending
+                            orientation = calculate_orientation(image, i, j)
+                            if is_valid_minutia(i, j, minutiae, MIN_DISTANCE):
+                                minutiae.append({
+                                    'type': 'ending',
+                                    'x': j,
+                                    'y': i,
+                                    'orientation': orientation,
+                                    'quality': quality
+                                })
+                        elif crossings == 6:  # Ridge bifurcation
+                            orientation = calculate_orientation(image, i, j)
+                            if is_valid_minutia(i, j, minutiae, MIN_DISTANCE):
+                                minutiae.append({
+                                    'type': 'bifurcation',
+                                    'x': j,
+                                    'y': i,
+                                    'orientation': orientation,
+                                    'quality': quality
+                                })
+        
+        print(f"Initial minutiae count: {len(minutiae)}")
+        
+        # Sort minutiae by quality and limit to max_points
+        minutiae = sorted(minutiae, key=lambda x: x.get('quality', 0), reverse=True)
+        minutiae = minutiae[:max_points]
+        
+        print(f"Final minutiae count after limiting to max points: {len(minutiae)}")
+        return minutiae
+        
+    except Exception as e:
+        print(f"Error in minutiae extraction: {str(e)}")
+        import traceback
+        print("Traceback:")
+        print(traceback.format_exc())
+        return []
 
 def calculate_orientation(img, y, x, window_size=MINUTIAE_WINDOW_SIZE):
     """

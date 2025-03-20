@@ -7,10 +7,12 @@ import numpy as np
 
 from utils.image_processing import preprocess_image
 from utils.minutiae_extraction import extract_minutiae
-from utils.matcher import match_fingerprints
+from utils.matcher import match_fingerprints, visualize_matches
 from utils.feature_extraction import extract_features
 from utils.scoring import calculate_similarity_score, get_score_details, analyze_match_quality
 from utils.report_generator import generate_report
+from utils.partial_matcher import match_partial_fingerprint, visualize_partial_match
+from utils.grid_matcher import match_normalized_grids, visualize_grid_match
 
 from config import *
 
@@ -43,6 +45,14 @@ def upload_fingerprint():
         
         fingerprint1 = request.files['fingerprint1']
         fingerprint2 = request.files['fingerprint2']
+        
+        # Get parameters from request
+        minutiae_count = int(request.form.get('minutiaeCount', 100))
+        is_partial_mode = request.form.get('matchingMode') == 'true'
+        use_grid_matching = request.form.get('useGridMatching') == 'true'
+        print(f"Requested minutiae count: {minutiae_count}")
+        print(f"Partial matching mode: {is_partial_mode}")
+        print(f"Grid matching mode: {use_grid_matching}")
         
         print(f"Received files: {fingerprint1.filename}, {fingerprint2.filename}")
         
@@ -83,8 +93,8 @@ def upload_fingerprint():
         
         # Extract minutiae
         print("Extracting minutiae...")
-        minutiae1 = extract_minutiae(processed1)
-        minutiae2 = extract_minutiae(processed2)
+        minutiae1 = extract_minutiae(processed1, max_points=minutiae_count)
+        minutiae2 = extract_minutiae(processed2, max_points=minutiae_count)
         print(f"Found minutiae points: {len(minutiae1)} in image 1, {len(minutiae2)} in image 2")
         
         # Save minutiae visualizations
@@ -104,21 +114,48 @@ def upload_fingerprint():
         features1 = extract_features(processed1)
         features2 = extract_features(processed2)
         
-        # Match fingerprints
+        # Match fingerprints based on mode
         print("Matching fingerprints...")
-        match_result = match_fingerprints(minutiae1, minutiae2, features1, features2)
+        if use_grid_matching:
+            # استخدام المطابقة بالمربعات المعدلة
+            match_result = match_normalized_grids(processed1, processed2)
+            visualizations = visualize_grid_match(processed1, processed2, match_result)
+            
+            # حفظ الصور
+            match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
+            grids_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_grids_visualization.png')
+            
+            cv2.imwrite(match_path, visualizations['main_visualization'])
+            cv2.imwrite(grids_path, visualizations['grids_visualization'])
+            
+            score_details = {
+                'total_score': match_result['best_match']['score'],
+                'minutiae_score': match_result['best_match']['score'],
+                'orientation_score': match_result['best_match']['score'],
+                'density_score': match_result['best_match']['score']
+            }
+            
+            # تحديث response_data
+            response_data['grid_match'] = {
+                'position': match_result['best_match']['position'],
+                'score': float(match_result['best_match']['score']),
+                'grids_visualization': url_for('static', filename=f'images/results/{timestamp}_grids_visualization.png')
+            }
+        elif is_partial_mode:
+            match_result = match_partial_fingerprint(processed1, processed2, features1, features2)
+            match_img = visualize_partial_match(processed1, processed2, match_result)
+            score_details = get_score_details(match_result)
+        else:
+            match_result = match_fingerprints(minutiae1, minutiae2, features1, features2)
+            match_img = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
+            score_details = get_score_details(match_result)
         
-        # Save matching visualization
-        print("Generating matching visualization...")
-        from utils.matcher import visualize_matches
-        match_img = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
         match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
         print(f"Saving matching visualization to: {match_path}")
         cv2.imwrite(match_path, match_img)
         
         # Calculate scores and analysis
         print("Calculating scores and analysis...")
-        score_details = get_score_details(match_result)
         quality_analysis = analyze_match_quality(match_result)
         
         print(f"Score details: {score_details}")
@@ -150,8 +187,16 @@ def upload_fingerprint():
                 'level': str(quality_analysis['quality_level']),
                 'issues': [str(issue) for issue in quality_analysis['issues']],
                 'recommendations': [str(rec) for rec in quality_analysis['recommendations']]
-            }
+            },
+            'is_partial_mode': is_partial_mode,
+            'use_grid_matching': use_grid_matching
         }
+        
+        if is_partial_mode:
+            response_data['partial_match'] = {
+                'location': match_result['match_location'],
+                'region': match_result['best_match_region']
+            }
         
         print("Sending response data...")
         print(f"Response URLs: {response_data['processed_images']}")

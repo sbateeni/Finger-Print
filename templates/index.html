@@ -48,6 +48,48 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-3">
+                                <div class="col-md-6 mx-auto">
+                                    <div class="form-group">
+                                        <label for="minutiaeCount" class="form-label">عدد النقاط المميزة المطلوبة</label>
+                                        <input type="number" class="form-control" id="minutiaeCount" name="minutiaeCount" 
+                                               min="50" max="500" value="100" 
+                                               placeholder="أدخل عدد النقاط المميزة">
+                                        <div class="form-text text-muted">
+                                            القيمة المقترحة: 100 نقطة. يمكن زيادتها للحصول على دقة أعلى.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6 mx-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="matchingMode" name="matchingMode">
+                                        <label class="form-check-label" for="matchingMode">
+                                            تفعيل نمط مقارنة البصمة الجزئية
+                                        </label>
+                                        <div class="form-text text-muted">
+                                            استخدم هذا الخيار عند مقارنة بصمة جزئية مع بصمة كاملة
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6 mx-auto">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="useGridMatching" name="useGridMatching">
+                                        <label class="form-check-label" for="useGridMatching">
+                                            تفعيل المطابقة باستخدام المربعات المعدلة
+                                        </label>
+                                        <div class="form-text text-muted">
+                                            يقوم بتقسيم البصمة إلى مربعات وتعديل حجمها لتتناسب مع المسافة بين الخطوط
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="text-center mt-4">
                                 <button type="submit" class="btn btn-primary btn-lg" id="compareBtn">
                                     <i class="bi bi-search"></i>
@@ -111,6 +153,18 @@
                                 <div class="alert" role="alert">
                                     <h4 class="alert-heading" id="matchResult"></h4>
                                     <p id="matchScore"></p>
+                                    <div id="partialMatchInfo" class="d-none">
+                                        <hr>
+                                        <p class="mb-0">موقع التطابق في البصمة الكاملة:</p>
+                                        <p id="matchLocation" class="mb-0"></p>
+                                    </div>
+                                    <div id="gridMatchInfo" class="d-none">
+                                        <hr>
+                                        <p class="mb-0">موقع المربع المطابق:</p>
+                                        <p id="gridPosition" class="mb-0"></p>
+                                        <p class="mb-0">درجة تطابق المربع:</p>
+                                        <p id="gridScore" class="mb-0"></p>
+                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6">
@@ -144,6 +198,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="gridVisualization" class="d-none">
+        <!-- سيتم ملء هذا العنصر بالمربعات المقصوصة -->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -273,6 +331,20 @@
             });
         });
 
+        document.getElementById('matchingMode').addEventListener('change', function() {
+            const useGridMatching = document.getElementById('useGridMatching');
+            if (this.checked) {
+                useGridMatching.checked = false;
+            }
+        });
+        
+        document.getElementById('useGridMatching').addEventListener('change', function() {
+            const matchingMode = document.getElementById('matchingMode');
+            if (this.checked) {
+                matchingMode.checked = false;
+            }
+        });
+
         function updateProcessingSteps(data) {
             try {
                 console.log('Starting UI update with data:', data);
@@ -319,14 +391,35 @@
                 console.log('Updating match result alert...');
                 const matchResult = document.getElementById('matchResult');
                 const alertElement = matchResult.closest('.alert');
+                const partialMatchInfo = document.getElementById('partialMatchInfo');
+                const gridMatchInfo = document.getElementById('gridMatchInfo');
                 alertElement.classList.remove('alert-success', 'alert-danger');
                 
-                if (data.is_match) {
-                    matchResult.textContent = 'تم العثور على تطابق!';
-                    alertElement.classList.add('alert-success');
+                if (data.use_grid_matching) {
+                    document.getElementById('gridMatchInfo').classList.remove('d-none');
+                    document.getElementById('partialMatchInfo').classList.add('d-none');
+                    document.getElementById('gridPosition').textContent = 
+                        `الإحداثيات: (${data.grid_match.position[0]}, ${data.grid_match.position[1]})`;
+                    document.getElementById('gridScore').textContent = 
+                        `${data.grid_match.score.toFixed(2)}%`;
+
+                    // إضافة عرض المربعات المقصوصة
+                    const gridVisualization = document.getElementById('gridVisualization');
+                    gridVisualization.classList.remove('d-none');
+                    gridVisualization.innerHTML = `
+                        <h6 class="mt-3">المربعات المقصوصة والمعدلة:</h6>
+                        <img src="${data.grid_match.grids_visualization}" class="img-fluid" alt="المربعات المقصوصة">
+                        <p class="text-muted">درجة التطابق مكتوبة فوق كل مربع</p>
+                    `;
+                } else if (data.is_partial_mode) {
+                    document.getElementById('partialMatchInfo').classList.remove('d-none');
+                    document.getElementById('gridMatchInfo').classList.add('d-none');
+                    const location = data.partial_match.location;
+                    document.getElementById('matchLocation').textContent = 
+                        `الإحداثيات: (${location[0]}, ${location[1]})`;
                 } else {
-                    matchResult.textContent = 'لم يتم العثور على تطابق';
-                    alertElement.classList.add('alert-danger');
+                    document.getElementById('partialMatchInfo').classList.add('d-none');
+                    document.getElementById('gridMatchInfo').classList.add('d-none');
                 }
                 
                 // Update quality analysis
@@ -368,4 +461,4 @@
         }
     </script>
 </body>
-</html> 
+</html>
