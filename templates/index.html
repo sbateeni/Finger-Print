@@ -1,246 +1,291 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تحليل ومقارنة البصمات</title>
+    <title>نظام تحليل البصمات الجنائي</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #f8f9fa;
         }
-        .container {
-            max-width: 1200px;
-            margin-top: 2rem;
-        }
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-        .upload-area {
-            border: 2px dashed #dee2e6;
+        .result-box {
+            background-color: #f0f2f6;
             border-radius: 10px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 20px;
+            margin: 10px 0;
         }
-        .upload-area:hover {
-            border-color: #0d6efd;
-            background-color: #f8f9fa;
+        .result-item {
+            font-size: 18px;
+            margin: 10px 0;
         }
-        .preview-image {
-            max-width: 100%;
-            max-height: 300px;
-            margin-top: 1rem;
-        }
-        .result-card {
-            display: none;
-        }
-        .btn-analyze {
-            padding: 0.5rem 2rem;
-            font-size: 1.1rem;
-        }
-        .match-score {
-            font-size: 2rem;
+        .highlight {
+            color: #0068c9;
             font-weight: bold;
-            color: #198754;
         }
-        .status-badge {
-            font-size: 1.2rem;
-            padding: 0.5rem 1rem;
+        .success {
+            color: #09ab3b;
+            font-weight: bold;
+        }
+        .high-match {
+            color: #09ab3b;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 10px;
+            background-color: rgba(9, 171, 59, 0.1);
+            border-radius: 5px;
+        }
+        .medium-match {
+            color: #f0a202;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 10px;
+            background-color: rgba(240, 162, 2, 0.1);
+            border-radius: 5px;
+        }
+        .low-match {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 10px;
+            background-color: rgba(255, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .image-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .error-message {
+            color: #dc3545;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center mb-4">نظام تحليل ومقارنة البصمات</h1>
-        
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">نظام تحليل البصمات الجنائي</h1>
+        <h3 class="text-center mb-4">نظام متقدم لتحليل ومطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي</h3>
+
         <div class="row">
-            <!-- Original Fingerprint Upload -->
+            <!-- البصمة الأصلية -->
             <div class="col-md-6">
                 <div class="card">
+                    <div class="card-header">
+                        <h4>البصمة الأصلية</h4>
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title">البصمة الأصلية</h5>
-                        <div class="upload-area" id="original-upload">
-                            <input type="file" id="original-input" accept="image/*" style="display: none;">
-                            <i class="fas fa-fingerprint fa-3x mb-3"></i>
-                            <p>انقر لرفع البصمة الأصلية</p>
+                        <form id="originalForm">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="originalFile" accept=".png,.jpg,.jpeg,.bmp,.tiff">
+                            </div>
+                            <button type="submit" class="btn btn-primary">تحميل</button>
+                        </form>
+                        <div id="originalImage" class="image-container"></div>
+                        <div id="originalProcessed" class="image-container"></div>
+                        <div id="originalLoading" class="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">جاري التحميل...</span>
+                            </div>
                         </div>
-                        <img id="original-preview" class="preview-image" style="display: none;">
+                        <div id="originalError" class="error-message"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Partial Fingerprint Upload -->
+            <!-- البصمة الجزئية -->
             <div class="col-md-6">
                 <div class="card">
+                    <div class="card-header">
+                        <h4>البصمة الجزئية</h4>
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title">البصمة الجزئية</h5>
-                        <div class="upload-area" id="partial-upload">
-                            <input type="file" id="partial-input" accept="image/*" style="display: none;">
-                            <i class="fas fa-fingerprint fa-3x mb-3"></i>
-                            <p>انقر لرفع البصمة الجزئية</p>
+                        <form id="partialForm">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="partialFile" accept=".png,.jpg,.jpeg,.bmp,.tiff">
+                            </div>
+                            <button type="submit" class="btn btn-primary">تحميل</button>
+                        </form>
+                        <div id="partialImage" class="image-container"></div>
+                        <div id="partialProcessed" class="image-container"></div>
+                        <div id="partialLoading" class="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">جاري التحميل...</span>
+                            </div>
                         </div>
-                        <img id="partial-preview" class="preview-image" style="display: none;">
+                        <div id="partialError" class="error-message"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Analyze Button -->
-        <div class="text-center mb-4">
-            <button class="btn btn-primary btn-analyze" id="analyze-btn" disabled>
-                تحليل البصمات
-            </button>
+        <!-- زر المطابقة -->
+        <div class="text-center mt-4">
+            <button id="matchButton" class="btn btn-success btn-lg" disabled>بدء المطابقة</button>
         </div>
 
-        <!-- Results Card -->
-        <div class="card result-card" id="result-card">
-            <div class="card-body">
-                <h5 class="card-title text-center mb-4">نتائج التحليل</h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="text-center">
-                            <h6>نسبة التطابق</h6>
-                            <div class="match-score" id="match-score">0%</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="text-center">
-                            <h6>الحالة</h6>
-                            <span class="badge bg-success status-badge" id="match-status"></span>
-                        </div>
-                    </div>
+        <!-- نتائج المطابقة -->
+        <div id="matchResults" class="mt-4" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h4>نتائج المطابقة</h4>
                 </div>
-                <div class="mt-4">
-                    <h6>تفاصيل التحليل:</h6>
-                    <ul class="list-group">
-                        <li class="list-group-item">عدد النقاط في البصمة الأصلية: <span id="original-points">0</span></li>
-                        <li class="list-group-item">عدد النقاط في البصمة الجزئية: <span id="partial-points">0</span></li>
-                        <li class="list-group-item">عدد النقاط المتطابقة: <span id="matched-points">0</span></li>
-                    </ul>
+                <div class="card-body">
+                    <div id="summaryResults" class="result-box">
+                        <div id="summaryContent"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
     <script>
-        let originalFile = null;
-        let partialFile = null;
+        let originalMinutiae = null;
+        let partialMinutiae = null;
 
-        // Handle file uploads
-        document.getElementById('original-upload').addEventListener('click', () => {
-            document.getElementById('original-input').click();
-        });
+        // معالجة تحميل البصمة الأصلية
+        document.getElementById('originalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('originalFile').files[0];
+            if (!file) return;
 
-        document.getElementById('partial-upload').addEventListener('click', () => {
-            document.getElementById('partial-input').click();
-        });
+            const formData = new FormData();
+            formData.append('file', file);
 
-        document.getElementById('original-input').addEventListener('change', handleFileSelect);
-        document.getElementById('partial-input').addEventListener('change', handleFileSelect);
+            document.getElementById('originalLoading').style.display = 'block';
+            document.getElementById('originalError').textContent = '';
 
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            const preview = event.target.id === 'original-input' ? 
-                document.getElementById('original-preview') : 
-                document.getElementById('partial-preview');
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    
-                    if (event.target.id === 'original-input') {
-                        originalFile = file;
-                    } else {
-                        partialFile = file;
-                    }
-                    
-                    updateAnalyzeButton();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function updateAnalyzeButton() {
-            document.getElementById('analyze-btn').disabled = !(originalFile && partialFile);
-        }
-
-        // Handle analysis
-        document.getElementById('analyze-btn').addEventListener('click', async () => {
             try {
-                // Show loading state
-                const analyzeBtn = document.getElementById('analyze-btn');
-                analyzeBtn.disabled = true;
-                analyzeBtn.innerHTML = 'جاري التحليل...';
-
-                // Create form data with both files
-                const formData = new FormData();
-                formData.append('file1', originalFile);
-                formData.append('file2', partialFile);
-
-                // Send request
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    displayResults(result);
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('originalImage').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="البصمة الأصلية">`;
+                    document.getElementById('originalProcessed').innerHTML = `<img src="/processed/${data.processed_image}" alt="البصمة المعالجة">`;
+                    originalMinutiae = data.minutiae_count;
+                    checkMatchButton();
                 } else {
-                    throw new Error(result.error || 'حدث خطأ أثناء تحليل البصمات');
+                    document.getElementById('originalError').textContent = data.error;
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert(error.message || 'حدث خطأ أثناء تحليل البصمات');
+                document.getElementById('originalError').textContent = 'حدث خطأ أثناء معالجة الصورة';
             } finally {
-                // Reset button state
-                const analyzeBtn = document.getElementById('analyze-btn');
-                analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = 'تحليل البصمات';
+                document.getElementById('originalLoading').style.display = 'none';
             }
         });
 
-        function displayResults(result) {
-            // Show the result card
-            document.getElementById('result-card').style.display = 'block';
-            
-            // Check if result is valid
-            if (!result) {
-                alert('لم يتم استلام نتائج صالحة');
-                return;
-            }
+        // معالجة تحميل البصمة الجزئية
+        document.getElementById('partialForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('partialFile').files[0];
+            if (!file) return;
 
-            // Update match score with proper formatting
-            const matchScore = result.match_score || 0;
-            document.getElementById('match-score').textContent = `${matchScore.toFixed(2)}%`;
-            
-            // Update status with proper styling
-            const statusElement = document.getElementById('match-status');
-            statusElement.textContent = result.status || 'غير معروف';
-            
-            // Update status badge color based on match score
-            if (matchScore >= 80) {
-                statusElement.className = 'badge bg-success status-badge';
-            } else if (matchScore >= 60) {
-                statusElement.className = 'badge bg-warning status-badge';
-            } else {
-                statusElement.className = 'badge bg-danger status-badge';
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('partialLoading').style.display = 'block';
+            document.getElementById('partialError').textContent = '';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('partialImage').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="البصمة الجزئية">`;
+                    document.getElementById('partialProcessed').innerHTML = `<img src="/processed/${data.processed_image}" alt="البصمة المعالجة">`;
+                    partialMinutiae = data.minutiae_count;
+                    checkMatchButton();
+                } else {
+                    document.getElementById('partialError').textContent = data.error;
+                }
+            } catch (error) {
+                document.getElementById('partialError').textContent = 'حدث خطأ أثناء معالجة الصورة';
+            } finally {
+                document.getElementById('partialLoading').style.display = 'none';
             }
-            
-            // Update points count
-            document.getElementById('original-points').textContent = result.total_original || 0;
-            document.getElementById('partial-points').textContent = result.total_partial || 0;
-            document.getElementById('matched-points').textContent = result.matched_points || 0;
+        });
+
+        // التحقق من إمكانية تفعيل زر المطابقة
+        function checkMatchButton() {
+            document.getElementById('matchButton').disabled = !(originalMinutiae && partialMinutiae);
+        }
+
+        // معالجة المطابقة
+        document.getElementById('matchButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/match', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        original_minutiae: originalMinutiae,
+                        partial_minutiae: partialMinutiae
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('matchResults').style.display = 'block';
+                    document.getElementById('matchScore').textContent = `${data.match_score.toFixed(2)}%`;
+                    document.getElementById('matchedPoints').textContent = `${data.matched_points}/${data.total_partial}`;
+                    document.getElementById('matchStatus').textContent = data.status;
+
+                    // عرض ملخص النتائج
+                    const summaryContent = document.getElementById('summaryContent');
+                    summaryContent.innerHTML = `
+                        <div class="result-item">🔎 عدد النقاط المستخرجة من الأصلية: ${data.total_original}</div>
+                        <div class="result-item">🔎 عدد النقاط المستخرجة من الجزئية: ${data.total_partial}</div>
+                        <div class="result-item">✅ نقاط التطابق: ${data.matched_points}</div>
+                        <div class="result-item">✅ نسبة التشابه: ${data.match_score.toFixed(2)}%</div>
+                        <div class="result-item">✅ القرار: ${getDecisionText(data.match_score)}</div>
+                    `;
+
+                    // عرض تحليل الخطوط
+                    if (data.details.ridge_analysis) {
+                        document.getElementById('ridgeAnalysis').style.display = 'block';
+                        const ridgeContent = document.getElementById('ridgeContent');
+                        ridgeContent.innerHTML = data.details.ridge_analysis.map(analysis => `
+                            <div class="mb-3">
+                                <p>المسافة: ${analysis.distance.toFixed(2)}</p>
+                                <p>الفرق في الزاوية: ${analysis.angle_difference.toFixed(2)}</p>
+                                <p>تطابق النوع: ${analysis.type_match ? 'نعم' : 'لا'}</p>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                alert('حدث خطأ أثناء المطابقة');
+            }
+        });
+
+        function getDecisionClass(score) {
+            if (score > 75) return 'high-match';
+            if (score > 50) return 'medium-match';
+            return 'low-match';
+        }
+
+        function getDecisionText(score) {
+            if (score > 75) return 'HIGH MATCH - احتمالية التطابق كبيرة جدًا';
+            if (score > 50) return 'MEDIUM MATCH - احتمالية التطابق متوسطة';
+            return 'LOW MATCH - احتمالية التطابق منخفضة';
         }
     </script>
 </body>
