@@ -19,7 +19,7 @@ from ui.components import (
     display_summary_results,
     display_error
 )
-from preprocessing.image_processor import (
+from preprocessing.image_processing import (
     preprocess_image,
     extract_minutiae,
     calculate_scale_factor,

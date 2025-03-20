@@ -250,4 +250,166 @@ def analyze_ridge_patterns(skeleton, direction):
         return features
     except Exception as e:
         print(f"Error in analyze_ridge_patterns: {str(e)}")
-        return [] 
+        return []
+
+def extract_minutiae(skeleton):
+    """استخراج النقاط المميزة من البصمة"""
+    try:
+        if skeleton is None:
+            print("Error: Input skeleton is None")
+            return []
+
+        # تحويل الصورة إلى ثنائية
+        binary = (skeleton > 0).astype(np.uint8) * 255
+
+        # البحث عن نقاط النهاية والتفرعات
+        kernel = np.ones((3,3), np.uint8)
+        dilated = cv2.dilate(binary, kernel, iterations=1)
+        eroded = cv2.erode(binary, kernel, iterations=1)
+        
+        # نقاط النهاية
+        endings = cv2.subtract(binary, eroded)
+        # نقاط التفرع
+        bifurcations = cv2.subtract(dilated, binary)
+        
+        minutiae = []
+        
+        # إضافة نقاط النهاية
+        ending_points = np.where(endings > 0)
+        for y, x in zip(*ending_points):
+            minutiae.append({
+                'x': int(x),
+                'y': int(y),
+                'type': 'ending',
+                'angle': 0.0,  # سيتم حسابه لاحقاً
+                'quality': 1.0
+            })
+        
+        # إضافة نقاط التفرع
+        bifurcation_points = np.where(bifurcations > 0)
+        for y, x in zip(*bifurcation_points):
+            minutiae.append({
+                'x': int(x),
+                'y': int(y),
+                'type': 'bifurcation',
+                'angle': 0.0,  # سيتم حسابه لاحقاً
+                'quality': 1.0
+            })
+        
+        # حساب الزوايا لكل نقطة
+        for minutia in minutiae:
+            x, y = minutia['x'], minutia['y']
+            # أخذ منطقة 7×7 حول النقطة
+            region = binary[max(0, y-3):min(binary.shape[0], y+4),
+                          max(0, x-3):min(binary.shape[1], x+4)]
+            if region.size > 0:
+                # حساب اتجاه الخط باستخدام gradient
+                gy, gx = np.gradient(region.astype(float))
+                angle = np.arctan2(gy.mean(), gx.mean())
+                minutia['angle'] = float(angle)
+        
+        return minutiae
+    except Exception as e:
+        print(f"Error in extract_minutiae: {str(e)}")
+        return []
+
+def calculate_scale_factor(original_image, partial_image):
+    """حساب معامل التحجيم بين الصورتين"""
+    try:
+        if original_image is None or partial_image is None:
+            return 1.0
+            
+        # حساب نسبة الأبعاد
+        h1, w1 = original_image.shape[:2]
+        h2, w2 = partial_image.shape[:2]
+        
+        # حساب متوسط النسب
+        scale_h = h1 / h2 if h2 > 0 else 1.0
+        scale_w = w1 / w2 if w2 > 0 else 1.0
+        
+        return (scale_h + scale_w) / 2
+    except Exception as e:
+        print(f"Error in calculate_scale_factor: {str(e)}")
+        return 1.0
+
+def add_ruler_to_image(image, dpi=100):
+    """إضافة مسطرة مرقمة إلى الصورة"""
+    try:
+        # تحويل الصورة إلى مصفوفة NumPy إذا كانت PIL Image
+        if isinstance(image, np.ndarray):
+            if len(image.shape) == 2:
+                # تحويل الصورة الرمادية إلى RGB
+                image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        else:
+            return image
+        
+        # إنشاء صورة جديدة مع مساحة إضافية للمساطر
+        height, width = image.shape[:2]
+        ruler_size = 50  # حجم المسطرة بالبكسل
+        new_width = width + ruler_size
+        new_height = height + ruler_size
+        
+        # إنشاء صورة جديدة مع خلفية بيضاء
+        new_image = np.ones((new_height, new_width, 3), dtype=np.uint8) * 255
+        
+        # نسخ الصورة الأصلية إلى الموقع الصحيح
+        new_image[ruler_size:, ruler_size:] = image
+        
+        # إضافة المسطرة الأفقية
+        for i in range(0, width, int(dpi/2.54)):  # كل سنتيمتر
+            x = i + ruler_size
+            y = ruler_size - 10
+            cv2.line(new_image, (x, y), (x, ruler_size), (0,0,0), 1)
+            cv2.putText(new_image, f"{i/dpi*2.54:.1f}", (x-10, y-5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0), 1)
+        
+        # إضافة المسطرة العمودية
+        for i in range(0, height, int(dpi/2.54)):  # كل سنتيمتر
+            x = ruler_size - 10
+            y = i + ruler_size
+            cv2.line(new_image, (x, y), (ruler_size, y), (0,0,0), 1)
+            cv2.putText(new_image, f"{i/dpi*2.54:.1f}", (x-25, y+5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0), 1)
+        
+        return new_image
+    except Exception as e:
+        print(f"Error in add_ruler_to_image: {str(e)}")
+        return image
+
+def draw_matching_boxes(image, match_regions, original_size):
+    """رسم مربعات حول المناطق المتطابقة"""
+    try:
+        if image is None or not match_regions:
+            return image
+            
+        # نسخ الصورة للرسم عليها
+        result = image.copy()
+        if len(result.shape) == 2:
+            result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+        
+        # رسم المربعات لكل منطقة تطابق
+        for region in match_regions:
+            # استخراج معلومات المربع
+            x1, y1 = region['box'][0]
+            x2, y2 = region['box'][1]
+            score = region['score']
+            
+            # تحديد اللون حسب درجة التطابق
+            if score > 75:
+                color = (0, 255, 0)  # أخضر للتطابق العالي
+            elif score > 50:
+                color = (255, 255, 0)  # أصفر للتطابق المتوسط
+            else:
+                color = (0, 0, 255)  # أحمر للتطابق المنخفض
+            
+            # رسم المربع
+            cv2.rectangle(result, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+            
+            # إضافة نسبة التطابق
+            cv2.putText(result, f"{score:.1f}%", (int(x1), int(y1)-5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+        
+        return result
+    except Exception as e:
+        print(f"Error in draw_matching_boxes: {str(e)}")
+        return image 
