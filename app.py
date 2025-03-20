@@ -1,231 +1,186 @@
-import streamlit as st
+from flask import Flask, request, render_template, jsonify, send_file, url_for
+import os
+from werkzeug.utils import secure_filename
+from datetime import datetime
 import cv2
 import numpy as np
-from PIL import Image
-import logging
-import traceback
-from utils.image_processing import preprocess_image, detect_edges, enhance_image
-from utils.minutiae_extractor import extract_minutiae, visualize_minutiae
-from utils.matcher import match_fingerprints, visualize_matches
+
+from utils.image_processing import preprocess_image
+from utils.minutiae_extraction import extract_minutiae
+from utils.matcher import match_fingerprints
+from utils.feature_extraction import extract_features
+from utils.scoring import calculate_similarity_score, get_score_details, analyze_match_quality
 from utils.report_generator import generate_report
+
 from config import *
 
-# تكوين التسجيل
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-# تكوين الصفحة
-st.set_page_config(
-    page_title="نظام تحليل البصمات",
-    page_icon="🔍",
-    layout="wide"
-)
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# العنوان الرئيسي
-st.title("نظام تحليل البصمات الجنائي")
-st.markdown("""
-### نظام متقدم لتحليل ومطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي
-""")
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# إنشاء أعمدة للصور
-col1, col2 = st.columns(2)
+@app.route('/upload', methods=['POST'])
+def upload_fingerprint():
+    try:
+        print("Starting fingerprint upload and processing...")
+        
+        # Create necessary directories if they don't exist
+        print("Creating directories...")
+        for directory in [app.config['UPLOAD_FOLDER'], PROCESSED_FOLDER, RESULTS_FOLDER, OUTPUT_FOLDER]:
+            os.makedirs(directory, exist_ok=True)
+            print(f"Directory created/verified: {directory}")
 
-# البصمة الأصلية
-with col1:
-    st.subheader("البصمة الأصلية")
-    original_file = st.file_uploader("اختر البصمة الأصلية", type=['png', 'jpg', 'jpeg', 'bmp', 'tiff'], key="original")
+        print("Checking request files...")
+        if 'fingerprint1' not in request.files or 'fingerprint2' not in request.files:
+            print("Error: Missing files in request")
+            return jsonify({'error': 'Both fingerprint images are required'}), 400
+        
+        fingerprint1 = request.files['fingerprint1']
+        fingerprint2 = request.files['fingerprint2']
+        
+        print(f"Received files: {fingerprint1.filename}, {fingerprint2.filename}")
+        
+        if fingerprint1.filename == '' or fingerprint2.filename == '':
+            print("Error: Empty filenames")
+            return jsonify({'error': 'No selected files'}), 400
+        
+        if not (allowed_file(fingerprint1.filename) and allowed_file(fingerprint2.filename)):
+            print(f"Error: Invalid file types. Allowed types are: {ALLOWED_EXTENSIONS}")
+            return jsonify({'error': 'Invalid file type. Allowed types are: ' + ', '.join(ALLOWED_EXTENSIONS)}), 400
+
+        # Create timestamp for unique filenames
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        print(f"Generated timestamp: {timestamp}")
+        
+        # Save original images
+        filename1 = f"{timestamp}_1_{secure_filename(fingerprint1.filename)}"
+        filename2 = f"{timestamp}_2_{secure_filename(fingerprint2.filename)}"
+        
+        filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
+        filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
+        
+        print(f"Saving files to: {filepath1}, {filepath2}")
+        fingerprint1.save(filepath1)
+        fingerprint2.save(filepath2)
+        
+        # Process images
+        print("Processing images...")
+        processed1 = preprocess_image(filepath1)
+        processed2 = preprocess_image(filepath2)
+        
+        # Save processed images
+        proc1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_processed.png')
+        proc2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_processed.png')
+        print(f"Saving processed images to: {proc1_path}, {proc2_path}")
+        cv2.imwrite(proc1_path, processed1)
+        cv2.imwrite(proc2_path, processed2)
+        
+        # Extract minutiae
+        print("Extracting minutiae...")
+        minutiae1 = extract_minutiae(processed1)
+        minutiae2 = extract_minutiae(processed2)
+        print(f"Found minutiae points: {len(minutiae1)} in image 1, {len(minutiae2)} in image 2")
+        
+        # Save minutiae visualizations
+        print("Generating minutiae visualizations...")
+        from utils.minutiae_extraction import visualize_minutiae
+        min1_img = visualize_minutiae(processed1, minutiae1)
+        min2_img = visualize_minutiae(processed2, minutiae2)
+        
+        min1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_minutiae.png')
+        min2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_minutiae.png')
+        print(f"Saving minutiae visualizations to: {min1_path}, {min2_path}")
+        cv2.imwrite(min1_path, min1_img)
+        cv2.imwrite(min2_path, min2_img)
+        
+        # Extract features
+        print("Extracting features...")
+        features1 = extract_features(processed1)
+        features2 = extract_features(processed2)
+        
+        # Match fingerprints
+        print("Matching fingerprints...")
+        match_result = match_fingerprints(minutiae1, minutiae2, features1, features2)
+        
+        # Save matching visualization
+        print("Generating matching visualization...")
+        from utils.matcher import visualize_matches
+        match_img = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
+        match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
+        print(f"Saving matching visualization to: {match_path}")
+        cv2.imwrite(match_path, match_img)
+        
+        # Calculate scores and analysis
+        print("Calculating scores and analysis...")
+        score_details = get_score_details(match_result)
+        quality_analysis = analyze_match_quality(match_result)
+        
+        print(f"Score details: {score_details}")
+        print(f"Quality analysis: {quality_analysis}")
+        
+        # Prepare response data
+        response_data = {
+            'processed_images': {
+                'img1': url_for('static', filename=f'images/processed/{timestamp}_1_processed.png'),
+                'img2': url_for('static', filename=f'images/processed/{timestamp}_2_processed.png')
+            },
+            'minutiae_images': {
+                'img1': url_for('static', filename=f'images/processed/{timestamp}_1_minutiae.png'),
+                'img2': url_for('static', filename=f'images/processed/{timestamp}_2_minutiae.png')
+            },
+            'minutiae_count': {
+                'img1': len(minutiae1),
+                'img2': len(minutiae2)
+            },
+            'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png'),
+            'score': {
+                'total': score_details['total_score'],
+                'minutiae': score_details['minutiae_score'],
+                'orientation': score_details['orientation_score'],
+                'density': score_details['density_score']
+            },
+            'is_match': score_details['total_score'] >= MATCHING_THRESHOLD,
+            'quality': {
+                'level': quality_analysis['quality_level'],
+                'issues': quality_analysis['issues'],
+                'recommendations': quality_analysis['recommendations']
+            }
+        }
+        
+        print("Sending response data...")
+        print(f"Response URLs: {response_data['processed_images']}")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        import traceback
+        print("Error occurred during processing:")
+        print("Error message:", str(e))
+        print("Traceback:")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/report/<timestamp>')
+def view_report(timestamp):
+    return render_template('report.html', timestamp=timestamp)
+
+@app.route('/download_report/<timestamp>')
+def download_report(timestamp):
+    report_path = os.path.join(OUTPUT_FOLDER, f'report_{timestamp}.pdf')
+    if os.path.exists(report_path):
+        return send_file(report_path, as_attachment=True)
+    return jsonify({'error': 'Report not found'}), 404
+
+if __name__ == '__main__':
+    # Create necessary directories if they don't exist
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+    os.makedirs(RESULTS_FOLDER, exist_ok=True)
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     
-    if original_file is not None:
-        try:
-            # قراءة الصورة
-            original_pil = Image.open(original_file)
-            original_img = np.array(original_pil.convert('L'))
-            
-            # عرض الصورة الأصلية
-            st.image(original_pil, caption="البصمة الأصلية", use_column_width=True)
-            
-            # معالجة البصمة الأصلية
-            with st.spinner("جاري معالجة البصمة الأصلية..."):
-                # المعالجة المسبقة
-                processed_original = preprocess_image(original_img)
-                if processed_original is not None:
-                    # استخراج الحواف
-                    ridges_original, orientation_map_original = detect_edges(processed_original)
-                    if ridges_original is not None:
-                        # تحسين الصورة
-                        enhanced_original = enhance_image(ridges_original)
-                        if enhanced_original is not None:
-                            # استخراج النقاط الدقيقة
-                            minutiae_original = extract_minutiae(enhanced_original)
-                            if minutiae_original:
-                                # تصور النقاط
-                                vis_original = visualize_minutiae(enhanced_original, minutiae_original)
-                                if vis_original is not None:
-                                    st.image(vis_original, caption="البصمة المعالجة", use_column_width=True)
-                                    st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
-                                else:
-                                    st.error("فشل في تصور النقاط")
-                            else:
-                                st.error("لم يتم العثور على نقاط مميزة")
-                        else:
-                            st.error("فشل في تحسين الصورة")
-                    else:
-                        st.error("فشل في استخراج الحواف")
-                else:
-                    st.error("فشل في المعالجة المسبقة")
-        except Exception as e:
-            logger.error(f"Error processing original image: {str(e)}")
-            st.error("حدث خطأ أثناء معالجة الصورة الأصلية")
-
-# البصمة الجزئية
-with col2:
-    st.subheader("البصمة الجزئية")
-    partial_file = st.file_uploader("اختر البصمة الجزئية", type=['png', 'jpg', 'jpeg', 'bmp', 'tiff'], key="partial")
-    
-    if partial_file is not None:
-        try:
-            # قراءة الصورة
-            partial_pil = Image.open(partial_file)
-            partial_img = np.array(partial_pil.convert('L'))
-            
-            # عرض الصورة الجزئية
-            st.image(partial_pil, caption="البصمة الجزئية", use_column_width=True)
-            
-            # معالجة البصمة الجزئية
-            with st.spinner("جاري معالجة البصمة الجزئية..."):
-                # المعالجة المسبقة
-                processed_partial = preprocess_image(partial_img)
-                if processed_partial is not None:
-                    # استخراج الحواف
-                    ridges_partial, orientation_map_partial = detect_edges(processed_partial)
-                    if ridges_partial is not None:
-                        # تحسين الصورة
-                        enhanced_partial = enhance_image(ridges_partial)
-                        if enhanced_partial is not None:
-                            # استخراج النقاط الدقيقة
-                            minutiae_partial = extract_minutiae(enhanced_partial)
-                            if minutiae_partial:
-                                # تصور النقاط
-                                vis_partial = visualize_minutiae(enhanced_partial, minutiae_partial)
-                                if vis_partial is not None:
-                                    st.image(vis_partial, caption="البصمة المعالجة", use_column_width=True)
-                                    st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
-                                else:
-                                    st.error("فشل في تصور النقاط")
-                            else:
-                                st.error("لم يتم العثور على نقاط مميزة")
-                        else:
-                            st.error("فشل في تحسين الصورة")
-                    else:
-                        st.error("فشل في استخراج الحواف")
-                else:
-                    st.error("فشل في المعالجة المسبقة")
-        except Exception as e:
-            logger.error(f"Error processing partial image: {str(e)}")
-            st.error("حدث خطأ أثناء معالجة الصورة الجزئية")
-
-# زر المطابقة
-if st.button("بدء المطابقة", type="primary"):
-    if original_file is not None and partial_file is not None:
-        if minutiae_original and minutiae_partial:
-            with st.spinner("جاري مطابقة البصمات..."):
-                try:
-                    # مطابقة البصمات
-                    match_result = match_fingerprints(minutiae_original, minutiae_partial)
-                    
-                    # تصور النقاط المتطابقة
-                    matches_vis = visualize_matches(enhanced_original, enhanced_partial, match_result)
-                    if matches_vis is not None:
-                        st.image(matches_vis, caption="النقاط المتطابقة", use_column_width=True)
-                    
-                    # عرض النتائج
-                    st.markdown("---")
-                    st.subheader("📊 ملخص النتائج")
-                    
-                    # صندوق النتائج
-                    st.markdown("""
-                    <style>
-                    .result-box {
-                        background-color: #f0f2f6;
-                        border-radius: 10px;
-                        padding: 20px;
-                        margin: 10px 0;
-                        font-family: 'Arial', sans-serif;
-                        direction: rtl;
-                    }
-                    .result-item {
-                        font-size: 18px;
-                        margin: 10px 0;
-                    }
-                    .highlight {
-                        color: #0068c9;
-                        font-weight: bold;
-                    }
-                    .success {
-                        color: #09ab3b;
-                        font-weight: bold;
-                    }
-                    .high-match {
-                        color: #09ab3b;
-                        font-weight: bold;
-                        font-size: 24px;
-                        padding: 10px;
-                        background-color: rgba(9, 171, 59, 0.1);
-                        border-radius: 5px;
-                    }
-                    .medium-match {
-                        color: #f0a202;
-                        font-weight: bold;
-                        font-size: 24px;
-                        padding: 10px;
-                        background-color: rgba(240, 162, 2, 0.1);
-                        border-radius: 5px;
-                    }
-                    .low-match {
-                        color: #ff0000;
-                        font-weight: bold;
-                        font-size: 24px;
-                        padding: 10px;
-                        background-color: rgba(255, 0, 0, 0.1);
-                        border-radius: 5px;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown('<div class="result-box">', unsafe_allow_html=True)
-                    
-                    # عدد النقاط
-                    st.markdown(f'<div class="result-item">🔎 عدد النقاط المستخرجة من الأصلية: <span class="highlight">{match_result["total_original"]}</span></div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="result-item">🔎 عدد النقاط المستخرجة من الجزئية: <span class="highlight">{match_result["total_partial"]}</span></div>', unsafe_allow_html=True)
-                    
-                    # نتائج المطابقة
-                    st.markdown(f'<div class="result-item">✅ نقاط التطابق: <span class="success">{match_result["matched_points"]}</span></div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="result-item">✅ نسبة التشابه: <span class="success">{match_result["match_score"]:.2f}%</span></div>', unsafe_allow_html=True)
-                    
-                    # القرار
-                    decision_class = "high-match" if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['HIGH'] else "medium-match" if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['MEDIUM'] else "low-match"
-                    decision_text = f'HIGH MATCH - احتمالية التطابق كبيرة جدًا' if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['HIGH'] else f'MEDIUM MATCH - احتمالية التطابق متوسطة' if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['MEDIUM'] else f'LOW MATCH - احتمالية التطابق منخفضة'
-                    
-                    st.markdown(f'<div class="result-item">✅ القرار: <span class="{decision_class}">{decision_text}</span></div>', unsafe_allow_html=True)
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # توليد التقرير
-                    report_path = generate_report(enhanced_original, enhanced_partial, match_result)
-                    if report_path:
-                        with open(report_path, 'rb') as f:
-                            st.download_button(
-                                label="تحميل التقرير",
-                                data=f,
-                                file_name="matched_result.pdf",
-                                mime="application/pdf"
-                            )
-                    
-                except Exception as e:
-                    logger.error(f"Error in matching: {str(e)}")
-                    logger.error(traceback.format_exc())
-                    st.error("حدث خطأ أثناء المطابقة")
-        else:
-            st.error("يرجى التأكد من معالجة البصمتين بنجاح")
-    else:
-        st.error("يرجى تحميل البصمتين أولاً") 
+    app.run(debug=True) 

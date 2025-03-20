@@ -2,140 +2,195 @@ import os
 import cv2
 import numpy as np
 from datetime import datetime
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from config import *
 
-def generate_report(original_img, partial_img, match_result, output_dir=OUTPUT_DIR):
-    """توليد تقرير PDF"""
-    try:
-        # إنشاء مجلد النتائج إذا لم يكن موجوداً
-        os.makedirs(output_dir, exist_ok=True)
+def generate_report(original_image1, original_image2, processed_image1, processed_image2,
+                   minutiae1, minutiae2, match_result, score, timestamp):
+    """
+    Generate a detailed PDF report of the fingerprint matching analysis.
+    
+    Args:
+        original_image1 (str): Path to first original image
+        original_image2 (str): Path to second original image
+        processed_image1 (numpy.ndarray): First processed image
+        processed_image2 (numpy.ndarray): Second processed image
+        minutiae1 (list): Minutiae points from first fingerprint
+        minutiae2 (list): Minutiae points from second fingerprint
+        match_result (dict): Matching results
+        score (float): Overall similarity score
+        timestamp (str): Timestamp for the analysis
         
-        # إنشاء اسم الملف
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_name = f"matched_result_{timestamp}.pdf"
-        report_path = os.path.join(output_dir, report_name)
-        
-        # حفظ الصور
-        original_path = os.path.join(output_dir, f"original_{timestamp}.png")
-        partial_path = os.path.join(output_dir, f"partial_{timestamp}.png")
-        cv2.imwrite(original_path, original_img)
-        cv2.imwrite(partial_path, partial_img)
-        
-        # إنشاء محتوى التقرير
-        report_content = f"""
-        <html dir="rtl">
-        <head>
-            <meta charset="UTF-8">
-            <title>تقرير مطابقة البصمات</title>
-            <style>
-                body {{
-                    font-family: 'Arial', sans-serif;
-                    margin: 20px;
-                    background-color: #f0f2f6;
-                }}
-                .container {{
-                    max-width: 800px;
-                    margin: 0 auto;
-                    background-color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                }}
-                .header {{
-                    text-align: center;
-                    margin-bottom: 30px;
-                }}
-                .result-box {{
-                    background-color: #f8f9fa;
-                    border-radius: 5px;
-                    padding: 15px;
-                    margin: 10px 0;
-                }}
-                .highlight {{
-                    color: #0068c9;
-                    font-weight: bold;
-                }}
-                .success {{
-                    color: #09ab3b;
-                    font-weight: bold;
-                }}
-                .high-match {{
-                    color: #09ab3b;
-                    font-weight: bold;
-                    font-size: 24px;
-                    padding: 10px;
-                    background-color: rgba(9, 171, 59, 0.1);
-                    border-radius: 5px;
-                }}
-                .medium-match {{
-                    color: #f0a202;
-                    font-weight: bold;
-                    font-size: 24px;
-                    padding: 10px;
-                    background-color: rgba(240, 162, 2, 0.1);
-                    border-radius: 5px;
-                }}
-                .low-match {{
-                    color: #ff0000;
-                    font-weight: bold;
-                    font-size: 24px;
-                    padding: 10px;
-                    background-color: rgba(255, 0, 0, 0.1);
-                    border-radius: 5px;
-                }}
-                .images {{
-                    display: flex;
-                    justify-content: space-between;
-                    margin: 20px 0;
-                }}
-                .image-container {{
-                    text-align: center;
-                }}
-                .image-container img {{
-                    max-width: 300px;
-                    border-radius: 5px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>تقرير مطابقة البصمات</h1>
-                    <p>تاريخ التقرير: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-                </div>
-                
-                <div class="images">
-                    <div class="image-container">
-                        <h3>البصمة الأصلية</h3>
-                        <img src="{original_path}" alt="البصمة الأصلية">
-                    </div>
-                    <div class="image-container">
-                        <h3>البصمة الجزئية</h3>
-                        <img src="{partial_path}" alt="البصمة الجزئية">
-                    </div>
-                </div>
-                
-                <div class="result-box">
-                    <h2>نتائج المطابقة</h2>
-                    <p>🔎 عدد النقاط المستخرجة من الأصلية: <span class="highlight">{match_result["total_original"]}</span></p>
-                    <p>🔎 عدد النقاط المستخرجة من الجزئية: <span class="highlight">{match_result["total_partial"]}</span></p>
-                    <p>✅ نقاط التطابق: <span class="success">{match_result["matched_points"]}</span></p>
-                    <p>✅ نسبة التشابه: <span class="success">{match_result["match_score"]:.2f}%</span></p>
-                    
-                    <div class="{match_result['status'].lower().replace(' ', '-')}">
-                        <h3>القرار: {match_result['status']}</h3>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # حفظ التقرير
-        with open(report_path, 'w', encoding='utf-8') as f:
-            f.write(report_content)
-        
-        return report_path
-    except Exception as e:
-        print(f"Error generating report: {str(e)}")
-        return None 
+    Returns:
+        str: Path to the generated PDF report
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    
+    # Define report path
+    report_path = os.path.join(OUTPUT_FOLDER, f'report_{timestamp}.pdf')
+    
+    # Create document
+    doc = SimpleDocTemplate(
+        report_path,
+        pagesize=A4,
+        rightMargin=72,
+        leftMargin=72,
+        topMargin=72,
+        bottomMargin=72
+    )
+    
+    # Create style
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Title'],
+        fontSize=24,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=12,
+        leading=16,
+        alignment=1  # Center alignment
+    )
+    
+    # Create story (content)
+    story = []
+    
+    # Add title
+    title = Paragraph('Fingerprint Analysis Report', title_style)
+    story.append(title)
+    story.append(Spacer(1, 20))
+    
+    # Add date and time
+    date_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    date_para = Paragraph(f'Analysis Date: {date_str}', normal_style)
+    story.append(date_para)
+    story.append(Spacer(1, 20))
+    
+    # Add original images
+    story.append(Paragraph('Original Fingerprints', normal_style))
+    story.append(Spacer(1, 10))
+    
+    # Save and add images to report
+    img1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_original.png')
+    img2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_original.png')
+    cv2.imwrite(img1_path, cv2.imread(original_image1))
+    cv2.imwrite(img2_path, cv2.imread(original_image2))
+    
+    img_table = Table([
+        [Image(img1_path, width=200, height=200),
+         Image(img2_path, width=200, height=200)]
+    ])
+    story.append(img_table)
+    story.append(Spacer(1, 20))
+    
+    # Add processed images
+    story.append(Paragraph('Processed Fingerprints', normal_style))
+    story.append(Spacer(1, 10))
+    
+    proc1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_processed.png')
+    proc2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_processed.png')
+    cv2.imwrite(proc1_path, processed_image1)
+    cv2.imwrite(proc2_path, processed_image2)
+    
+    proc_table = Table([
+        [Image(proc1_path, width=200, height=200),
+         Image(proc2_path, width=200, height=200)]
+    ])
+    story.append(proc_table)
+    story.append(Spacer(1, 20))
+    
+    # Add minutiae visualization
+    story.append(Paragraph('Extracted Minutiae Points', normal_style))
+    story.append(Spacer(1, 10))
+    
+    # Create minutiae visualizations
+    from .minutiae_extraction import visualize_minutiae
+    min1_img = visualize_minutiae(processed_image1, minutiae1)
+    min2_img = visualize_minutiae(processed_image2, minutiae2)
+    
+    min1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_minutiae.png')
+    min2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_minutiae.png')
+    cv2.imwrite(min1_path, min1_img)
+    cv2.imwrite(min2_path, min2_img)
+    
+    min_table = Table([
+        [Image(min1_path, width=200, height=200),
+         Image(min2_path, width=200, height=200)]
+    ])
+    story.append(min_table)
+    story.append(Spacer(1, 20))
+    
+    # Add matching visualization
+    story.append(Paragraph('Matching Points', normal_style))
+    story.append(Spacer(1, 10))
+    
+    from .matcher import visualize_matches
+    match_img = visualize_matches(processed_image1, processed_image2, match_result['matched_minutiae'])
+    match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
+    cv2.imwrite(match_path, match_img)
+    
+    story.append(Image(match_path, width=400, height=200))
+    story.append(Spacer(1, 20))
+    
+    # Add analysis results
+    story.append(Paragraph('Analysis Results', normal_style))
+    story.append(Spacer(1, 10))
+    
+    from .scoring import get_score_details, analyze_match_quality
+    score_details = get_score_details(match_result)
+    analysis = analyze_match_quality(match_result)
+    
+    # Create results table
+    results_data = [
+        ['Metric', 'Value'],
+        ['Final Score', f"{score_details['total_score']:.2f}%"],
+        ['Confidence Level', score_details['confidence']],
+        ['Matched Points Count', str(score_details['matched_count'])],
+        ['Minutiae Match Score', f"{score_details['minutiae_score']:.2f}%"],
+        ['Orientation Match Score', f"{score_details['orientation_score']:.2f}%"],
+        ['Ridge Density Match Score', f"{score_details['density_score']:.2f}%"]
+    ]
+    
+    results_table = Table(results_data)
+    results_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    story.append(results_table)
+    story.append(Spacer(1, 20))
+    
+    # Add quality analysis
+    story.append(Paragraph('Match Quality Analysis', normal_style))
+    story.append(Spacer(1, 10))
+    
+    story.append(Paragraph(f"Quality Level: {analysis['quality_level']}", normal_style))
+    
+    if analysis['issues']:
+        story.append(Paragraph('Detected Issues:', normal_style))
+        for issue in analysis['issues']:
+            story.append(Paragraph(f"• {issue}", normal_style))
+    
+    if analysis['recommendations']:
+        story.append(Paragraph('Recommendations:', normal_style))
+        for rec in analysis['recommendations']:
+            story.append(Paragraph(f"• {rec}", normal_style))
+    
+    # Build PDF
+    doc.build(story)
+    
+    return report_path 
