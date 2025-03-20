@@ -13,6 +13,8 @@ def extract_minutiae(img):
     Returns:
         list: List of minutiae points with their type and orientation
     """
+    print("Starting minutiae extraction with improved filtering...")
+    
     # Initialize list to store minutiae points
     minutiae = []
     
@@ -21,6 +23,14 @@ def extract_minutiae(img):
     
     # Create padded image for neighborhood operations
     padded = np.pad(img, ((1,1), (1,1)), mode='constant')
+    
+    # Minimum distance between minutiae points (increased for better filtering)
+    MIN_DISTANCE = 20  # Increased from original value
+    
+    # Quality threshold for minutiae points
+    QUALITY_THRESHOLD = 0.4  # Minimum quality score to accept a minutia
+    
+    print("Processing image for minutiae extraction...")
     
     # Crossing number method for minutiae extraction
     for i in range(1, height-1):
@@ -37,33 +47,41 @@ def extract_minutiae(img):
                 crossings = sum(abs(int(neighbors[k]//255) - int(neighbors[k+1]//255)) for k in range(8))
                 crossings += abs(int(neighbors[8]//255) - int(neighbors[0]//255))
                 
-                # Determine minutiae type
-                if crossings == 2:  # Ridge ending
-                    orientation = calculate_orientation(img, i, j)
-                    if is_valid_minutia(i, j, minutiae, MIN_RIDGE_LENGTH):
-                        minutiae.append({
-                            'type': 'ending',
-                            'x': j,
-                            'y': i,
-                            'orientation': orientation,
-                            'quality': calculate_minutia_quality(img, i, j)
-                        })
-                elif crossings == 6:  # Ridge bifurcation
-                    orientation = calculate_orientation(img, i, j)
-                    if is_valid_minutia(i, j, minutiae, MIN_RIDGE_LENGTH):
-                        minutiae.append({
-                            'type': 'bifurcation',
-                            'x': j,
-                            'y': i,
-                            'orientation': orientation,
-                            'quality': calculate_minutia_quality(img, i, j)
-                        })
+                # Calculate quality score for current point
+                quality = calculate_minutia_quality(img, i, j)
+                
+                # Only process high-quality points
+                if quality >= QUALITY_THRESHOLD:
+                    # Determine minutiae type
+                    if crossings == 2:  # Ridge ending
+                        orientation = calculate_orientation(img, i, j)
+                        if is_valid_minutia(i, j, minutiae, MIN_DISTANCE):
+                            minutiae.append({
+                                'type': 'ending',
+                                'x': j,
+                                'y': i,
+                                'orientation': orientation,
+                                'quality': quality
+                            })
+                    elif crossings == 6:  # Ridge bifurcation
+                        orientation = calculate_orientation(img, i, j)
+                        if is_valid_minutia(i, j, minutiae, MIN_DISTANCE):
+                            minutiae.append({
+                                'type': 'bifurcation',
+                                'x': j,
+                                'y': i,
+                                'orientation': orientation,
+                                'quality': quality
+                            })
     
-    # Detect delta points
-    delta_points = detect_delta_points(img)
-    for delta in delta_points:
-        if is_valid_minutia(delta['y'], delta['x'], minutiae, MIN_RIDGE_LENGTH):
-            minutiae.append(delta)
+    print(f"Initial minutiae count: {len(minutiae)}")
+    
+    # Sort minutiae by quality and keep only the top ones
+    MAX_MINUTIAE = 100  # Maximum number of minutiae to keep
+    minutiae.sort(key=lambda x: x['quality'], reverse=True)
+    minutiae = minutiae[:MAX_MINUTIAE]
+    
+    print(f"Final minutiae count after quality filtering: {len(minutiae)}")
     
     return minutiae
 

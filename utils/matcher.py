@@ -420,6 +420,11 @@ def match_local_structures(minutiae1, minutiae2, distance_threshold, orientation
     try:
         print("Starting local structure matching...")
         
+        # Reduce thresholds to be more tolerant
+        distance_threshold = distance_threshold * 1.5  # Increase distance threshold
+        orientation_tolerance = orientation_tolerance * 1.5  # Increase orientation tolerance
+        LOCAL_STRUCTURE_THRESHOLD = 0.4  # Reduce threshold for accepting matches
+        
         matched_pairs = []
         used_indices2 = set()
         
@@ -451,7 +456,7 @@ def match_local_structures(minutiae1, minutiae2, distance_threshold, orientation
                 if orient_diff > orientation_tolerance:
                     continue
                     
-                # Compare local structures
+                # Compare local structures with more tolerance
                 structure_score = compare_local_structures(s1, s2)
                 
                 if structure_score > best_score:
@@ -463,6 +468,10 @@ def match_local_structures(minutiae1, minutiae2, distance_threshold, orientation
             if best_match is not None and best_score > LOCAL_STRUCTURE_THRESHOLD:
                 matched_pairs.append((m1, best_match))
                 used_indices2.add(best_idx)
+                
+                # Print debug information for first few matches
+                if len(matched_pairs) <= 5:
+                    print(f"Match {len(matched_pairs)}: Score = {best_score:.2f}, Distance = {dist:.2f}, Orientation diff = {orient_diff:.2f}")
         
         print(f"Found {len(matched_pairs)} matching pairs")
         return matched_pairs

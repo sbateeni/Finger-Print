@@ -135,21 +135,21 @@ def upload_fingerprint():
                 'img2': url_for('static', filename=f'images/processed/{timestamp}_2_minutiae.png')
             },
             'minutiae_count': {
-                'img1': len(minutiae1),
-                'img2': len(minutiae2)
+                'img1': int(len(minutiae1)),
+                'img2': int(len(minutiae2))
             },
             'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png'),
             'score': {
-                'total': score_details['total_score'],
-                'minutiae': score_details['minutiae_score'],
-                'orientation': score_details['orientation_score'],
-                'density': score_details['density_score']
+                'total': float(score_details['total_score']),
+                'minutiae': float(score_details['minutiae_score']),
+                'orientation': float(score_details['orientation_score']),
+                'density': float(score_details['density_score'])
             },
-            'is_match': score_details['total_score'] >= MATCHING_THRESHOLD,
+            'is_match': bool(score_details['total_score'] >= MATCHING_THRESHOLD),
             'quality': {
-                'level': quality_analysis['quality_level'],
-                'issues': quality_analysis['issues'],
-                'recommendations': quality_analysis['recommendations']
+                'level': str(quality_analysis['quality_level']),
+                'issues': [str(issue) for issue in quality_analysis['issues']],
+                'recommendations': [str(rec) for rec in quality_analysis['recommendations']]
             }
         }
         
