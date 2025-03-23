@@ -117,3 +117,73 @@
 2025-03-23 19:17:44,708 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:17:44] "GET / HTTP/1.1" 200 -
 2025-03-23 19:19:17,137 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
 2025-03-23 19:19:17,266 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:40:11,939 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-23 19:40:11,940 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-23 19:40:11,949 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:40:13,144 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:40:13,154 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:40:21,558 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:40:21] "[33mGET /grid_compare HTTP/1.1[0m" 404 -
+2025-03-23 19:41:01,090 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:41:01] "[33mGET /grid_compare HTTP/1.1[0m" 404 -
+2025-03-23 19:41:37,826 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:41:38,044 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:41:39,586 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:41:39,596 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:41:40,641 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:41:40,752 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:41:41,979 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:41:41,989 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:42:05,243 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:42:05,382 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:42:06,650 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:42:06,659 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:42:08,697 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:42:08,813 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:42:10,072 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:42:10,080 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:42:13,243 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:42:13] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-23 19:43:00,343 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "POST /split_fingerprint HTTP/1.1" 200 -
+2025-03-23 19:43:00,642 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_1_1.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,647 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_3_1.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,653 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_3_3.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,661 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_3_2.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,664 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_1_2.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,676 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_1_3.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,682 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_2_1.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,683 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_2_2.png HTTP/1.1" 200 -
+2025-03-23 19:43:00,684 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:00] "GET /static/images/processed/20250323_194300_grid_2_3.png HTTP/1.1" 200 -
+2025-03-23 19:43:32,583 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:43:32,763 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:43:34,491 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:43:34,501 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:43:39,589 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:43:39,706 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:43:41,012 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:43:41,023 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:43:47,467 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:43:47] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-23 19:44:24,398 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-23 19:44:24,399 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-23 19:44:24,402 - werkzeug - INFO -  * Restarting with stat
+2025-03-23 19:44:25,657 - werkzeug - WARNING -  * Debugger is active!
+2025-03-23 19:44:25,667 - werkzeug - INFO -  * Debugger PIN: 912-133-759
+2025-03-23 19:44:58,471 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "POST /split_fingerprint HTTP/1.1" 200 -
+2025-03-23 19:44:58,794 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_2_1.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,796 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_1_3.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,803 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_3_2.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,804 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_1_2.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,806 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_2_2.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,806 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_3_1.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,806 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_2_3.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,808 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_1_1.png HTTP/1.1" 200 -
+2025-03-23 19:44:58,815 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:44:58] "GET /static/images/processed/20250323_194458_grid_3_3.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,095 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "POST /split_fingerprint HTTP/1.1" 200 -
+2025-03-23 19:46:22,113 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_1_3.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,113 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_1_1.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,114 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_1_2.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,114 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_2_3.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,114 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_2_1.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,115 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_2_2.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,130 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_3_2.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,139 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_3_1.png HTTP/1.1" 200 -
+2025-03-23 19:46:22,141 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_3_3.png HTTP/1.1" 200 -

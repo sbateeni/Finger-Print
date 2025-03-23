@@ -18,126 +18,6 @@
         </div>
     </nav>
 
-<<<<<<< HEAD
-        <div class="text-center mt-4">
-            <button class="btn btn-primary btn-lg mx-2" id="compareBtn" disabled>
-                مقارنة البصمات
-            </button>
-            <button class="btn btn-success btn-lg mx-2" id="multipleBtn" disabled>
-                تحليل بصمات متعددة
-            </button>
-            <button class="btn btn-info btn-lg mx-2" id="crossCompareBtn" disabled>
-                مقارنة البصمات المتعددة بين الصورتين
-            </button>
-            <a href="/grid_compare" class="btn btn-warning btn-lg mx-2">
-                مقارنة البصمات باستخدام الشبكة
-            </a>
-        </div>
-
-        <div id="resultContainer" class="result-container">
-            <h2 class="text-center mb-4">نتيجة المقارنة</h2>
-            
-            <div id="singleComparisonResult">
-                <div class="progress">
-                    <div id="matchScore" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                </div>
-                
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="score-detail">
-                            <h4>جودة البصمة الأولى</h4>
-                            <div class="progress">
-                                <div id="quality1" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="score-detail">
-                            <h4>جودة البصمة الثانية</h4>
-                            <div class="progress">
-                                <div id="quality2" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="multipleComparisonResult" style="display: none;">
-                <h3 class="text-center mb-3">نتائج تحليل البصمات المتعددة</h3>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>البصمة #1</th>
-                                <th>البصمة #2</th>
-                                <th>نسبة التطابق</th>
-                                <th>جودة البصمة #1</th>
-                                <th>جودة البصمة #2</th>
-                            </tr>
-                        </thead>
-                        <tbody id="multipleResultsTable">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="crossComparisonResult" style="display: none;">
-                <h3 class="text-center mb-3">نتائج مقارنة البصمات المتعددة بين الصورتين</h3>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>البصمة من الصورة الأولى</th>
-                                <th>البصمة من الصورة الثانية</th>
-                                <th>نسبة التطابق</th>
-                                <th>جودة البصمة الأولى</th>
-                                <th>جودة البصمة الثانية</th>
-                            </tr>
-                        </thead>
-                        <tbody id="crossCompareResultsTable">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="alert alert-info mt-3">
-                    <strong>ملاحظة:</strong> يتم عرض أفضل نتائج المطابقة فقط (نسبة التطابق > 60%)
-                </div>
-            </div>
-
-            <div class="score-details mt-4">
-                <h4>تفاصيل المقارنة</h4>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="score-detail">
-                            <p>تشابه الصور: <span id="ssimScore">0</span></p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="score-detail">
-                            <p>تطابق النقاط المميزة: <span id="minutiaeScore">0</span></p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="score-detail">
-                            <p>تشابه التوجيه: <span id="orientationScore">0</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- قسم قاعدة بيانات البصمات -->
-        <div class="database-section">
-            <h2 class="text-center mb-4">قاعدة بيانات البصمات</h2>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">رفع بصمة للبحث</h5>
-                            <form id="searchForm">
-                                <div class="mb-3">
-                                    <input type="file" class="form-control" id="searchFile" accept="image/*" required>
-=======
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-10">
@@ -162,7 +42,6 @@
                                             <div class="preview" id="preview1"></div>
                                         </div>
                                     </div>
->>>>>>> b776498f34254ddb2b3f12e3edd5fb2ba551068b
                                 </div>
                                 
                                 <!-- البصمة الثانية -->
