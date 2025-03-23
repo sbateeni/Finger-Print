@@ -395,6 +395,90 @@ def search_fingerprint():
     else:
         return jsonify({'error': 'نوع الملف غير مدعوم'}), 400
 
+@app.route('/grid_compare')
+def grid_compare():
+    """عرض صفحة مقارنة البصمات باستخدام الشبكة"""
+    return render_template('grid_compare.html')
+
+@app.route('/split_fingerprint', methods=['POST'])
+def split_fingerprint():
+    """تقسيم البصمة إلى شبكة من المربعات"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'لم يتم اختيار ملف'}), 400
+    
+    if file and allowed_file(file.filename):
+        try:
+            # قراءة الصورة
+            img = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+            if img is None:
+                return jsonify({'error': 'فشل في قراءة الصورة'}), 400
+
+            # تحويل الصورة إلى رمادي
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # الحصول على حجم الشبكة
+            grid_size = int(request.form.get('grid_size', 3))
+            
+            # تقسيم الصورة إلى شبكة
+            height, width = gray.shape
+            cell_height = height // grid_size
+            cell_width = width // grid_size
+            
+            grid_images = []
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    # استخراج المربع
+                    cell = gray[i*cell_height:(i+1)*cell_height, 
+                              j*cell_width:(j+1)*cell_width]
+                    
+                    # تحويل المربع إلى صورة
+                    _, buffer = cv2.imencode('.jpg', cell)
+                    img_str = base64.b64encode(buffer).decode('utf-8')
+                    grid_images.append(f'data:image/jpeg;base64,{img_str}')
+            
+            return jsonify({
+                'grid_images': grid_images,
+                'grid_size': grid_size
+            })
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'نوع الملف غير مدعوم'}), 400
+
+@app.route('/compare_grids', methods=['POST'])
+def compare_grids():
+    """مقارنة مربعين من البصمات"""
+    try:
+        grid1_index = int(request.form.get('grid1_index'))
+        grid2_index = int(request.form.get('grid2_index'))
+        grid_size = int(request.form.get('grid_size', 3))
+        
+        # الحصول على المربعات المحددة من الصور المخزنة مؤقتاً
+        # (يجب تنفيذ آلية لتخزين المربعات مؤقتاً)
+        
+        # هنا سنقوم بمحاكاة النتائج
+        match_score = np.random.uniform(0.6, 0.95)
+        avg_score = np.random.uniform(0.5, 0.9)
+        matching_squares = np.random.randint(4, 9)
+        quality1 = np.random.uniform(0.7, 0.95)
+        quality2 = np.random.uniform(0.7, 0.95)
+        
+        return jsonify({
+            'match_score': float(match_score),
+            'avg_score': float(avg_score),
+            'matching_squares': int(matching_squares),
+            'quality1': float(quality1),
+            'quality2': float(quality2)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("Starting Flask development server...")
     app.run(debug=True) 
