@@ -114,6 +114,167 @@ async function compareGrids() {
     }
 }
 
+// تحليل بصمات متعددة
+async function analyzeMultipleFingerprints() {
+    const file = document.getElementById('fingerprint1').files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('grid_size', gridSize);
+
+    try {
+        const response = await fetch('/split_fingerprint', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        // إنشاء مصفوفة لتخزين نتائج المقارنة
+        const comparisonResults = [];
+        
+        // مقارنة كل مربع مع باقي المربعات
+        for (let i = 0; i < result.grid_images.length; i++) {
+            for (let j = i + 1; j < result.grid_images.length; j++) {
+                const compareFormData = new FormData();
+                compareFormData.append('grid1_index', i);
+                compareFormData.append('grid2_index', j);
+                compareFormData.append('grid_size', gridSize);
+
+                const compareResponse = await fetch('/compare_grids', {
+                    method: 'POST',
+                    body: compareFormData
+                });
+                const compareResult = await compareResponse.json();
+                
+                if (!compareResult.error) {
+                    comparisonResults.push({
+                        grid1: i + 1,
+                        grid2: j + 1,
+                        score: compareResult.match_score
+                    });
+                }
+            }
+        }
+
+        // عرض النتائج
+        const gridResults = document.getElementById('gridResults');
+        gridResults.innerHTML = '';
+        
+        comparisonResults.forEach(result => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            div.innerHTML = `
+                <div class="match-score ${result.score >= 70 ? 'high' : result.score >= 50 ? 'medium' : 'low'}">
+                    المربع ${result.grid1} مع المربع ${result.grid2}: ${result.score.toFixed(1)}%
+                </div>
+            `;
+            gridResults.appendChild(div);
+        });
+
+        // عرض إحصائيات عامة
+        const avgScore = comparisonResults.reduce((sum, r) => sum + r.score, 0) / comparisonResults.length;
+        document.getElementById('avgScore').textContent = avgScore.toFixed(1);
+        document.getElementById('overallScore').style.width = `${avgScore}%`;
+        document.getElementById('overallScore').textContent = `${avgScore.toFixed(1)}%`;
+        document.getElementById('overallScore').className = 'progress-bar ' + 
+            (avgScore >= 70 ? 'bg-success' : avgScore >= 50 ? 'bg-warning' : 'bg-danger');
+
+    } catch (error) {
+        alert('حدث خطأ: ' + error.message);
+    }
+}
+
+// مقارنة البصمات المتعددة بين الصورتين
+async function crossCompareFingerprints() {
+    const file1 = document.getElementById('fingerprint1').files[0];
+    const file2 = document.getElementById('fingerprint2').files[0];
+    if (!file1 || !file2) return;
+
+    try {
+        // تقسيم البصمة الأولى
+        const formData1 = new FormData();
+        formData1.append('file', file1);
+        formData1.append('grid_size', gridSize);
+        const response1 = await fetch('/split_fingerprint', {
+            method: 'POST',
+            body: formData1
+        });
+        const result1 = await response1.json();
+
+        // تقسيم البصمة الثانية
+        const formData2 = new FormData();
+        formData2.append('file', file2);
+        formData2.append('grid_size', gridSize);
+        const response2 = await fetch('/split_fingerprint', {
+            method: 'POST',
+            body: formData2
+        });
+        const result2 = await response2.json();
+
+        if (result1.error || result2.error) {
+            throw new Error(result1.error || result2.error);
+        }
+
+        // إنشاء مصفوفة لتخزين نتائج المقارنة
+        const comparisonResults = [];
+        
+        // مقارنة كل مربع من البصمة الأولى مع كل مربع من البصمة الثانية
+        for (let i = 0; i < result1.grid_images.length; i++) {
+            for (let j = 0; j < result2.grid_images.length; j++) {
+                const compareFormData = new FormData();
+                compareFormData.append('grid1_index', i);
+                compareFormData.append('grid2_index', j);
+                compareFormData.append('grid_size', gridSize);
+
+                const compareResponse = await fetch('/compare_grids', {
+                    method: 'POST',
+                    body: compareFormData
+                });
+                const compareResult = await compareResponse.json();
+                
+                if (!compareResult.error) {
+                    comparisonResults.push({
+                        grid1: i + 1,
+                        grid2: j + 1,
+                        score: compareResult.match_score
+                    });
+                }
+            }
+        }
+
+        // عرض النتائج
+        const gridResults = document.getElementById('gridResults');
+        gridResults.innerHTML = '';
+        
+        comparisonResults.forEach(result => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            div.innerHTML = `
+                <div class="match-score ${result.score >= 70 ? 'high' : result.score >= 50 ? 'medium' : 'low'}">
+                    المربع ${result.grid1} من البصمة الأولى مع المربع ${result.grid2} من البصمة الثانية: ${result.score.toFixed(1)}%
+                </div>
+            `;
+            gridResults.appendChild(div);
+        });
+
+        // عرض إحصائيات عامة
+        const avgScore = comparisonResults.reduce((sum, r) => sum + r.score, 0) / comparisonResults.length;
+        document.getElementById('avgScore').textContent = avgScore.toFixed(1);
+        document.getElementById('overallScore').style.width = `${avgScore}%`;
+        document.getElementById('overallScore').textContent = `${avgScore.toFixed(1)}%`;
+        document.getElementById('overallScore').className = 'progress-bar ' + 
+            (avgScore >= 70 ? 'bg-success' : avgScore >= 50 ? 'bg-warning' : 'bg-danger');
+
+    } catch (error) {
+        alert('حدث خطأ: ' + error.message);
+    }
+}
+
 // إضافة مستمعي الأحداث
 document.addEventListener('DOMContentLoaded', function() {
     // تحديث حجم الشبكة
@@ -147,4 +308,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // مقارنة البصمات
     document.getElementById('compareBtn').addEventListener('click', compareGrids);
+
+    // إضافة مستمعي الأحداث للأزرار الجديدة
+    document.getElementById('multipleBtn').addEventListener('click', analyzeMultipleFingerprints);
+    document.getElementById('crossCompareBtn').addEventListener('click', crossCompareFingerprints);
 }); 
