@@ -115,3 +115,5 @@
 2025-03-23 19:17:01,860 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:17:01] "POST /split_fingerprint HTTP/1.1" 200 -
 2025-03-23 19:17:06,065 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:17:06] "POST /split_fingerprint HTTP/1.1" 200 -
 2025-03-23 19:17:44,708 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:17:44] "GET / HTTP/1.1" 200 -
+2025-03-23 19:19:17,137 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-23 19:19:17,266 - werkzeug - INFO -  * Restarting with stat

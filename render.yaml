@@ -1,9 +1,19 @@
 services:
   - type: web
-    name: fingerprint-app
+    name: fingerprint-matching
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.8 
+        value: 3.8.0
+      - key: FLASK_APP
+        value: app.py
+      - key: FLASK_ENV
+        value: production
+    healthCheckPath: /
+    autoDeploy: true
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/static
+      sizeGB: 1 
