@@ -1009,3 +1009,21 @@
 2025-03-24 12:12:40,018 - __main__ - INFO - Created/verified directory: logs
 2025-03-24 12:12:40,060 - werkzeug - WARNING -  * Debugger is active!
 2025-03-24 12:12:40,071 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 13:27:15,681 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\__init__.py', reloading
+2025-03-24 13:27:15,744 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:28:24,928 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:28:24,928 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:28:24,929 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:28:24,929 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:28:24,929 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:28:24,974 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 13:28:24,974 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 13:28:24,976 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:28:25,419 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:28:25,420 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:28:25,420 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:28:25,421 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:28:25,421 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:28:25,454 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 13:28:25,464 - werkzeug - INFO -  * Debugger PIN: 142-815-324
