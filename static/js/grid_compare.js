@@ -1,22 +1,20 @@
 // متغيرات عامة
-let selectedGrid1 = null;
-let selectedGrid2 = null;
-let gridSize = 3;
+let gridSize1 = 3;
+let gridSize2 = 3;
+let gridImages1 = [];
+let gridImages2 = [];
+let timestamp1 = '';
+let timestamp2 = '';
 
 // تحديث حالة الأزرار
 function updateButtons() {
-    const splitBtn1 = document.getElementById('splitBtn');
+    const splitBtn1 = document.getElementById('splitBtn1');
     const splitBtn2 = document.getElementById('splitBtn2');
     const compareBtn = document.getElementById('compareBtn');
-    const multipleBtn = document.getElementById('multipleBtn');
-    const crossCompareBtn = document.getElementById('crossCompareBtn');
 
     splitBtn1.disabled = !document.getElementById('fingerprint1').files.length;
     splitBtn2.disabled = !document.getElementById('fingerprint2').files.length;
-    compareBtn.disabled = !(selectedGrid1 !== null && selectedGrid2 !== null);
-    multipleBtn.disabled = !document.getElementById('fingerprint1').files.length;
-    crossCompareBtn.disabled = !(document.getElementById('fingerprint1').files.length && 
-                               document.getElementById('fingerprint2').files.length);
+    compareBtn.disabled = !(gridImages1.length > 0 && gridImages2.length > 0);
 }
 
 // معاينة الصورة
@@ -32,204 +30,116 @@ function previewImage(input, preview) {
 }
 
 // تقسيم البصمة إلى شبكة
-async function splitFingerprint(file, gridSize, gridContainer) {
+async function splitFingerprint(file, gridSize, gridContainerId, gridImagesArray, timestampVar) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('grid_size', gridSize);
 
     try {
-        const response = await fetch('/split_fingerprint', {
+        console.log('بدء إرسال الطلب...');
+        console.log('حجم الشبكة:', gridSize);
+        console.log('اسم الملف:', file.name);
+
+        const response = await fetch('/cut_fingerprint', {
             method: 'POST',
             body: formData
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'حدث خطأ أثناء معالجة الصورة');
+        }
+
         const result = await response.json();
+        console.log('تم استلام النتيجة:', result);
         
         if (result.error) {
             throw new Error(result.error);
         }
 
+        const gridContainer = document.getElementById(gridContainerId);
         gridContainer.innerHTML = '';
+        gridImagesArray.length = 0;
+        gridImagesArray.push(...result.grids.map(grid => grid.image));
+        window[timestampVar] = result.timestamp;
         
-        result.grid_images.forEach((img, index) => {
+        result.grids.forEach((grid, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
             div.innerHTML = `
-                <img src="${img}" alt="Grid ${index + 1}">
+                <img src="${grid.image}" alt="Grid ${index + 1}">
                 <div class="match-score">المربع ${index + 1}</div>
             `;
-            div.addEventListener('click', () => {
-                document.querySelectorAll(`#${gridContainer.id} .grid-item`).forEach(item => 
-                    item.classList.remove('selected'));
-                div.classList.add('selected');
-                if (gridContainer.id === 'grid1') {
-                    selectedGrid1 = index;
-                } else {
-                    selectedGrid2 = index;
-                }
-                updateButtons();
-            });
             gridContainer.appendChild(div);
         });
+
+        updateButtons();
+        console.log('تم تقسيم البصمة بنجاح');
     } catch (error) {
+        console.error('حدث خطأ:', error);
         alert('حدث خطأ: ' + error.message);
     }
 }
 
-// مقارنة المربعات المحددة
+// معالجة نتائج المقارنة
+function handleComparisonResults(results) {
+    const gridContainer1 = document.getElementById('grid1');
+    const gridContainer2 = document.getElementById('grid2');
+    const gridItems1 = gridContainer1.getElementsByClassName('grid-item');
+    const gridItems2 = gridContainer2.getElementsByClassName('grid-item');
+    
+    // تحديث درجات التطابق لكل مربع
+    results.forEach(result => {
+        const gridItem1 = gridItems1[result.grid1 - 1];
+        const gridItem2 = gridItems2[result.grid2 - 1];
+        
+        if (gridItem1 && gridItem2) {
+            const scoreElement1 = gridItem1.querySelector('.match-score');
+            const scoreElement2 = gridItem2.querySelector('.match-score');
+            
+            scoreElement1.textContent = `المربع ${result.grid1}: ${result.score.toFixed(1)}%`;
+            scoreElement2.textContent = `المربع ${result.grid2}: ${result.score.toFixed(1)}%`;
+            
+            const scoreClass = result.score >= 70 ? 'high' : 
+                             result.score >= 50 ? 'medium' : 'low';
+            
+            scoreElement1.className = 'match-score ' + scoreClass;
+            scoreElement2.className = 'match-score ' + scoreClass;
+        }
+    });
+
+    // حساب وإظهار النتائج الإجمالية
+    const bestMatch = results.reduce((best, current) => 
+        current.score > best.score ? current : best
+    );
+
+    document.getElementById('resultContainer').style.display = 'block';
+    document.getElementById('overallScore').style.width = `${bestMatch.score}%`;
+    document.getElementById('overallScore').textContent = `${bestMatch.score.toFixed(1)}%`;
+    document.getElementById('avgScore').textContent = (results.reduce((sum, r) => sum + r.score, 0) / results.length).toFixed(1);
+    document.getElementById('matchingSquares').textContent = results.filter(r => r.score >= 70).length;
+
+    // تحديث ألوان شريط التقدم
+    const progressBar = document.getElementById('overallScore');
+    progressBar.className = 'progress-bar ' + 
+        (bestMatch.score >= 70 ? 'bg-success' : 
+         bestMatch.score >= 50 ? 'bg-warning' : 'bg-danger');
+}
+
+// مقارنة المربعات
 async function compareGrids() {
-    if (selectedGrid1 === null || selectedGrid2 === null) return;
-
-    const formData = new FormData();
-    formData.append('grid1_index', selectedGrid1);
-    formData.append('grid2_index', selectedGrid2);
-    formData.append('grid_size', gridSize);
+    if (gridImages1.length === 0 || gridImages2.length === 0) return;
 
     try {
-        const response = await fetch('/compare_grids', {
-            method: 'POST',
-            body: formData
-        });
-        const result = await response.json();
-        
-        if (result.error) {
-            throw new Error(result.error);
-        }
-
-        // عرض النتائج
-        document.getElementById('resultContainer').style.display = 'block';
-        document.getElementById('overallScore').style.width = `${result.match_score}%`;
-        document.getElementById('overallScore').textContent = `${result.match_score}%`;
-        document.getElementById('avgScore').textContent = result.avg_score;
-        document.getElementById('matchingSquares').textContent = result.matching_squares;
-        document.getElementById('quality1').textContent = result.quality1;
-        document.getElementById('quality2').textContent = result.quality2;
-
-        // تحديث ألوان شريط التقدم
-        const progressBar = document.getElementById('overallScore');
-        progressBar.className = 'progress-bar ' + 
-            (result.match_score >= 70 ? 'bg-success' : 
-             result.match_score >= 50 ? 'bg-warning' : 'bg-danger');
-    } catch (error) {
-        alert('حدث خطأ: ' + error.message);
-    }
-}
-
-// تحليل بصمات متعددة
-async function analyzeMultipleFingerprints() {
-    const file = document.getElementById('fingerprint1').files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('grid_size', gridSize);
-
-    try {
-        const response = await fetch('/split_fingerprint', {
-            method: 'POST',
-            body: formData
-        });
-        const result = await response.json();
-        
-        if (result.error) {
-            throw new Error(result.error);
-        }
-
-        // إنشاء مصفوفة لتخزين نتائج المقارنة
-        const comparisonResults = [];
-        
-        // مقارنة كل مربع مع باقي المربعات
-        for (let i = 0; i < result.grid_images.length; i++) {
-            for (let j = i + 1; j < result.grid_images.length; j++) {
-                const compareFormData = new FormData();
-                compareFormData.append('grid1_index', i);
-                compareFormData.append('grid2_index', j);
-                compareFormData.append('grid_size', gridSize);
-
-                const compareResponse = await fetch('/compare_grids', {
-                    method: 'POST',
-                    body: compareFormData
-                });
-                const compareResult = await compareResponse.json();
-                
-                if (!compareResult.error) {
-                    comparisonResults.push({
-                        grid1: i + 1,
-                        grid2: j + 1,
-                        score: compareResult.match_score
-                    });
-                }
-            }
-        }
-
-        // عرض النتائج
-        const gridResults = document.getElementById('gridResults');
-        gridResults.innerHTML = '';
-        
-        comparisonResults.forEach(result => {
-            const div = document.createElement('div');
-            div.className = 'grid-item';
-            div.innerHTML = `
-                <div class="match-score ${result.score >= 70 ? 'high' : result.score >= 50 ? 'medium' : 'low'}">
-                    المربع ${result.grid1} مع المربع ${result.grid2}: ${result.score.toFixed(1)}%
-                </div>
-            `;
-            gridResults.appendChild(div);
-        });
-
-        // عرض إحصائيات عامة
-        const avgScore = comparisonResults.reduce((sum, r) => sum + r.score, 0) / comparisonResults.length;
-        document.getElementById('avgScore').textContent = avgScore.toFixed(1);
-        document.getElementById('overallScore').style.width = `${avgScore}%`;
-        document.getElementById('overallScore').textContent = `${avgScore.toFixed(1)}%`;
-        document.getElementById('overallScore').className = 'progress-bar ' + 
-            (avgScore >= 70 ? 'bg-success' : avgScore >= 50 ? 'bg-warning' : 'bg-danger');
-
-    } catch (error) {
-        alert('حدث خطأ: ' + error.message);
-    }
-}
-
-// مقارنة البصمات المتعددة بين الصورتين
-async function crossCompareFingerprints() {
-    const file1 = document.getElementById('fingerprint1').files[0];
-    const file2 = document.getElementById('fingerprint2').files[0];
-    if (!file1 || !file2) return;
-
-    try {
-        // تقسيم البصمة الأولى
-        const formData1 = new FormData();
-        formData1.append('file', file1);
-        formData1.append('grid_size', gridSize);
-        const response1 = await fetch('/split_fingerprint', {
-            method: 'POST',
-            body: formData1
-        });
-        const result1 = await response1.json();
-
-        // تقسيم البصمة الثانية
-        const formData2 = new FormData();
-        formData2.append('file', file2);
-        formData2.append('grid_size', gridSize);
-        const response2 = await fetch('/split_fingerprint', {
-            method: 'POST',
-            body: formData2
-        });
-        const result2 = await response2.json();
-
-        if (result1.error || result2.error) {
-            throw new Error(result1.error || result2.error);
-        }
-
-        // إنشاء مصفوفة لتخزين نتائج المقارنة
         const comparisonResults = [];
         
         // مقارنة كل مربع من البصمة الأولى مع كل مربع من البصمة الثانية
-        for (let i = 0; i < result1.grid_images.length; i++) {
-            for (let j = 0; j < result2.grid_images.length; j++) {
+        for (let i = 0; i < gridImages1.length; i++) {
+            for (let j = 0; j < gridImages2.length; j++) {
                 const compareFormData = new FormData();
                 compareFormData.append('grid1_index', i);
                 compareFormData.append('grid2_index', j);
-                compareFormData.append('grid_size', gridSize);
+                compareFormData.append('grid_size', Math.max(gridSize1, gridSize2));
 
                 const compareResponse = await fetch('/compare_grids', {
                     method: 'POST',
@@ -247,28 +157,8 @@ async function crossCompareFingerprints() {
             }
         }
 
-        // عرض النتائج
-        const gridResults = document.getElementById('gridResults');
-        gridResults.innerHTML = '';
-        
-        comparisonResults.forEach(result => {
-            const div = document.createElement('div');
-            div.className = 'grid-item';
-            div.innerHTML = `
-                <div class="match-score ${result.score >= 70 ? 'high' : result.score >= 50 ? 'medium' : 'low'}">
-                    المربع ${result.grid1} من البصمة الأولى مع المربع ${result.grid2} من البصمة الثانية: ${result.score.toFixed(1)}%
-                </div>
-            `;
-            gridResults.appendChild(div);
-        });
-
-        // عرض إحصائيات عامة
-        const avgScore = comparisonResults.reduce((sum, r) => sum + r.score, 0) / comparisonResults.length;
-        document.getElementById('avgScore').textContent = avgScore.toFixed(1);
-        document.getElementById('overallScore').style.width = `${avgScore}%`;
-        document.getElementById('overallScore').textContent = `${avgScore.toFixed(1)}%`;
-        document.getElementById('overallScore').className = 'progress-bar ' + 
-            (avgScore >= 70 ? 'bg-success' : avgScore >= 50 ? 'bg-warning' : 'bg-danger');
+        // معالجة وعرض النتائج
+        handleComparisonResults(comparisonResults);
 
     } catch (error) {
         alert('حدث خطأ: ' + error.message);
@@ -278,8 +168,12 @@ async function crossCompareFingerprints() {
 // إضافة مستمعي الأحداث
 document.addEventListener('DOMContentLoaded', function() {
     // تحديث حجم الشبكة
-    document.getElementById('gridSize').addEventListener('change', function() {
-        gridSize = parseInt(this.value);
+    document.getElementById('gridSize1').addEventListener('change', function() {
+        gridSize1 = parseInt(this.value);
+    });
+
+    document.getElementById('gridSize2').addEventListener('change', function() {
+        gridSize2 = parseInt(this.value);
     });
 
     // معاينة الصور
@@ -294,22 +188,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // تقسيم البصمات
-    document.getElementById('splitBtn').addEventListener('click', function() {
+    document.getElementById('splitBtn1').addEventListener('click', function() {
         const file = document.getElementById('fingerprint1').files[0];
         if (!file) return;
-        splitFingerprint(file, gridSize, document.getElementById('grid1'));
+        splitFingerprint(file, gridSize1, 'grid1', gridImages1, 'timestamp1');
     });
 
     document.getElementById('splitBtn2').addEventListener('click', function() {
         const file = document.getElementById('fingerprint2').files[0];
         if (!file) return;
-        splitFingerprint(file, gridSize, document.getElementById('grid2'));
+        splitFingerprint(file, gridSize2, 'grid2', gridImages2, 'timestamp2');
     });
 
-    // مقارنة البصمات
+    // مقارنة المربعات
     document.getElementById('compareBtn').addEventListener('click', compareGrids);
-
-    // إضافة مستمعي الأحداث للأزرار الجديدة
-    document.getElementById('multipleBtn').addEventListener('click', analyzeMultipleFingerprints);
-    document.getElementById('crossCompareBtn').addEventListener('click', crossCompareFingerprints);
 }); 

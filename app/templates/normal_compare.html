@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}مقارنة عادية{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    .result-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-top: 1rem;
+    }
+    .progress {
+        height: 25px;
+        margin: 1rem 0;
+    }
+    .progress-bar {
+        font-size: 1rem;
+        line-height: 25px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">مقارنة عادية</h4>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">البصمة الأولى</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="fingerprint1" class="form-label">اختر صورة البصمة الأولى</label>
+                                        <input type="file" class="form-control" id="fingerprint1" name="fingerprint1" accept="image/*" required>
+                                    </div>
+                                    <div id="preview1" class="text-center">
+                                        <img id="preview1_img" class="preview-image" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">البصمة الثانية</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="fingerprint2" class="form-label">اختر صورة البصمة الثانية</label>
+                                        <input type="file" class="form-control" id="fingerprint2" name="fingerprint2" accept="image/*" required>
+                                    </div>
+                                    <div id="preview2" class="text-center">
+                                        <img id="preview2_img" class="preview-image" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">إعدادات المقارنة</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="minutiaeCount" class="form-label">عدد نقاط التفاصيل</label>
+                                                <input type="range" class="form-range" id="minutiaeCount" name="minutiaeCount" min="50" max="200" value="100">
+                                                <div class="text-center">
+                                                    <span id="minutiaeCountValue">100</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="matchingMode" class="form-label">وضع المطابقة</label>
+                                                <select class="form-select" id="matchingMode" name="matchingMode">
+                                                    <option value="false">مطابقة كاملة</option>
+                                                    <option value="true">مطابقة جزئية</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            بدء المقارنة
+                        </button>
+                    </div>
+                </form>
+
+                <div id="results" style="display: none;">
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">نتائج المقارنة</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>نقاط التفاصيل - البصمة الأولى</h6>
+                                            <img id="minutiae1_img" class="result-image">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>نقاط التفاصيل - البصمة الثانية</h6>
+                                            <img id="minutiae2_img" class="result-image">
+                                        </div>
+                                    </div>
+                                    <div class="row mt-4">
+                                        <div class="col-md-12">
+                                            <h6>نتيجة المطابقة</h6>
+                                            <img id="match_img" class="result-image">
+                                        </div>
+                                    </div>
+                                    <div class="row mt-4">
+                                        <div class="col-md-6">
+                                            <div class="progress">
+                                                <div id="matchScore" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                                                    0%
+                                                </div>
+                                            </div>
+                                            <div class="text-center mt-2">
+                                                <h5 id="matchResult" class="text-success">نتيجة المطابقة</h5>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="progress">
+                                                <div id="qualityScore" class="progress-bar bg-info" role="progressbar" style="width: 0%">
+                                                    0%
+                                                </div>
+                                            </div>
+                                            <div class="text-center mt-2">
+                                                <h5 id="qualityResult" class="text-info">جودة المطابقة</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // معاينة الصور
+    function previewImage(input, previewId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $(previewId).attr('src', e.target.result).show();
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    $('#fingerprint1').change(function() {
+        previewImage(this, '#preview1_img');
+    });
+
+    $('#fingerprint2').change(function() {
+        previewImage(this, '#preview2_img');
+    });
+
+    // تحديث قيمة عدد نقاط التفاصيل
+    $('#minutiaeCount').on('input', function() {
+        $('#minutiaeCountValue').text($(this).val());
+    });
+
+    // معالجة تقديم النموذج
+    $('#uploadForm').submit(function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: '{{ url_for("fingerprint.upload_fingerprint") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function() {
+                $('#results').hide();
+                $('button[type="submit"]').prop('disabled', true).html(
+                    '<i class="fas fa-spinner fa-spin me-2"></i>جاري المعالجة...'
+                );
+            },
+            success: function(response) {
+                // عرض الصور المعالجة
+                $('#minutiae1_img').attr('src', response.minutiae_images.img1);
+                $('#minutiae2_img').attr('src', response.minutiae_images.img2);
+                $('#match_img').attr('src', response.matching_image);
+                
+                // تحديث النتائج
+                $('#matchScore').css('width', response.score + '%').text(response.score.toFixed(1) + '%');
+                $('#qualityScore').css('width', response.quality_score + '%').text(response.quality_score.toFixed(1) + '%');
+                
+                // تحديث النص
+                $('#matchResult').text(response.is_match ? 'مطابقة ناجحة' : 'مطابقة غير ناجحة')
+                    .removeClass('text-success text-danger')
+                    .addClass(response.is_match ? 'text-success' : 'text-danger');
+                
+                $('#qualityResult').text('جودة المطابقة: ' + response.quality_score.toFixed(1) + '%');
+                
+                // عرض النتائج
+                $('#results').show();
+            },
+            error: function(xhr, status, error) {
+                alert('حدث خطأ أثناء معالجة البصمات: ' + error);
+            },
+            complete: function() {
+                $('button[type="submit"]').prop('disabled', false).html(
+                    '<i class="fas fa-search me-2"></i>بدء المقارنة'
+                );
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

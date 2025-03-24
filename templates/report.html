@@ -3,147 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقرير تحليل البصمات - نظام مطابقة البصمات</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>تقرير المقارنة - نظام مطابقة البصمات</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .report-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .progress {
+            height: 25px;
+            font-size: 1rem;
+        }
+        .quality-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+        }
+        .section-title {
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .back-button {
+            margin-bottom: 20px;
+        }
+        .print-button {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-fingerprint"></i>
-                نظام مطابقة البصمات
-            </a>
-        </div>
-    </nav>
-
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="card shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-center mb-4">تقرير تحليل البصمات</h2>
-                        
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">البصمة الأولى - التحليل</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <img src="{{ url_for('static', filename='images/processed/' + timestamp + '_1_processed.png') }}" 
-                                                     class="img-fluid mb-3" alt="البصمة الأولى المعالجة">
-                                                <h6>الصورة المعالجة</h6>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <img src="{{ url_for('static', filename='images/processed/' + timestamp + '_1_minutiae.png') }}" 
-                                                     class="img-fluid mb-3" alt="نقاط التفرد">
-                                                <h6>نقاط التفرد</h6>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">البصمة الثانية - التحليل</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <img src="{{ url_for('static', filename='images/processed/' + timestamp + '_2_processed.png') }}" 
-                                                     class="img-fluid mb-3" alt="البصمة الثانية المعالجة">
-                                                <h6>الصورة المعالجة</h6>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <img src="{{ url_for('static', filename='images/processed/' + timestamp + '_2_minutiae.png') }}" 
-                                                     class="img-fluid mb-3" alt="نقاط التفرد">
-                                                <h6>نقاط التفرد</h6>
-                                            </div>
-                                        </div>
-                                    </div>
+<body>
+    <div class="container py-5">
+        <a href="/" class="btn btn-outline-primary back-button">
+            <i class="bi bi-arrow-right"></i> العودة للصفحة الرئيسية
+        </a>
+        
+        <button onclick="window.print()" class="btn btn-primary print-button">
+            <i class="bi bi-printer"></i> طباعة التقرير
+        </button>
+        
+        <div class="report-container">
+            <h1 class="text-center mb-4">تقرير مقارنة البصمات</h1>
+            <p class="text-center text-muted mb-4">
+                تاريخ التقرير: {{ report.timestamp }}
+            </p>
+            
+            <!-- نتائج المطابقة -->
+            <div class="mb-5">
+                <h3 class="section-title">نتائج المطابقة</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">درجة التطابق الكلية</label>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: {{ report.totalScore }}%">
+                                    {{ report.totalScore }}%
                                 </div>
                             </div>
                         </div>
-
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">تفاصيل المطابقة</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6>إحصائيات نقاط التفرد</h6>
-                                        <ul class="list-group">
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                عدد نقاط التفرد في البصمة الأولى
-                                                <span class="badge bg-primary rounded-pill">{{ minutiae_stats.fp1_count }}</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                عدد نقاط التفرد في البصمة الثانية
-                                                <span class="badge bg-primary rounded-pill">{{ minutiae_stats.fp2_count }}</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                عدد النقاط المتطابقة
-                                                <span class="badge bg-success rounded-pill">{{ minutiae_stats.matched_count }}</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6>مؤشرات التطابق</h6>
-                                        <ul class="list-group">
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                نسبة تطابق نقاط التفرد
-                                                <span class="badge bg-info rounded-pill">{{ "%.2f"|format(score_details.minutiae_score) }}%</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                نسبة تطابق الاتجاهات
-                                                <span class="badge bg-info rounded-pill">{{ "%.2f"|format(score_details.orientation_score) }}%</span>
-                                            </li>
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                النتيجة النهائية
-                                                <span class="badge {% if final_score >= match_threshold %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
-                                                    {{ "%.2f"|format(final_score) }}%
-                                                </span>
-                                            </li>
-                                        </ul>
-                                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">نقاط التفاصيل المتطابقة</label>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ report.minutiaeScore }}%">
+                                    {{ report.minutiaeScore }}%
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">صورة المطابقة النهائية</h5>
-                            </div>
-                            <div class="card-body text-center">
-                                <img src="{{ url_for('static', filename='images/results/' + timestamp + '_match_visualization.png') }}" 
-                                     class="img-fluid" alt="صورة المطابقة">
-                                <p class="mt-3">توضيح بصري للنقاط المتطابقة بين البصمتين</p>
-                            </div>
-                        </div>
-
-                        <div class="text-center mt-4">
-                            <a href="{{ url_for('download_report', timestamp=timestamp) }}" class="btn btn-primary me-2">
-                                <i class="bi bi-download"></i>
-                                تحميل التقرير كملف PDF
-                            </a>
-                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-repeat"></i>
-                                مقارنة جديدة
-                            </a>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">اتجاه الخطوط</label>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ report.orientationScore }}%">
+                                    {{ report.orientationScore }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">كثافة الخطوط</label>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ report.densityScore }}%">
+                                    {{ report.densityScore }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <span class="badge quality-badge {{ 'bg-success' if report.qualityLevel == 'ممتاز' else 'bg-primary' if report.qualityLevel == 'جيد' else 'bg-warning' if report.qualityLevel == 'متوسط' else 'bg-danger' }}">
+                        مستوى التطابق: {{ report.qualityLevel }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- تحليل الجودة -->
+            <div class="mb-5">
+                <h3 class="section-title">تحليل الجودة</h3>
+                <div class="row">
+                    {% for quality in report.qualityAnalysis %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ quality.name }}</h5>
+                                <p class="card-text">{{ quality.value }}</p>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ quality.score }}%">
+                                        {{ quality.score }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- تحليل التشوهات -->
+            <div class="mb-5">
+                <h3 class="section-title">تحليل التشوهات</h3>
+                <div class="row">
+                    {% for distortion in report.distortionAnalysis %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ distortion.type }}</h5>
+                                <p class="card-text">{{ distortion.description }}</p>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ distortion.severity }}%">
+                                        {{ distortion.severity }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- المشاكل والتوصيات -->
+            <div class="row">
+                <div class="col-md-6 mb-5">
+                    <h3 class="section-title">المشاكل المكتشفة</h3>
+                    <ul class="list-group">
+                        {% for issue in report.issues %}
+                        <li class="list-group-item text-danger">
+                            <i class="bi bi-exclamation-circle"></i> {{ issue }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="col-md-6 mb-5">
+                    <h3 class="section-title">التوصيات</h3>
+                    <ul class="list-group">
+                        {% for recommendation in report.recommendations %}
+                        <li class="list-group-item text-success">
+                            <i class="bi bi-check-circle"></i> {{ recommendation }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- صورة المطابقة -->
+            <div class="mb-5">
+                <h3 class="section-title">صورة المطابقة</h3>
+                <div class="text-center">
+                    <img src="{{ report.matchingImage }}" alt="صورة المطابقة" class="img-fluid">
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

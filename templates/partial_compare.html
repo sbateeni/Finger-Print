@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المطابقة الجزئية - نظام مطابقة البصمات</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .fingerprint-container {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .fingerprint-container:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .fingerprint-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+        }
+        .result-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress {
+            height: 25px;
+            font-size: 1rem;
+        }
+        .back-button {
+            margin-bottom: 20px;
+        }
+        .match-region {
+            border: 2px solid #28a745;
+            position: absolute;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <a href="/" class="btn btn-outline-primary back-button">
+            <i class="bi bi-arrow-right"></i> العودة للصفحة الرئيسية
+        </a>
+        
+        <h1 class="text-center mb-4">المطابقة الجزئية</h1>
+        <p class="text-center text-muted mb-4">قم بتحميل بصمة كاملة وبصمة جزئية للمقارنة</p>
+        
+        <div class="row">
+            <!-- البصمة الكاملة -->
+            <div class="col-md-6 mb-4">
+                <div class="fingerprint-container" id="fullFingerprint-container">
+                    <i class="bi bi-fingerprint" style="font-size: 3rem;"></i>
+                    <h5>البصمة الكاملة</h5>
+                    <input type="file" id="fullFingerprint" accept="image/*" class="d-none">
+                    <img id="previewFull" class="fingerprint-preview d-none">
+                </div>
+            </div>
+            
+            <!-- البصمة الجزئية -->
+            <div class="col-md-6 mb-4">
+                <div class="fingerprint-container" id="partialFingerprint-container">
+                    <i class="bi bi-scissors" style="font-size: 3rem;"></i>
+                    <h5>البصمة الجزئية</h5>
+                    <input type="file" id="partialFingerprint" accept="image/*" class="d-none">
+                    <img id="previewPartial" class="fingerprint-preview d-none">
+                </div>
+            </div>
+        </div>
+        
+        <!-- خيارات المطابقة -->
+        <div class="row mb-4">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">خيارات المطابقة</h5>
+                        <div class="mb-3">
+                            <label class="form-label">عدد نقاط التفاصيل</label>
+                            <input type="range" class="form-range" id="minutiaeCount" min="50" max="200" value="100">
+                            <div class="text-center" id="minutiaeCountValue">100</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">حساسية المطابقة</label>
+                            <select class="form-select" id="sensitivity">
+                                <option value="high">عالية</option>
+                                <option value="medium" selected>متوسطة</option>
+                                <option value="low">منخفضة</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary w-100" id="compareBtn" disabled>
+                            <i class="bi bi-search"></i> بدء المقارنة
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- نتائج المطابقة -->
+        <div class="result-container" id="resultContainer">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">نتائج المطابقة</h5>
+                            <div class="mb-3">
+                                <label class="form-label">درجة التطابق الكلية</label>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="text-center mt-2" id="totalScore">0%</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">نقاط التفاصيل المتطابقة</label>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="text-center mt-2" id="minutiaeScore">0%</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">اتجاه الخطوط</label>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="text-center mt-2" id="orientationScore">0%</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">كثافة الخطوط</label>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="text-center mt-2" id="densityScore">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">تحليل النتيجة</h5>
+                            <div id="qualityAnalysis">
+                                <div class="mb-3">
+                                    <strong>مستوى التطابق:</strong>
+                                    <span id="qualityLevel" class="badge bg-secondary">-</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>موقع المطابقة:</strong>
+                                    <p id="matchLocation" class="text-muted">-</p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>المشاكل المكتشفة:</strong>
+                                    <ul id="issues" class="list-unstyled"></ul>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>التوصيات:</strong>
+                                    <ul id="recommendations" class="list-unstyled"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">صورة المطابقة</h5>
+                            <div class="position-relative">
+                                <img id="matchingImage" class="img-fluid" alt="صورة المطابقة">
+                                <div id="matchRegion" class="match-region d-none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn btn-success" id="generateReportBtn">
+                    <i class="bi bi-file-earmark-text"></i> إنشاء تقرير
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/partial_compare.js') }}"></script>
+</body>
+</html> 

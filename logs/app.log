@@ -187,3 +187,483 @@
 2025-03-23 19:46:22,130 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_3_2.png HTTP/1.1" 200 -
 2025-03-23 19:46:22,139 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_3_1.png HTTP/1.1" 200 -
 2025-03-23 19:46:22,141 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2025 19:46:22] "GET /static/images/processed/20250323_194622_grid_3_3.png HTTP/1.1" 200 -
+2025-03-24 11:06:55,824 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:06:55,824 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:06:55,827 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:06:57,002 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:06:57,021 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:07:04,296 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:04] "GET / HTTP/1.1" 200 -
+2025-03-24 11:07:04,833 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:04] "GET /static/js/script.js HTTP/1.1" 200 -
+2025-03-24 11:07:04,834 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:04] "GET /static/css/style.css HTTP/1.1" 200 -
+2025-03-24 11:07:05,409 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:05] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-03-24 11:07:44,263 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:44] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:07:49,676 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:49] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:07:57,229 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:07:57] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:08:40,274 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:08:40] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:08:42,569 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:08:42] "GET / HTTP/1.1" 200 -
+2025-03-24 11:08:42,595 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:08:42] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:08:42,598 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:08:42] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2025-03-24 11:08:52,234 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:08:52] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:09:11,752 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:09:11] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:09:25,401 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:09:25,401 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:09:25,403 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:09:26,303 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:09:26,312 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:09:33,028 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:09:33] "GET / HTTP/1.1" 200 -
+2025-03-24 11:09:33,183 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:09:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:09:33,184 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:09:33] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2025-03-24 11:09:43,093 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:09:43] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:10:50,929 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:10:50] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:10:55,570 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:10:55,740 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:10:56,957 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:10:56,967 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:11:02,054 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:11:02] "[31m[1mPOST /cut_fingerprint HTTP/1.1[0m" 400 -
+2025-03-24 11:11:39,592 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:11:39,727 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:11:40,827 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:11:40,836 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:11:44,824 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:11:44] "[31m[1mPOST /cut_fingerprint HTTP/1.1[0m" 400 -
+2025-03-24 11:11:56,015 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:11:56] "[31m[1mPOST /cut_fingerprint HTTP/1.1[0m" 400 -
+2025-03-24 11:12:02,331 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:12:02] "GET / HTTP/1.1" 200 -
+2025-03-24 11:12:02,557 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:12:02] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2025-03-24 11:12:02,579 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:12:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:12:12,778 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:12:12] "[31m[1mPOST /cut_fingerprint HTTP/1.1[0m" 400 -
+2025-03-24 11:13:35,544 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:35] "GET / HTTP/1.1" 200 -
+2025-03-24 11:13:35,569 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:35] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:13:35,574 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:35] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2025-03-24 11:13:52,723 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:52] "GET / HTTP/1.1" 200 -
+2025-03-24 11:13:52,745 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:13:52,746 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:52] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2025-03-24 11:13:57,330 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:57] "GET / HTTP/1.1" 200 -
+2025-03-24 11:13:57,346 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:57] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:13:57,347 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:13:57] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2025-03-24 11:14:32,481 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:14:32] "[31m[1mPOST /cut_fingerprint HTTP/1.1[0m" 400 -
+2025-03-24 11:15:27,757 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:27] "GET / HTTP/1.1" 200 -
+2025-03-24 11:15:31,908 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:31] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:15:34,939 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:34] "GET /grid_cutter HTTP/1.1" 200 -
+2025-03-24 11:15:34,958 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:34] "GET /static/js/grid_cutter.js HTTP/1.1" 200 -
+2025-03-24 11:15:34,961 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:34] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:15:44,482 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "POST /process_grids HTTP/1.1" 200 -
+2025-03-24 11:15:44,496 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r1_c3.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,497 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r1_c2.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,497 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_visualization.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,497 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r1_c1.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,497 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r2_c2.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,497 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r2_c1.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,518 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r2_c3.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,522 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r3_c1.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,524 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r3_c2.png HTTP/1.1" 200 -
+2025-03-24 11:15:44,529 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:44] "GET /static/images/results/grids_20250324_111544/grid_r3_c3.png HTTP/1.1" 200 -
+2025-03-24 11:15:54,468 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:54] "GET / HTTP/1.1" 200 -
+2025-03-24 11:15:56,176 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:56] "[33mGET /advanced_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:15:59,847 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:59] "GET /grid_cutter HTTP/1.1" 200 -
+2025-03-24 11:15:59,870 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:15:59,877 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:15:59] "[36mGET /static/js/grid_cutter.js HTTP/1.1[0m" 304 -
+2025-03-24 11:16:07,148 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "POST /process_grids HTTP/1.1" 200 -
+2025-03-24 11:16:07,163 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_visualization.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,163 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r1_c1.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,165 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r1_c2.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,165 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r2_c1.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,165 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r1_c3.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,166 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r2_c2.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,188 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r2_c3.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,191 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r3_c1.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,193 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r3_c2.png HTTP/1.1" 200 -
+2025-03-24 11:16:07,194 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:07] "GET /static/images/results/grids_20250324_111607/grid_r3_c3.png HTTP/1.1" 200 -
+2025-03-24 11:16:14,465 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:14] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-24 11:16:14,481 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:14] "GET /static/js/grid_compare.js HTTP/1.1" 200 -
+2025-03-24 11:16:25,348 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:16:25,363 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_1_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,363 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_1_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,365 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_1_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,368 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_2_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,372 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_2_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,378 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_2_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,399 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_3_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,401 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_3_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:25,406 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:25] "GET /static/images/processed/20250324_111625_grid_3_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:35,779 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:35] "[33mGET /settings HTTP/1.1[0m" 404 -
+2025-03-24 11:16:41,618 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:41] "GET / HTTP/1.1" 200 -
+2025-03-24 11:16:43,099 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:43] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-24 11:16:43,113 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:43] "[36mGET /static/js/grid_compare.js HTTP/1.1[0m" 304 -
+2025-03-24 11:16:51,190 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:16:51,204 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_2_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,205 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_1_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,205 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_1_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,205 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_1_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,206 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_2_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,206 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_2_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,220 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_3_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,228 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_3_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:51,229 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:51] "GET /static/images/processed/20250324_111651_grid_3_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,021 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:16:53,035 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_1_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,037 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_1_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,037 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_2_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,037 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_1_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,038 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_2_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,038 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_2_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,054 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_3_3.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,057 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_3_1.png HTTP/1.1" 200 -
+2025-03-24 11:16:53,058 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:53] "GET /static/images/processed/20250324_111652_grid_3_2.png HTTP/1.1" 200 -
+2025-03-24 11:16:54,306 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,320 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,326 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,334 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,341 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,346 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,353 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,359 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,365 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,374 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,379 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,388 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,395 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,403 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,409 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,416 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,423 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,428 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,435 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,441 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,449 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,456 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,462 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,469 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,475 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,482 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,490 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,496 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,503 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,510 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,517 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,524 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,530 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,538 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,544 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,551 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,558 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,564 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,571 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,578 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,585 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,592 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,599 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,607 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,613 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,620 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,626 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,633 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,640 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,646 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,653 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,659 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,667 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,675 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,681 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,690 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,696 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,701 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,710 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,716 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,723 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,729 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,736 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,743 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,749 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,756 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,763 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,773 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,779 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,786 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,792 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,798 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,806 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,812 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,821 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,828 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,836 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,842 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,849 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,857 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:16:54,863 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:16:54] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:00,577 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:00] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-24 11:17:00,592 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:00] "[36mGET /static/js/grid_compare.js HTTP/1.1[0m" 304 -
+2025-03-24 11:17:07,809 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:17:07,822 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_2_1.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,822 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_1_1.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,823 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_1_2.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,824 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_1_3.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,825 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_2_2.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,825 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_2_3.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,832 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_3_1.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,845 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_3_2.png HTTP/1.1" 200 -
+2025-03-24 11:17:07,849 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:07] "GET /static/images/processed/20250324_111707_grid_3_3.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,095 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "POST /cut_fingerprint HTTP/1.1" 200 -
+2025-03-24 11:17:12,108 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_1_1.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,109 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_2_1.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,110 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_1_2.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,110 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_2_2.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,110 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_1_3.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,113 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_2_3.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,128 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_3_1.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,129 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_3_2.png HTTP/1.1" 200 -
+2025-03-24 11:17:12,132 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:12] "GET /static/images/processed/20250324_111712_grid_3_3.png HTTP/1.1" 200 -
+2025-03-24 11:17:13,532 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,543 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,549 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,556 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,562 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,568 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,575 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,581 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,586 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,596 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,602 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,610 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,616 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,623 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,630 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,636 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,644 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,650 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,657 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,663 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,669 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,677 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,683 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,690 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,696 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,702 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,709 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,715 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,722 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,729 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,735 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,743 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,749 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,757 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,764 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,769 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,778 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,783 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,790 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,797 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,802 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,810 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,816 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,822 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,829 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,835 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,843 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,848 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,854 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,862 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,868 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,876 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,882 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,887 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,895 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,900 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,908 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,914 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,919 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,927 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,932 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,939 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,946 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,951 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,958 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,964 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,970 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,978 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,983 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,990 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:13,997 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:13] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,002 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,010 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,016 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,025 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,031 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,037 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,045 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,050 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,058 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:14,064 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:14] "[33mPOST /compare_grids HTTP/1.1[0m" 404 -
+2025-03-24 11:17:25,879 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:25] "[33mGET /advanced_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:17:28,232 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:28] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:17:31,328 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:31] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:17:33,969 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:33] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-24 11:17:33,985 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:33] "[36mGET /static/js/grid_compare.js HTTP/1.1[0m" 304 -
+2025-03-24 11:17:36,553 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:36] "GET /grid_cutter HTTP/1.1" 200 -
+2025-03-24 11:17:36,569 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:36] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:17:36,573 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:36] "[36mGET /static/js/grid_cutter.js HTTP/1.1[0m" 304 -
+2025-03-24 11:17:40,121 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:40] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:17:42,785 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:42] "[33mGET /settings HTTP/1.1[0m" 404 -
+2025-03-24 11:17:53,634 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:53] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:17:56,139 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:17:56] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:18:03,780 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:18:03] "[33mGET /advanced_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:18:47,678 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:18:47] "[33mGET /advanced_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:18:49,557 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:18:49] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:19:05,417 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:05] "[33mGET /settings HTTP/1.1[0m" 404 -
+2025-03-24 11:19:07,588 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:07] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:19:09,667 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:09] "GET /grid_cutter HTTP/1.1" 200 -
+2025-03-24 11:19:09,731 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:09] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:19:09,745 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:09] "[36mGET /static/js/grid_cutter.js HTTP/1.1[0m" 304 -
+2025-03-24 11:19:11,770 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:11] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-24 11:19:11,789 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:11] "[36mGET /static/js/grid_compare.js HTTP/1.1[0m" 304 -
+2025-03-24 11:19:16,715 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:16] "[33mGET /advanced_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:19:19,627 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:19] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:19:22,227 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:22] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:19:33,014 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:19:33] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:19:58,959 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:19:59,121 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:20:02,661 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:20:02,670 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:20:02,693 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:20:02] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:21:20,371 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:21:20,547 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:21:21,731 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:21:21,740 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:21:24,438 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:21:24] "GET / HTTP/1.1" 200 -
+2025-03-24 11:21:25,972 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:21:25] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:21:27,626 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:21:27] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:21:35,899 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:21:36,105 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:23:08,518 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:23:08,519 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:23:08,527 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:23:09,638 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:23:09,648 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:23:11,539 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:23:11] "GET /advanced_compare HTTP/1.1" 200 -
+2025-03-24 11:23:11,680 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:23:11] "GET /static/js/advanced_compare.js HTTP/1.1" 200 -
+2025-03-24 11:23:28,461 - app - ERROR - Error in advanced_compare: 'bool' object is not callable
+2025-03-24 11:23:28,462 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:23:28] "[35m[1mPOST /advanced_compare HTTP/1.1[0m" 500 -
+2025-03-24 11:24:10,379 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:24:10,380 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:24:10,381 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:24:11,499 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:24:11,508 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:24:15,126 - app - ERROR - Error in advanced_compare: 'bool' object is not callable
+2025-03-24 11:24:15,128 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:15] "[35m[1mPOST /advanced_compare HTTP/1.1[0m" 500 -
+2025-03-24 11:24:20,215 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:20] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:24:22,635 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:22] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:24:25,371 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:25] "GET /advanced_compare HTTP/1.1" 200 -
+2025-03-24 11:24:25,491 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:25] "[36mGET /static/js/advanced_compare.js HTTP/1.1[0m" 304 -
+2025-03-24 11:24:27,667 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:27] "GET /grid_cutter HTTP/1.1" 200 -
+2025-03-24 11:24:27,686 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:27] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-03-24 11:24:27,689 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:27] "[36mGET /static/js/grid_cutter.js HTTP/1.1[0m" 304 -
+2025-03-24 11:24:30,567 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:30] "GET /grid_compare HTTP/1.1" 200 -
+2025-03-24 11:24:30,582 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:30] "[36mGET /static/js/grid_compare.js HTTP/1.1[0m" 304 -
+2025-03-24 11:24:35,225 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:35] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:24:37,753 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:24:37] "[33mGET /settings HTTP/1.1[0m" 404 -
+2025-03-24 11:25:12,070 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:25:12,071 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:25:12,073 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:25:13,167 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:25:13,177 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:25:15,007 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:25:15] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:25:37,305 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:25:37,306 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:25:37,308 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:25:38,291 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:25:38,300 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:25:42,278 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:25:42] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:26:13,906 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:26:14,074 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:26:15,122 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:26:15,131 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:29:24,255 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:29:24,387 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:29:25,512 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:29:25,522 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:29:26,759 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:29:26] "GET /reports HTTP/1.1" 200 -
+2025-03-24 11:30:50,896 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\config\\config.py', reloading
+2025-03-24 11:30:51,052 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:30:52,200 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:30:52,209 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:31:09,519 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\image_processing.py', reloading
+2025-03-24 11:31:09,669 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:31:10,910 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:31:10,919 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:31:33,285 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\minutiae_extraction.py', reloading
+2025-03-24 11:31:33,444 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:31:34,681 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:31:34,690 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:31:57,012 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\matcher.py', reloading
+2025-03-24 11:31:57,235 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:31:58,371 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:31:58,380 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:32:24,781 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 11:32:24,927 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:32:25,994 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:32:26,002 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:32:39,199 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app.py', reloading
+2025-03-24 11:32:39,334 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:36:58,464 - __main__ - INFO - Created/verified directory: uploads
+2025-03-24 11:36:58,464 - __main__ - INFO - Created/verified directory: static\images\processed
+2025-03-24 11:36:58,465 - __main__ - INFO - Created/verified directory: static\images\results
+2025-03-24 11:36:58,465 - __main__ - INFO - Created/verified directory: static\images\output
+2025-03-24 11:36:58,465 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 11:36:58,507 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 11:36:58,508 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 11:36:58,510 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:36:58,970 - __main__ - INFO - Created/verified directory: uploads
+2025-03-24 11:36:58,971 - __main__ - INFO - Created/verified directory: static\images\processed
+2025-03-24 11:36:58,971 - __main__ - INFO - Created/verified directory: static\images\results
+2025-03-24 11:36:58,972 - __main__ - INFO - Created/verified directory: static\images\output
+2025-03-24 11:36:58,972 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 11:36:58,999 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:36:59,009 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:37:10,218 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:10] "GET / HTTP/1.1" 200 -
+2025-03-24 11:37:11,501 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:11] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:37:19,160 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:19] "[33mGET /partial_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:37:22,112 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:22] "[33mGET /advanced_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:37:24,618 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:24] "[33mGET /grid_cutter HTTP/1.1[0m" 404 -
+2025-03-24 11:37:26,664 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:26] "[33mGET /grid_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:37:29,473 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:29] "[33mGET /reports HTTP/1.1[0m" 404 -
+2025-03-24 11:37:31,881 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:37:31] "[33mGET /settings HTTP/1.1[0m" 404 -
+2025-03-24 11:38:07,011 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:38:07] "[33mGET /normal_compare HTTP/1.1[0m" 404 -
+2025-03-24 11:39:23,982 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 11:39:24,051 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:39:24,550 - __main__ - INFO - Created/verified directory: uploads
+2025-03-24 11:39:24,551 - __main__ - INFO - Created/verified directory: static\images\processed
+2025-03-24 11:39:24,552 - __main__ - INFO - Created/verified directory: static\images\results
+2025-03-24 11:39:24,552 - __main__ - INFO - Created/verified directory: static\images\output
+2025-03-24 11:39:24,553 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 11:39:24,582 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:39:24,591 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:39:29,698 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 11:39:29,765 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 11:39:30,284 - __main__ - INFO - Created/verified directory: uploads
+2025-03-24 11:39:30,287 - __main__ - INFO - Created/verified directory: static\images\processed
+2025-03-24 11:39:30,290 - __main__ - INFO - Created/verified directory: static\images\results
+2025-03-24 11:39:30,292 - __main__ - INFO - Created/verified directory: static\images\output
+2025-03-24 11:39:30,293 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 11:39:30,369 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 11:39:30,382 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 11:39:31,308 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:31] "GET /normal_compare HTTP/1.1" 200 -
+2025-03-24 11:39:31,445 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:31] "GET /static/js/normal_compare.js HTTP/1.1" 200 -
+2025-03-24 11:39:33,469 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:33] "GET / HTTP/1.1" 200 -
+2025-03-24 11:39:34,476 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:34] "GET /partial_compare HTTP/1.1" 200 -
+2025-03-24 11:39:34,498 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:34] "GET /static/js/partial_compare.js HTTP/1.1" 200 -
+2025-03-24 11:39:44,112 - app.routes.fingerprint_routes - INFO - Starting fingerprint upload and processing...
+2025-03-24 11:39:44,125 - app.routes.fingerprint_routes - INFO - Parameters: minutiae_count=100, is_partial_mode=True
+2025-03-24 11:39:44,131 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 11:39:44,551 - app.routes.fingerprint_routes - ERROR - Error in upload_fingerprint: all the input array dimensions except for the concatenation axis must match exactly, but along dimension 0, the array at index 0 has size 1256 and the array at index 1 has size 408
+2025-03-24 11:39:44,554 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:44] "[35m[1mPOST /upload HTTP/1.1[0m" 500 -
+2025-03-24 11:39:50,735 - app.routes.fingerprint_routes - INFO - Starting fingerprint upload and processing...
+2025-03-24 11:39:50,749 - app.routes.fingerprint_routes - INFO - Parameters: minutiae_count=100, is_partial_mode=True
+2025-03-24 11:39:50,752 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 11:39:51,153 - app.routes.fingerprint_routes - ERROR - Error in upload_fingerprint: all the input array dimensions except for the concatenation axis must match exactly, but along dimension 0, the array at index 0 has size 1256 and the array at index 1 has size 408
+2025-03-24 11:39:51,156 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:39:51] "[35m[1mPOST /upload HTTP/1.1[0m" 500 -
+2025-03-24 11:40:14,095 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 11:40:14] "GET / HTTP/1.1" 200 -

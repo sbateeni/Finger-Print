@@ -87,72 +87,76 @@
         
         <div class="row">
             <div class="col-md-6">
-                <div class="upload-container">
-                    <h3>البصمة الأولى</h3>
-                    <input type="file" class="form-control" id="fingerprint1" accept="image/*">
-                    <img id="preview1" class="preview-image d-none">
-                    <div class="grid-controls">
-                        <div class="grid-size-selector">
-                            <label for="gridSize">حجم الشبكة:</label>
-                            <select class="form-select" id="gridSize">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">البصمة الكاملة</h5>
+                        <div class="mb-3">
+                            <label for="fingerprint1" class="form-label">اختر البصمة الكاملة</label>
+                            <input type="file" class="form-control" id="fingerprint1" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <img id="preview1" class="img-fluid d-none" alt="معاينة البصمة الأولى">
+                        </div>
+                        <div class="mb-3">
+                            <label for="gridSize1" class="form-label">حجم الشبكة</label>
+                            <select class="form-select" id="gridSize1">
                                 <option value="3">3×3</option>
                                 <option value="4">4×4</option>
                                 <option value="5">5×5</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary" id="splitBtn" disabled>تقسيم البصمة</button>
+                        <button id="splitBtn1" class="btn btn-primary mb-3" disabled>تقسيم البصمة إلى مربعات</button>
+                        <div id="grid1" class="grid-container"></div>
                     </div>
-                    <div id="grid1" class="grid-container"></div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="upload-container">
-                    <h3>البصمة الثانية</h3>
-                    <input type="file" class="form-control" id="fingerprint2" accept="image/*">
-                    <img id="preview2" class="preview-image d-none">
-                    <div class="grid-controls">
-                        <button class="btn btn-primary" id="splitBtn2" disabled>تقسيم البصمة</button>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">البصمة الجزئية</h5>
+                        <div class="mb-3">
+                            <label for="fingerprint2" class="form-label">اختر البصمة الجزئية</label>
+                            <input type="file" class="form-control" id="fingerprint2" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <img id="preview2" class="img-fluid d-none" alt="معاينة البصمة الثانية">
+                        </div>
+                        <div class="mb-3">
+                            <label for="gridSize2" class="form-label">حجم الشبكة</label>
+                            <select class="form-select" id="gridSize2">
+                                <option value="3">3×3</option>
+                                <option value="4">4×4</option>
+                                <option value="5">5×5</option>
+                            </select>
+                        </div>
+                        <button id="splitBtn2" class="btn btn-primary mb-3" disabled>تقسيم البصمة إلى مربعات</button>
+                        <div id="grid2" class="grid-container"></div>
                     </div>
-                    <div id="grid2" class="grid-container"></div>
                 </div>
             </div>
         </div>
-
-        <div class="text-center mt-4">
-            <button class="btn btn-primary btn-lg mx-2" id="compareBtn" disabled>
-                مقارنة البصمات
-            </button>
-            <button class="btn btn-success btn-lg mx-2" id="multipleBtn" disabled>
-                تحليل بصمات متعددة
-            </button>
-            <button class="btn btn-info btn-lg mx-2" id="crossCompareBtn" disabled>
-                مقارنة البصمات المتعددة بين الصورتين
-            </button>
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button id="compareBtn" class="btn btn-success" disabled>مقارنة المربعات</button>
+            </div>
         </div>
 
-        <div id="resultContainer" class="result-container">
-            <h2 class="text-center mb-4">نتيجة المقارنة</h2>
-            <div class="row">
-                <div class="col-md-6">
-                    <h4>نتائج المقارنة حسب الشبكة</h4>
-                    <div id="gridResults" class="grid-container"></div>
+        <div id="resultContainer" class="mt-4" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">نتائج المقارنة</h5>
                 </div>
-                <div class="col-md-6">
-                    <h4>إحصائيات المقارنة</h4>
-                    <div class="score-details">
-                        <div class="progress mb-3">
-                            <div id="overallScore" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <div class="score-detail">
-                            <p>متوسط نسبة التطابق: <span id="avgScore">0</span>%</p>
-                        </div>
-                        <div class="score-detail">
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        <div id="overallScore" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p>متوسط درجة التطابق: <span id="avgScore">0</span>%</p>
                             <p>عدد المربعات المتطابقة: <span id="matchingSquares">0</span></p>
                         </div>
-                        <div class="score-detail">
+                        <div class="col-md-6">
                             <p>جودة البصمة الأولى: <span id="quality1">0</span>%</p>
-                        </div>
-                        <div class="score-detail">
                             <p>جودة البصمة الثانية: <span id="quality2">0</span>%</p>
                         </div>
                     </div>
