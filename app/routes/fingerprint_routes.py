@@ -590,9 +590,9 @@ def upload_grid_fingerprint():
         return jsonify({'error': str(e)}), 500
 
 @fingerprint_bp.route('/upload_grid_compare', methods=['POST'])
-def upload_grid_compare_fingerprint():
+def upload_grid_compare():
     try:
-        logger.info("Starting grid comparison fingerprint upload and processing...")
+        logger.info("Starting grid comparison upload and processing...")
         
         # التحقق من وجود الملفات
         if 'fingerprint1' not in request.files or 'fingerprint2' not in request.files:
@@ -607,7 +607,7 @@ def upload_grid_compare_fingerprint():
         overlap = float(request.form.get('overlap', 20)) / 100
         matching_threshold = float(request.form.get('matchingThreshold', 80)) / 100
         
-        logger.info(f"Parameters: grid_rows={grid_rows}, grid_cols={grid_cols}, overlap={overlap}, matching_threshold={matching_threshold}")
+        logger.info(f"Grid parameters: rows={grid_rows}, cols={grid_cols}, overlap={overlap}, threshold={matching_threshold}")
         
         # التحقق من الملفات
         if fingerprint1.filename == '' or fingerprint2.filename == '':
@@ -637,38 +637,44 @@ def upload_grid_compare_fingerprint():
             return jsonify({'error': 'Error processing images'}), 400
         
         # إنشاء الشبكة
-        height1, width1 = processed1.shape[:2]
-        height2, width2 = processed2.shape[:2]
+        height1, width1 = processed1.shape
+        height2, width2 = processed2.shape
         
-        cell_width1 = int(width1 / grid_cols)
-        cell_height1 = int(height1 / grid_rows)
-        cell_width2 = int(width2 / grid_cols)
-        cell_height2 = int(height2 / grid_rows)
+        # حساب حجم الخلايا
+        cell_width1 = width1 // grid_cols
+        cell_height1 = height1 // grid_rows
+        cell_width2 = width2 // grid_cols
+        cell_height2 = height2 // grid_rows
         
-        # إنشاء صور الشبكة
-        grid_img1 = processed1.copy()
-        grid_img2 = processed2.copy()
+        # حساب التداخل
+        overlap_width1 = int(cell_width1 * overlap)
+        overlap_height1 = int(cell_height1 * overlap)
+        overlap_width2 = int(cell_width2 * overlap)
+        overlap_height2 = int(cell_height2 * overlap)
+        
+        # إنشاء الشبكة
+        grid_image1 = processed1.copy()
+        grid_image2 = processed2.copy()
         
         # رسم خطوط الشبكة
         for i in range(grid_rows + 1):
             y1 = i * cell_height1
             y2 = i * cell_height2
-            cv2.line(grid_img1, (0, y1), (width1, y1), (0, 255, 0), 1)
-            cv2.line(grid_img2, (0, y2), (width2, y2), (0, 255, 0), 1)
+            cv2.line(grid_image1, (0, y1), (width1, y1), (0, 255, 0), 1)
+            cv2.line(grid_image2, (0, y2), (width2, y2), (0, 255, 0), 1)
         
         for j in range(grid_cols + 1):
             x1 = j * cell_width1
             x2 = j * cell_width2
-            cv2.line(grid_img1, (x1, 0), (x1, height1), (0, 255, 0), 1)
-            cv2.line(grid_img2, (x2, 0), (x2, height2), (0, 255, 0), 1)
+            cv2.line(grid_image1, (x1, 0), (x1, height1), (0, 255, 0), 1)
+            cv2.line(grid_image2, (x2, 0), (x2, height2), (0, 255, 0), 1)
         
         # حفظ صور الشبكة
-        grid_path1 = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_grid.png')
-        grid_path2 = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_grid.png')
-        cv2.imwrite(grid_path1, grid_img1)
-        cv2.imwrite(grid_path2, grid_img2)
+        grid1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_grid.png')
+        grid2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_grid.png')
         
-        logger.info("Grid images created and saved successfully")
+        cv2.imwrite(grid1_path, grid_image1)
+        cv2.imwrite(grid2_path, grid_image2)
         
         # تحضير البيانات للرد
         response_data = {
@@ -679,18 +685,50 @@ def upload_grid_compare_fingerprint():
             'grid_info': {
                 'rows': grid_rows,
                 'cols': grid_cols,
-                'total_cells': grid_rows * grid_cols,
-                'cell_width1': cell_width1,
-                'cell_height1': cell_height1,
-                'cell_width2': cell_width2,
-                'cell_height2': cell_height2,
                 'overlap': overlap,
-                'matching_threshold': matching_threshold
+                'cell_size': {
+                    'width1': cell_width1,
+                    'height1': cell_height1,
+                    'width2': cell_width2,
+                    'height2': cell_height2
+                }
             }
         }
         
         return jsonify(response_data)
         
     except Exception as e:
-        logger.error(f"Error in upload_grid_compare_fingerprint: {str(e)}")
+        logger.error(f"Error in upload_grid_compare: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@fingerprint_bp.route('/get_reports', methods=['GET'])
+def get_reports():
+    try:
+        logger.info("Getting reports...")
+        
+        # قراءة ملفات التقارير من مجلد النتائج
+        reports = []
+        for filename in os.listdir(RESULTS_FOLDER):
+            if filename.endswith('.json'):
+                filepath = os.path.join(RESULTS_FOLDER, filename)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    report_data = json.load(f)
+                    reports.append({
+                        'filename': filename,
+                        'timestamp': report_data.get('timestamp', ''),
+                        'type': report_data.get('type', ''),
+                        'score': report_data.get('score', 0),
+                        'details': report_data.get('details', {})
+                    })
+        
+        # ترتيب التقارير حسب التاريخ (الأحدث أولاً)
+        reports.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        return jsonify({
+            'reports': reports,
+            'total': len(reports)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_reports: {str(e)}")
         return jsonify({'error': str(e)}), 500 

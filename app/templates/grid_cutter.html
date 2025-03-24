@@ -207,7 +207,7 @@ $(document).ready(function() {
         var formData = new FormData(this);
         
         $.ajax({
-            url: '{{ url_for("fingerprint.upload_grid") }}',
+            url: '{{ url_for("fingerprint.upload_grid_fingerprint") }}',
             type: 'POST',
             data: formData,
             processData: false,
