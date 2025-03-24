@@ -1027,3 +1027,99 @@
 2025-03-24 13:28:25,421 - __main__ - INFO - Created/verified directory: logs
 2025-03-24 13:28:25,454 - werkzeug - WARNING -  * Debugger is active!
 2025-03-24 13:28:25,464 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 13:33:18,017 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:18] "GET /advanced_compare HTTP/1.1" 200 -
+2025-03-24 13:33:20,527 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:20] "[35m[1mGET /normal_compare HTTP/1.1[0m" 500 -
+2025-03-24 13:33:20,689 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:20] "[36mGET /normal_compare?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-03-24 13:33:20,691 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:20] "[36mGET /normal_compare?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-03-24 13:33:20,738 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:20] "GET /normal_compare?__debugger__=yes&cmd=resource&f=console.png&s=E4TPZTavIdckRzMYgB7R HTTP/1.1" 200 -
+2025-03-24 13:33:20,741 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:20] "[36mGET /normal_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 13:33:20,791 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:33:20] "[36mGET /normal_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 13:34:36,106 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:34:36] "GET /normal_compare HTTP/1.1" 200 -
+2025-03-24 13:34:43,856 - app.routes.fingerprint_routes - INFO - Starting normal fingerprint upload and processing...
+2025-03-24 13:34:43,865 - app.routes.fingerprint_routes - INFO - Parameters: minutiae_count=100
+2025-03-24 13:34:43,868 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 13:34:44,628 - app.routes.fingerprint_routes - INFO - Images processed and saved successfully
+2025-03-24 13:34:44,630 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:34:44] "POST /upload_normal HTTP/1.1" 200 -
+2025-03-24 13:34:44,640 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:34:44] "GET /static/images/processed/20250324_133443_1_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:34:44,641 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:34:44] "GET /static/images/results/20250324_133443_match_visualization.png HTTP/1.1" 200 -
+2025-03-24 13:34:44,641 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:34:44] "GET /static/images/processed/20250324_133443_2_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:34:57,882 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:34:57] "GET /normal_compare HTTP/1.1" 200 -
+2025-03-24 13:35:05,937 - app.routes.fingerprint_routes - INFO - Starting normal fingerprint upload and processing...
+2025-03-24 13:35:05,950 - app.routes.fingerprint_routes - INFO - Parameters: minutiae_count=100
+2025-03-24 13:35:05,952 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 13:35:06,348 - app.routes.fingerprint_routes - INFO - Images processed and saved successfully
+2025-03-24 13:35:06,349 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:06] "POST /upload_normal HTTP/1.1" 200 -
+2025-03-24 13:35:06,357 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:06] "GET /static/images/processed/20250324_133505_1_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:35:06,358 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:06] "GET /static/images/processed/20250324_133505_2_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:35:06,358 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:06] "GET /static/images/results/20250324_133505_match_visualization.png HTTP/1.1" 200 -
+2025-03-24 13:35:17,031 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:17] "[35m[1mGET /partial_compare HTTP/1.1[0m" 500 -
+2025-03-24 13:35:17,052 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:17] "[36mGET /partial_compare?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-03-24 13:35:17,055 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:17] "[36mGET /partial_compare?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-03-24 13:35:17,184 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:17] "GET /partial_compare?__debugger__=yes&cmd=resource&f=console.png&s=E4TPZTavIdckRzMYgB7R HTTP/1.1" 200 -
+2025-03-24 13:35:17,187 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:17] "[36mGET /partial_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 13:35:17,235 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:35:17] "[36mGET /partial_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 13:36:07,627 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:07] "GET /partial_compare HTTP/1.1" 200 -
+2025-03-24 13:36:14,658 - app.routes.fingerprint_routes - INFO - Starting partial fingerprint upload and processing...
+2025-03-24 13:36:14,671 - app.routes.fingerprint_routes - INFO - Parameters: minutiae_count=100, matching_threshold=0.8
+2025-03-24 13:36:14,673 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 13:36:15,086 - app.routes.fingerprint_routes - INFO - Images processed and saved successfully
+2025-03-24 13:36:15,088 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:15] "POST /upload_partial HTTP/1.1" 200 -
+2025-03-24 13:36:15,097 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:15] "GET /static/images/processed/20250324_133614_partial_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:36:15,097 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:15] "GET /static/images/processed/20250324_133614_full_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:36:15,098 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:15] "GET /static/images/results/20250324_133614_match_visualization.png HTTP/1.1" 200 -
+2025-03-24 13:36:21,202 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:21] "GET /advanced_compare HTTP/1.1" 200 -
+2025-03-24 13:36:28,531 - app.routes.fingerprint_routes - INFO - Starting advanced fingerprint upload and processing...
+2025-03-24 13:36:28,544 - app.routes.fingerprint_routes - INFO - Parameters: image_quality=0.8, contrast=1.0, minutiae_count=100, minutiae_quality=0.8, matching_threshold=0.8, rotation_tolerance=30.0, algorithm=minutiae, is_partial_mode=False
+2025-03-24 13:36:28,546 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 13:36:28,792 - app.routes.fingerprint_routes - ERROR - Error in upload_advanced_fingerprint: match_fingerprints() got an unexpected keyword argument 'threshold'
+2025-03-24 13:36:28,794 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:36:28] "[35m[1mPOST /upload_advanced HTTP/1.1[0m" 500 -
+2025-03-24 13:37:21,641 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 13:37:21,731 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:37:22,364 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:37:22,365 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:37:22,366 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:37:22,367 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:37:22,368 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:37:22,417 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 13:37:22,430 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 13:37:48,946 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 13:37:49,011 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:37:49,477 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:37:49,478 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:37:49,479 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:37:49,479 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:37:49,480 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:37:49,510 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 13:37:49,520 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 13:38:07,800 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\matcher.py', reloading
+2025-03-24 13:38:07,872 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:38:08,331 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:38:08,332 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:38:08,332 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:38:08,333 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:38:08,333 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:38:08,363 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 13:38:08,373 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 13:38:20,633 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 13:38:20,716 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:38:21,185 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:38:21,186 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:38:21,187 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:38:21,187 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:38:21,188 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:38:21,218 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 13:38:21,228 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 13:39:40,585 - app.routes.fingerprint_routes - INFO - Starting advanced fingerprint upload and processing...
+2025-03-24 13:39:40,598 - app.routes.fingerprint_routes - INFO - Advanced parameters: image_quality=0.8, contrast=1.0, minutiae_count=100, minutiae_quality=0.8, matching_threshold=0.8, rotation_tolerance=30.0, algorithm=minutiae, is_partial_mode=False
+2025-03-24 13:39:40,601 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 13:39:41,009 - app.routes.fingerprint_routes - INFO - Images processed and saved successfully
+2025-03-24 13:39:41,011 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:41] "POST /upload_advanced HTTP/1.1" 200 -
+2025-03-24 13:39:41,190 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:41] "GET /static/images/results/20250324_133940_match_visualization.png HTTP/1.1" 200 -
+2025-03-24 13:39:41,194 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:41] "GET /static/images/processed/20250324_133940_1_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:39:41,195 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:41] "GET /static/images/processed/20250324_133940_2_minutiae.png HTTP/1.1" 200 -
+2025-03-24 13:39:46,642 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:46] "[35m[1mGET /grid_cutter HTTP/1.1[0m" 500 -
+2025-03-24 13:39:46,664 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:46] "[36mGET /grid_cutter?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-03-24 13:39:46,672 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:46] "[36mGET /grid_cutter?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-03-24 13:39:46,834 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:46] "GET /grid_cutter?__debugger__=yes&cmd=resource&f=console.png&s=l9o3Ami5LaxlYWKw7PaP HTTP/1.1" 200 -
+2025-03-24 13:39:46,838 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:46] "[36mGET /grid_cutter?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 13:39:46,902 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:39:46] "[36mGET /grid_cutter?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -

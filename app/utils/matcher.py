@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from .feature_extraction import extract_features
 
-def match_fingerprints(minutiae1, minutiae2, features1=None, features2=None):
+def match_fingerprints(minutiae1, minutiae2, features1=None, features2=None, threshold=0.8, rotation_tolerance=30, algorithm='minutiae', is_partial=False):
     """مطابقة البصمات باستخدام نقاط التفاصيل والخصائص"""
     try:
         if not minutiae1 or not minutiae2:
@@ -11,6 +11,9 @@ def match_fingerprints(minutiae1, minutiae2, features1=None, features2=None):
                 'score': 0,
                 'quality_score': 0
             }
+        
+        # تحويل زاوية الدوران إلى راديان
+        rotation_tolerance_rad = np.radians(rotation_tolerance)
         
         # حساب المسافات والزوايا بين النقاط
         matches = []
@@ -25,8 +28,8 @@ def match_fingerprints(minutiae1, minutiae2, features1=None, features2=None):
                 # حساب الفرق في الزاوية
                 angle_diff = abs(m1['angle'] - m2['angle'])
                 
-                # التحقق من تطابق النقطتين
-                if distance < 10 and angle_diff < np.pi/4:
+                # التحقق من تطابق النقطتين مع مراعاة زاوية الدوران
+                if distance < 10 and angle_diff < rotation_tolerance_rad:
                     if distance < min_distance:
                         min_distance = distance
                         best_match = m2
@@ -35,7 +38,12 @@ def match_fingerprints(minutiae1, minutiae2, features1=None, features2=None):
                 matches.append((m1, best_match))
         
         # حساب درجة التطابق
-        score = len(matches) / min(len(minutiae1), len(minutiae2))
+        if is_partial:
+            # في حالة المطابقة الجزئية، نستخدم عدد النقاط المطابقة مقسوماً على عدد نقاط البصمة الجزئية
+            score = len(matches) / len(minutiae2)
+        else:
+            # في حالة المطابقة الكاملة، نستخدم عدد النقاط المطابقة مقسوماً على متوسط عدد النقاط في البصمتين
+            score = len(matches) / min(len(minutiae1), len(minutiae2))
         
         # حساب درجة الجودة
         quality_score = calculate_quality_score(matches, features1, features2)

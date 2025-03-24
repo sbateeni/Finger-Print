@@ -411,9 +411,10 @@ def upload_advanced_fingerprint():
         algorithm = request.form.get('algorithm', 'minutiae')
         is_partial_mode = request.form.get('matchingMode') == 'true'
         
-        logger.info(f"Parameters: image_quality={image_quality}, contrast={contrast}, minutiae_count={minutiae_count}, "
-                   f"minutiae_quality={minutiae_quality}, matching_threshold={matching_threshold}, "
-                   f"rotation_tolerance={rotation_tolerance}, algorithm={algorithm}, is_partial_mode={is_partial_mode}")
+        logger.info(f"Advanced parameters: image_quality={image_quality}, contrast={contrast}, "
+                   f"minutiae_count={minutiae_count}, minutiae_quality={minutiae_quality}, "
+                   f"matching_threshold={matching_threshold}, rotation_tolerance={rotation_tolerance}, "
+                   f"algorithm={algorithm}, is_partial_mode={is_partial_mode}")
         
         # التحقق من الملفات
         if fingerprint1.filename == '' or fingerprint2.filename == '':
@@ -442,7 +443,7 @@ def upload_advanced_fingerprint():
         if processed1 is None or processed2 is None:
             return jsonify({'error': 'Error processing images'}), 400
         
-        # استخراج نقاط التفاصيل مع جودة محسنة
+        # استخراج نقاط التفاصيل
         minutiae1 = extract_minutiae(processed1, minutiae_count, minutiae_quality)
         minutiae2 = extract_minutiae(processed2, minutiae_count, minutiae_quality)
         
@@ -450,7 +451,7 @@ def upload_advanced_fingerprint():
         features1 = extract_features(processed1)
         features2 = extract_features(processed2)
         
-        # مطابقة البصمات مع المعلمات المتقدمة
+        # مطابقة البصمات
         match_result = match_fingerprints(
             minutiae1, minutiae2, features1, features2,
             threshold=matching_threshold,
@@ -492,7 +493,7 @@ def upload_advanced_fingerprint():
             'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png'),
             'score': match_result['score'] * 100,
             'quality_score': match_result['quality_score'] * 100,
-            'is_match': match_result['score'] >= matching_threshold,
+            'is_match': match_result['score'] >= matching_threshold / 100,
             'minutiae_count': {
                 'img1': len(minutiae1),
                 'img2': len(minutiae2)

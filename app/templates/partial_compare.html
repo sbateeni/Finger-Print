@@ -218,7 +218,7 @@ $(document).ready(function() {
         var formData = new FormData(this);
         
         $.ajax({
-            url: '{{ url_for("fingerprint.upload_partial") }}',
+            url: '{{ url_for("fingerprint.upload_partial_fingerprint") }}',
             type: 'POST',
             data: formData,
             processData: false,
