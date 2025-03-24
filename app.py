@@ -22,7 +22,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                template_folder='app/templates',  # تحديد مجلد القوالب
+                static_folder='app/static')       # تحديد مجلد الملفات الثابتة
     
     # إعداد التكوين
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

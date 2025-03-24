@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block title %}مقارنة الشبكة{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    .grid-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-top: 1rem;
+    }
+    .grid-container {
+        position: relative;
+        margin: 1rem 0;
+    }
+    .grid-cell {
+        position: absolute;
+        border: 1px solid rgba(0, 123, 255, 0.5);
+        background-color: rgba(0, 123, 255, 0.1);
+        cursor: pointer;
+    }
+    .grid-cell.selected {
+        background-color: rgba(0, 123, 255, 0.3);
+        border-color: #007bff;
+    }
+    .grid-cell.matched {
+        background-color: rgba(40, 167, 69, 0.3);
+        border-color: #28a745;
+    }
+    .grid-cell:hover {
+        background-color: rgba(0, 123, 255, 0.2);
+    }
+    .grid-info {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .grid-controls {
+        margin-bottom: 1rem;
+    }
+    .comparison-results {
+        margin-top: 2rem;
+    }
+    .result-card {
+        margin-bottom: 1rem;
+    }
+    .result-card .card-header {
+        background-color: #f8f9fa;
+    }
+    .result-card .card-body {
+        padding: 1rem;
+    }
+    .result-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    .progress {
+        height: 25px;
+        margin: 1rem 0;
+    }
+    .progress-bar {
+        font-size: 1rem;
+        line-height: 25px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">مقارنة الشبكة</h4>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">البصمة الأولى</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="fingerprint1" class="form-label">اختر صورة البصمة الأولى</label>
+                                        <input type="file" class="form-control" id="fingerprint1" name="fingerprint1" accept="image/*" required>
+                                    </div>
+                                    <div id="preview1" class="text-center">
+                                        <img id="preview1_img" class="preview-image" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">البصمة الثانية</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="fingerprint2" class="form-label">اختر صورة البصمة الثانية</label>
+                                        <input type="file" class="form-control" id="fingerprint2" name="fingerprint2" accept="image/*" required>
+                                    </div>
+                                    <div id="preview2" class="text-center">
+                                        <img id="preview2_img" class="preview-image" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">إعدادات الشبكة</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="gridRows" class="form-label">عدد الصفوف</label>
+                                                <input type="number" class="form-control" id="gridRows" name="gridRows" min="2" max="10" value="3">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="gridCols" class="form-label">عدد الأعمدة</label>
+                                                <input type="number" class="form-control" id="gridCols" name="gridCols" min="2" max="10" value="3">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="overlap" class="form-label">تداخل الخلايا (%)</label>
+                                                <input type="range" class="form-range" id="overlap" name="overlap" min="0" max="50" value="20">
+                                                <div class="text-center">
+                                                    <span id="overlapValue">20%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="matchingThreshold" class="form-label">عتبة المطابقة (%)</label>
+                                                <input type="range" class="form-range" id="matchingThreshold" name="matchingThreshold" min="50" max="100" value="80">
+                                                <div class="text-center">
+                                                    <span id="matchingThresholdValue">80%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>
+                            بدء المقارنة
+                        </button>
+                    </div>
+                </form>
+
+                <div id="gridResults" style="display: none;">
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">نتائج المقارنة</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="grid-controls">
+                                        <button type="button" class="btn btn-outline-primary me-2" id="selectAll">
+                                            <i class="fas fa-check-double me-2"></i>
+                                            تحديد الكل
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger me-2" id="deselectAll">
+                                            <i class="fas fa-times me-2"></i>
+                                            إلغاء تحديد الكل
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="compareSelected">
+                                            <i class="fas fa-search me-2"></i>
+                                            مقارنة الخلايا المحددة
+                                        </button>
+                                    </div>
+                                    <div class="grid-container">
+                                        <img id="grid_img" class="grid-image">
+                                    </div>
+                                    <div class="grid-info">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>معلومات الشبكة</h6>
+                                                <p>عدد الصفوف: <span id="rowsCount">0</span></p>
+                                                <p>عدد الأعمدة: <span id="colsCount">0</span></p>
+                                                <p>إجمالي الخلايا: <span id="totalCells">0</span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>الخلايا المحددة</h6>
+                                                <p>عدد الخلايا المحددة: <span id="selectedCells">0</span></p>
+                                                <p>نسبة التغطية: <span id="coverage">0%</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="comparisonResults" class="comparison-results" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card result-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">نتائج مقارنة الخلايا</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>الخلايا المتطابقة</h6>
+                                                <img id="matchedCells_img" class="result-image">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>الخلايا غير المتطابقة</h6>
+                                                <img id="unmatchedCells_img" class="result-image">
+                                            </div>
+                                        </div>
+                                        <div class="row mt-4">
+                                            <div class="col-md-6">
+                                                <div class="progress">
+                                                    <div id="matchScore" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                                                        0%
+                                                    </div>
+                                                </div>
+                                                <div class="text-center mt-2">
+                                                    <h5 id="matchResult" class="text-success">نتيجة المطابقة</h5>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="progress">
+                                                    <div id="qualityScore" class="progress-bar bg-info" role="progressbar" style="width: 0%">
+                                                        0%
+                                                    </div>
+                                                </div>
+                                                <div class="text-center mt-2">
+                                                    <h5 id="qualityResult" class="text-info">جودة المطابقة</h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // معاينة الصور
+    function previewImage(input, previewId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $(previewId).attr('src', e.target.result).show();
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    $('#fingerprint1').change(function() {
+        previewImage(this, '#preview1_img');
+    });
+
+    $('#fingerprint2').change(function() {
+        previewImage(this, '#preview2_img');
+    });
+
+    // تحديث القيم
+    $('#overlap').on('input', function() {
+        $('#overlapValue').text($(this).val() + '%');
+    });
+
+    $('#matchingThreshold').on('input', function() {
+        $('#matchingThresholdValue').text($(this).val() + '%');
+    });
+
+    // معالجة تقديم النموذج
+    $('#uploadForm').submit(function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: '{{ url_for("fingerprint.upload_grid_compare") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function() {
+                $('#gridResults').hide();
+                $('#comparisonResults').hide();
+                $('button[type="submit"]').prop('disabled', true).html(
+                    '<i class="fas fa-spinner fa-spin me-2"></i>جاري المعالجة...'
+                );
+            },
+            success: function(response) {
+                // عرض صورة الشبكة
+                $('#grid_img').attr('src', response.grid_image);
+                
+                // إنشاء الخلايا
+                var container = $('.grid-container');
+                container.empty();
+                
+                var rows = parseInt($('#gridRows').val());
+                var cols = parseInt($('#gridCols').val());
+                
+                var totalWidth = container.width();
+                var totalHeight = container.height();
+                var cellWidth = totalWidth / cols;
+                var cellHeight = totalHeight / rows;
+                
+                for (var i = 0; i < rows; i++) {
+                    for (var j = 0; j < cols; j++) {
+                        var cell = $('<div>')
+                            .addClass('grid-cell')
+                            .css({
+                                left: j * cellWidth + 'px',
+                                top: i * cellHeight + 'px',
+                                width: cellWidth + 'px',
+                                height: cellHeight + 'px'
+                            })
+                            .data('row', i)
+                            .data('col', j);
+                        
+                        container.append(cell);
+                    }
+                }
+                
+                // تحديث المعلومات
+                $('#rowsCount').text(rows);
+                $('#colsCount').text(cols);
+                $('#totalCells').text(rows * cols);
+                updateSelectedCount();
+                
+                // عرض النتائج
+                $('#gridResults').show();
+            },
+            error: function(xhr, status, error) {
+                alert('حدث خطأ أثناء معالجة البصمات: ' + error);
+            },
+            complete: function() {
+                $('button[type="submit"]').prop('disabled', false).html(
+                    '<i class="fas fa-search me-2"></i>بدء المقارنة'
+                );
+            }
+        });
+    });
+
+    // معالجة تحديد الخلايا
+    $(document).on('click', '.grid-cell', function() {
+        $(this).toggleClass('selected');
+        updateSelectedCount();
+    });
+
+    // تحديث عدد الخلايا المحددة
+    function updateSelectedCount() {
+        var selected = $('.grid-cell.selected').length;
+        var total = $('.grid-cell').length;
+        var coverage = (selected / total * 100).toFixed(1);
+        
+        $('#selectedCells').text(selected);
+        $('#coverage').text(coverage + '%');
+    }
+
+    // تحديد/إلغاء تحديد الكل
+    $('#selectAll').click(function() {
+        $('.grid-cell').addClass('selected');
+        updateSelectedCount();
+    });
+
+    $('#deselectAll').click(function() {
+        $('.grid-cell').removeClass('selected');
+        updateSelectedCount();
+    });
+
+    // مقارنة الخلايا المحددة
+    $('#compareSelected').click(function() {
+        var selectedCells = [];
+        $('.grid-cell.selected').each(function() {
+            selectedCells.push({
+                row: $(this).data('row'),
+                col: $(this).data('col')
+            });
+        });
+
+        $.ajax({
+            url: '{{ url_for("fingerprint.compare_grid_cells") }}',
+            type: 'POST',
+            data: JSON.stringify({ cells: selectedCells }),
+            contentType: 'application/json',
+            beforeSend: function() {
+                $('#comparisonResults').hide();
+                $(this).prop('disabled', true).html(
+                    '<i class="fas fa-spinner fa-spin me-2"></i>جاري المقارنة...'
+                );
+            },
+            success: function(response) {
+                // عرض نتائج المقارنة
+                $('#matchedCells_img').attr('src', response.matched_cells_image);
+                $('#unmatchedCells_img').attr('src', response.unmatched_cells_image);
+                
+                // تحديث النتائج
+                $('#matchScore').css('width', response.score + '%').text(response.score.toFixed(1) + '%');
+                $('#qualityScore').css('width', response.quality_score + '%').text(response.quality_score.toFixed(1) + '%');
+                
+                // تحديث النص
+                $('#matchResult').text(response.is_match ? 'مطابقة ناجحة' : 'مطابقة غير ناجحة')
+                    .removeClass('text-success text-danger')
+                    .addClass(response.is_match ? 'text-success' : 'text-danger');
+                
+                $('#qualityResult').text('جودة المطابقة: ' + response.quality_score.toFixed(1) + '%');
+                
+                // تحديث حالة الخلايا
+                $('.grid-cell').removeClass('matched');
+                response.matched_cells.forEach(function(cell) {
+                    $('.grid-cell[data-row="' + cell.row + '"][data-col="' + cell.col + '"]').addClass('matched');
+                });
+                
+                // عرض النتائج
+                $('#comparisonResults').show();
+            },
+            error: function(xhr, status, error) {
+                alert('حدث خطأ أثناء مقارنة الخلايا: ' + error);
+            },
+            complete: function() {
+                $(this).prop('disabled', false).html(
+                    '<i class="fas fa-search me-2"></i>مقارنة الخلايا المحددة'
+                );
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

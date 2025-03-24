@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}مقارنة عادية{% endblock %}
+{% block title %}مقارنة جزئية{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -26,6 +26,15 @@
         font-size: 1rem;
         line-height: 25px;
     }
+    .region-selector {
+        position: relative;
+        cursor: crosshair;
+    }
+    .region-box {
+        position: absolute;
+        border: 2px solid #007bff;
+        background-color: rgba(0, 123, 255, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -34,7 +43,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0">مقارنة عادية</h4>
+                <h4 class="mb-0">مقارنة جزئية</h4>
             </div>
             <div class="card-body">
                 <form id="uploadForm" enctype="multipart/form-data">
@@ -42,15 +51,15 @@
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="mb-0">البصمة الأولى</h5>
+                                    <h5 class="mb-0">البصمة الكاملة</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label for="fingerprint1" class="form-label">اختر صورة البصمة الأولى</label>
-                                        <input type="file" class="form-control" id="fingerprint1" name="fingerprint1" accept="image/*" required>
+                                        <label for="fullFingerprint" class="form-label">اختر صورة البصمة الكاملة</label>
+                                        <input type="file" class="form-control" id="fullFingerprint" name="fullFingerprint" accept="image/*" required>
                                     </div>
-                                    <div id="preview1" class="text-center">
-                                        <img id="preview1_img" class="preview-image" style="display: none;">
+                                    <div id="previewFull" class="text-center">
+                                        <img id="previewFull_img" class="preview-image" style="display: none;">
                                     </div>
                                 </div>
                             </div>
@@ -58,15 +67,15 @@
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="mb-0">البصمة الثانية</h5>
+                                    <h5 class="mb-0">البصمة الجزئية</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label for="fingerprint2" class="form-label">اختر صورة البصمة الثانية</label>
-                                        <input type="file" class="form-control" id="fingerprint2" name="fingerprint2" accept="image/*" required>
+                                        <label for="partialFingerprint" class="form-label">اختر صورة البصمة الجزئية</label>
+                                        <input type="file" class="form-control" id="partialFingerprint" name="partialFingerprint" accept="image/*" required>
                                     </div>
-                                    <div id="preview2" class="text-center">
-                                        <img id="preview2_img" class="preview-image" style="display: none;">
+                                    <div id="previewPartial" class="text-center">
+                                        <img id="previewPartial_img" class="preview-image" style="display: none;">
                                     </div>
                                 </div>
                             </div>
@@ -92,11 +101,11 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label for="matchingMode" class="form-label">وضع المطابقة</label>
-                                                <select class="form-select" id="matchingMode" name="matchingMode">
-                                                    <option value="false">مطابقة كاملة</option>
-                                                    <option value="true">مطابقة جزئية</option>
-                                                </select>
+                                                <label for="matchingThreshold" class="form-label">عتبة المطابقة (%)</label>
+                                                <input type="range" class="form-range" id="matchingThreshold" name="matchingThreshold" min="50" max="100" value="80">
+                                                <div class="text-center">
+                                                    <span id="matchingThresholdValue">80%</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -123,12 +132,12 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <h6>نقاط التفاصيل - البصمة الأولى</h6>
-                                            <img id="minutiae1_img" class="result-image">
+                                            <h6>نقاط التفاصيل - البصمة الكاملة</h6>
+                                            <img id="minutiaeFull_img" class="result-image">
                                         </div>
                                         <div class="col-md-6">
-                                            <h6>نقاط التفاصيل - البصمة الثانية</h6>
-                                            <img id="minutiae2_img" class="result-image">
+                                            <h6>نقاط التفاصيل - البصمة الجزئية</h6>
+                                            <img id="minutiaePartial_img" class="result-image">
                                         </div>
                                     </div>
                                     <div class="row mt-4">
@@ -184,17 +193,22 @@ $(document).ready(function() {
         }
     }
 
-    $('#fingerprint1').change(function() {
-        previewImage(this, '#preview1_img');
+    $('#fullFingerprint').change(function() {
+        previewImage(this, '#previewFull_img');
     });
 
-    $('#fingerprint2').change(function() {
-        previewImage(this, '#preview2_img');
+    $('#partialFingerprint').change(function() {
+        previewImage(this, '#previewPartial_img');
     });
 
     // تحديث قيمة عدد نقاط التفاصيل
     $('#minutiaeCount').on('input', function() {
         $('#minutiaeCountValue').text($(this).val());
+    });
+
+    // تحديث قيمة عتبة المطابقة
+    $('#matchingThreshold').on('input', function() {
+        $('#matchingThresholdValue').text($(this).val() + '%');
     });
 
     // معالجة تقديم النموذج
@@ -204,7 +218,7 @@ $(document).ready(function() {
         var formData = new FormData(this);
         
         $.ajax({
-            url: '{{ url_for("fingerprint.upload_normal") }}',
+            url: '{{ url_for("fingerprint.upload_partial") }}',
             type: 'POST',
             data: formData,
             processData: false,
@@ -217,8 +231,8 @@ $(document).ready(function() {
             },
             success: function(response) {
                 // عرض الصور المعالجة
-                $('#minutiae1_img').attr('src', response.minutiae_images.img1);
-                $('#minutiae2_img').attr('src', response.minutiae_images.img2);
+                $('#minutiaeFull_img').attr('src', response.minutiae_images.full);
+                $('#minutiaePartial_img').attr('src', response.minutiae_images.partial);
                 $('#match_img').attr('src', response.matching_image);
                 
                 // تحديث النتائج

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}مقارنة عادية{% endblock %}
+{% block title %}مقارنة متقدمة{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -26,6 +26,19 @@
         font-size: 1rem;
         line-height: 25px;
     }
+    .advanced-settings {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .parameter-group {
+        margin-bottom: 1rem;
+    }
+    .parameter-group h6 {
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
 </style>
 {% endblock %}
 
@@ -34,7 +47,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0">مقارنة عادية</h4>
+                <h4 class="mb-0">مقارنة متقدمة</h4>
             </div>
             <div class="card-body">
                 <form id="uploadForm" enctype="multipart/form-data">
@@ -77,26 +90,87 @@
                         <div class="col-md-12">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="mb-0">إعدادات المقارنة</h5>
+                                    <h5 class="mb-0">إعدادات متقدمة</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="minutiaeCount" class="form-label">عدد نقاط التفاصيل</label>
-                                                <input type="range" class="form-range" id="minutiaeCount" name="minutiaeCount" min="50" max="200" value="100">
-                                                <div class="text-center">
-                                                    <span id="minutiaeCountValue">100</span>
+                                            <div class="advanced-settings">
+                                                <h6>معالجة الصورة</h6>
+                                                <div class="parameter-group">
+                                                    <label for="imageQuality" class="form-label">جودة الصورة</label>
+                                                    <input type="range" class="form-range" id="imageQuality" name="imageQuality" min="1" max="100" value="80">
+                                                    <div class="text-center">
+                                                        <span id="imageQualityValue">80%</span>
+                                                    </div>
+                                                </div>
+                                                <div class="parameter-group">
+                                                    <label for="contrast" class="form-label">التباين</label>
+                                                    <input type="range" class="form-range" id="contrast" name="contrast" min="0" max="200" value="100">
+                                                    <div class="text-center">
+                                                        <span id="contrastValue">100%</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="matchingMode" class="form-label">وضع المطابقة</label>
-                                                <select class="form-select" id="matchingMode" name="matchingMode">
-                                                    <option value="false">مطابقة كاملة</option>
-                                                    <option value="true">مطابقة جزئية</option>
-                                                </select>
+                                            <div class="advanced-settings">
+                                                <h6>استخراج نقاط التفاصيل</h6>
+                                                <div class="parameter-group">
+                                                    <label for="minutiaeCount" class="form-label">عدد نقاط التفاصيل</label>
+                                                    <input type="range" class="form-range" id="minutiaeCount" name="minutiaeCount" min="50" max="200" value="100">
+                                                    <div class="text-center">
+                                                        <span id="minutiaeCountValue">100</span>
+                                                    </div>
+                                                </div>
+                                                <div class="parameter-group">
+                                                    <label for="minutiaeQuality" class="form-label">جودة نقاط التفاصيل</label>
+                                                    <input type="range" class="form-range" id="minutiaeQuality" name="minutiaeQuality" min="1" max="100" value="80">
+                                                    <div class="text-center">
+                                                        <span id="minutiaeQualityValue">80%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-4">
+                                        <div class="col-md-6">
+                                            <div class="advanced-settings">
+                                                <h6>المطابقة</h6>
+                                                <div class="parameter-group">
+                                                    <label for="matchingThreshold" class="form-label">عتبة المطابقة (%)</label>
+                                                    <input type="range" class="form-range" id="matchingThreshold" name="matchingThreshold" min="50" max="100" value="80">
+                                                    <div class="text-center">
+                                                        <span id="matchingThresholdValue">80%</span>
+                                                    </div>
+                                                </div>
+                                                <div class="parameter-group">
+                                                    <label for="rotationTolerance" class="form-label">تحمل الدوران (درجات)</label>
+                                                    <input type="range" class="form-range" id="rotationTolerance" name="rotationTolerance" min="0" max="180" value="30">
+                                                    <div class="text-center">
+                                                        <span id="rotationToleranceValue">30°</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="advanced-settings">
+                                                <h6>خوارزمية المطابقة</h6>
+                                                <div class="parameter-group">
+                                                    <label for="algorithm" class="form-label">الخوارزمية</label>
+                                                    <select class="form-select" id="algorithm" name="algorithm">
+                                                        <option value="minutiae">نقاط التفاصيل</option>
+                                                        <option value="ridge">نمط التعرجات</option>
+                                                        <option value="hybrid">هجين</option>
+                                                    </select>
+                                                </div>
+                                                <div class="parameter-group">
+                                                    <label for="matchingMode" class="form-label">وضع المطابقة</label>
+                                                    <select class="form-select" id="matchingMode" name="matchingMode">
+                                                        <option value="false">مطابقة كاملة</option>
+                                                        <option value="true">مطابقة جزئية</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -192,10 +266,19 @@ $(document).ready(function() {
         previewImage(this, '#preview2_img');
     });
 
-    // تحديث قيمة عدد نقاط التفاصيل
-    $('#minutiaeCount').on('input', function() {
-        $('#minutiaeCountValue').text($(this).val());
-    });
+    // تحديث القيم
+    function updateValue(inputId, valueId, suffix = '') {
+        $('#' + inputId).on('input', function() {
+            $('#' + valueId).text($(this).val() + suffix);
+        });
+    }
+
+    updateValue('imageQuality', 'imageQualityValue', '%');
+    updateValue('contrast', 'contrastValue', '%');
+    updateValue('minutiaeCount', 'minutiaeCountValue');
+    updateValue('minutiaeQuality', 'minutiaeQualityValue', '%');
+    updateValue('matchingThreshold', 'matchingThresholdValue', '%');
+    updateValue('rotationTolerance', 'rotationToleranceValue', '°');
 
     // معالجة تقديم النموذج
     $('#uploadForm').submit(function(e) {
@@ -204,7 +287,7 @@ $(document).ready(function() {
         var formData = new FormData(this);
         
         $.ajax({
-            url: '{{ url_for("fingerprint.upload_normal") }}',
+            url: '{{ url_for("fingerprint.upload_advanced") }}',
             type: 'POST',
             data: formData,
             processData: false,

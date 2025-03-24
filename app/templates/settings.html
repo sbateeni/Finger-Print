@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}الإعدادات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-card {
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    .settings-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .settings-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: none;
+    }
+    .settings-card .card-body {
+        padding: 1.5rem;
+    }
+    .setting-item {
+        margin-bottom: 1.5rem;
+    }
+    .setting-item:last-child {
+        margin-bottom: 0;
+    }
+    .setting-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    .setting-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .setting-value {
+        margin-top: 0.5rem;
+    }
+    .color-picker {
+        width: 100%;
+        height: 38px;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    .preview-image {
+        max-width: 100%;
+        height: auto;
+        margin-top: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+    }
+    .test-button {
+        margin-top: 1rem;
+    }
+    .alert {
+        margin-top: 1rem;
+    }
+    .tab-content {
+        padding: 1rem 0;
+    }
+    .nav-tabs {
+        margin-bottom: 1rem;
+    }
+    .nav-tabs .nav-link {
+        color: #495057;
+    }
+    .nav-tabs .nav-link.active {
+        color: #007bff;
+        font-weight: 500;
+    }
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+    .form-check:last-child {
+        margin-bottom: 0;
+    }
+    .range-value {
+        display: inline-block;
+        min-width: 3rem;
+        text-align: center;
+        margin-right: 0.5rem;
+    }
+    .advanced-settings {
+        display: none;
+    }
+    .advanced-settings.show {
+        display: block;
+    }
+    .setting-group {
+        margin-bottom: 2rem;
+    }
+    .setting-group:last-child {
+        margin-bottom: 0;
+    }
+    .setting-group-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">الإعدادات</h4>
+            </div>
+            <div class="card-body">
+                <!-- علامات التبويب -->
+                <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                            <i class="fas fa-cog me-2"></i>
+                            عام
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="processing-tab" data-bs-toggle="tab" data-bs-target="#processing" type="button" role="tab">
+                            <i class="fas fa-image me-2"></i>
+                            معالجة الصور
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="matching-tab" data-bs-toggle="tab" data-bs-target="#matching" type="button" role="tab">
+                            <i class="fas fa-fingerprint me-2"></i>
+                            المطابقة
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">
+                            <i class="fas fa-sliders-h me-2"></i>
+                            متقدم
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- محتوى علامات التبويب -->
+                <div class="tab-content" id="settingsTabContent">
+                    <!-- الإعدادات العامة -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">إعدادات التطبيق</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">اللغة</label>
+                                <div class="setting-description">اختر لغة واجهة المستخدم</div>
+                                <select class="form-select" id="language">
+                                    <option value="ar">العربية</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">المظهر</label>
+                                <div class="setting-description">اختر مظهر التطبيق</div>
+                                <select class="form-select" id="theme">
+                                    <option value="light">فاتح</option>
+                                    <option value="dark">داكن</option>
+                                    <option value="system">حسب النظام</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">حجم الخط</label>
+                                <div class="setting-description">اختر حجم الخط المناسب</div>
+                                <select class="form-select" id="fontSize">
+                                    <option value="small">صغير</option>
+                                    <option value="medium">متوسط</option>
+                                    <option value="large">كبير</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">إعدادات التصدير</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">صيغة التصدير الافتراضية</label>
+                                <div class="setting-description">اختر صيغة التصدير الافتراضية للتقارير</div>
+                                <select class="form-select" id="exportFormat">
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="csv">CSV</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">جودة الصور المصدرة</label>
+                                <div class="setting-description">اختر جودة الصور في التقارير المصدرة</div>
+                                <select class="form-select" id="exportQuality">
+                                    <option value="low">منخفضة</option>
+                                    <option value="medium">متوسطة</option>
+                                    <option value="high">عالية</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- إعدادات معالجة الصور -->
+                    <div class="tab-pane fade" id="processing" role="tabpanel">
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">معالجة الصور الأساسية</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">جودة الصورة</label>
+                                <div class="setting-description">ضبط جودة معالجة الصور (1-100)</div>
+                                <div class="setting-value">
+                                    <span class="range-value" id="qualityValue">80</span>
+                                    <input type="range" class="form-range" id="quality" min="1" max="100" value="80">
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">التباين</label>
+                                <div class="setting-description">ضبط تباين الصورة (1-100)</div>
+                                <div class="setting-value">
+                                    <span class="range-value" id="contrastValue">50</span>
+                                    <input type="range" class="form-range" id="contrast" min="1" max="100" value="50">
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">السطوع</label>
+                                <div class="setting-description">ضبط سطوع الصورة (1-100)</div>
+                                <div class="setting-value">
+                                    <span class="range-value" id="brightnessValue">50</span>
+                                    <input type="range" class="form-range" id="brightness" min="1" max="100" value="50">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">معالجة البصمة</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">حجم البصمة</label>
+                                <div class="setting-description">ضبط الحجم الافتراضي للبصمة (بالبكسل)</div>
+                                <input type="number" class="form-control" id="fingerprintSize" value="500">
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">تنسيق الصورة</label>
+                                <div class="setting-description">اختر تنسيق الصورة الافتراضي</div>
+                                <select class="form-select" id="imageFormat">
+                                    <option value="png">PNG</option>
+                                    <option value="jpg">JPG</option>
+                                    <option value="bmp">BMP</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">ضغط الصورة</label>
+                                <div class="setting-description">ضبط مستوى ضغط الصورة (1-100)</div>
+                                <div class="setting-value">
+                                    <span class="range-value" id="compressionValue">80</span>
+                                    <input type="range" class="form-range" id="compression" min="1" max="100" value="80">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- إعدادات المطابقة -->
+                    <div class="tab-pane fade" id="matching" role="tabpanel">
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">معلمات المطابقة</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">عتبة المطابقة</label>
+                                <div class="setting-description">ضبط الحد الأدنى لمعدل المطابقة (1-100)</div>
+                                <div class="setting-value">
+                                    <span class="range-value" id="thresholdValue">80</span>
+                                    <input type="range" class="form-range" id="threshold" min="1" max="100" value="80">
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">عدد النقاط المميزة</label>
+                                <div class="setting-description">ضبط الحد الأدنى لعدد النقاط المميزة</div>
+                                <input type="number" class="form-control" id="minutiaeCount" value="100">
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">نوع المطابقة</label>
+                                <div class="setting-description">اختر نوع المطابقة الافتراضي</div>
+                                <select class="form-select" id="matchingType">
+                                    <option value="normal">عادية</option>
+                                    <option value="partial">جزئية</option>
+                                    <option value="advanced">متقدمة</option>
+                                    <option value="grid">شبكة</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">خيارات المطابقة المتقدمة</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">التدوير المسموح به</label>
+                                <div class="setting-description">ضبط الحد الأقصى لزاوية التدوير المسموح بها (بالدرجات)</div>
+                                <input type="number" class="form-control" id="rotationTolerance" value="15">
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">التكبير/التصغير المسموح به</label>
+                                <div class="setting-description">ضبط الحد الأقصى لمعدل التكبير/التصغير المسموح به (1-100)</div>
+                                <div class="setting-value">
+                                    <span class="range-value" id="scaleToleranceValue">20</span>
+                                    <input type="range" class="form-range" id="scaleTolerance" min="1" max="100" value="20">
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">التحول المسموح به</label>
+                                <div class="setting-description">ضبط الحد الأقصى للتحول المسموح به (بالبكسل)</div>
+                                <input type="number" class="form-control" id="translationTolerance" value="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الإعدادات المتقدمة -->
+                    <div class="tab-pane fade" id="advanced" role="tabpanel">
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">إعدادات النظام</h5>
+                            <div class="setting-item">
+                                <label class="setting-label">عدد الخيوط</label>
+                                <div class="setting-description">ضبط عدد الخيوط المستخدمة في المعالجة</div>
+                                <input type="number" class="form-control" id="threadCount" value="4">
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">الذاكرة المؤقتة</label>
+                                <div class="setting-description">ضبط حجم الذاكرة المؤقتة (بالميجابايت)</div>
+                                <input type="number" class="form-control" id="cacheSize" value="1000">
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">مدة حفظ النتائج</label>
+                                <div class="setting-description">ضبط مدة حفظ نتائج المطابقة (بالأيام)</div>
+                                <input type="number" class="form-control" id="resultRetention" value="30">
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">خيارات التطوير</h5>
+                            <div class="setting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="debugMode">
+                                    <label class="form-check-label" for="debugMode">
+                                        وضع التصحيح
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="logErrors">
+                                    <label class="form-check-label" for="logErrors">
+                                        تسجيل الأخطاء
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="performanceMetrics">
+                                    <label class="form-check-label" for="performanceMetrics">
+                                        قياسات الأداء
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <h5 class="setting-group-title">إعدادات الأمان</h5>
+                            <div class="setting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="encryptData">
+                                    <label class="form-check-label" for="encryptData">
+                                        تشفير البيانات
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="secureStorage">
+                                    <label class="form-check-label" for="secureStorage">
+                                        تخزين آمن
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="autoBackup">
+                                    <label class="form-check-label" for="autoBackup">
+                                        نسخ احتياطي تلقائي
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- أزرار الحفظ وإعادة التعيين -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" id="resetSettings">
+                                <i class="fas fa-undo me-2"></i>
+                                إعادة التعيين
+                            </button>
+                            <button type="button" class="btn btn-primary" id="saveSettings">
+                                <i class="fas fa-save me-2"></i>
+                                حفظ الإعدادات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // تحديث قيم النطاقات
+    function updateRangeValue(inputId, valueId) {
+        $('#' + inputId).on('input', function() {
+            $('#' + valueId).text($(this).val());
+        });
+    }
+
+    // تحديث جميع قيم النطاقات
+    updateRangeValue('quality', 'qualityValue');
+    updateRangeValue('contrast', 'contrastValue');
+    updateRangeValue('brightness', 'brightnessValue');
+    updateRangeValue('compression', 'compressionValue');
+    updateRangeValue('threshold', 'thresholdValue');
+    updateRangeValue('scaleTolerance', 'scaleToleranceValue');
+
+    // تحميل الإعدادات الحالية
+    function loadSettings() {
+        $.ajax({
+            url: '{{ url_for("fingerprint.get_settings") }}',
+            type: 'GET',
+            success: function(response) {
+                // تحديث قيم الإعدادات
+                Object.keys(response).forEach(function(key) {
+                    var element = $('#' + key);
+                    if (element.length) {
+                        if (element.attr('type') === 'checkbox') {
+                            element.prop('checked', response[key]);
+                        } else {
+                            element.val(response[key]);
+                        }
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                alert('حدث خطأ أثناء تحميل الإعدادات: ' + error);
+            }
+        });
+    }
+
+    // حفظ الإعدادات
+    $('#saveSettings').click(function() {
+        var settings = {};
+        $('input, select').each(function() {
+            var key = $(this).attr('id');
+            if (key) {
+                if ($(this).attr('type') === 'checkbox') {
+                    settings[key] = $(this).prop('checked');
+                } else {
+                    settings[key] = $(this).val();
+                }
+            }
+        });
+
+        $.ajax({
+            url: '{{ url_for("fingerprint.save_settings") }}',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(settings),
+            success: function(response) {
+                alert('تم حفظ الإعدادات بنجاح');
+            },
+            error: function(xhr, status, error) {
+                alert('حدث خطأ أثناء حفظ الإعدادات: ' + error);
+            }
+        });
+    });
+
+    // إعادة تعيين الإعدادات
+    $('#resetSettings').click(function() {
+        if (confirm('هل أنت متأكد من إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟')) {
+            $.ajax({
+                url: '{{ url_for("fingerprint.reset_settings") }}',
+                type: 'POST',
+                success: function(response) {
+                    loadSettings();
+                    alert('تم إعادة تعيين الإعدادات بنجاح');
+                },
+                error: function(xhr, status, error) {
+                    alert('حدث خطأ أثناء إعادة تعيين الإعدادات: ' + error);
+                }
+            });
+        }
+    });
+
+    // تحميل الإعدادات عند فتح الصفحة
+    loadSettings();
+});
+</script>
+{% endblock %} 

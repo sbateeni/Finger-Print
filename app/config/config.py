@@ -1,10 +1,17 @@
 import os
 
 # إعدادات المجلدات
-UPLOAD_FOLDER = 'uploads'
-PROCESSED_FOLDER = os.path.join('static', 'images', 'processed')
-RESULTS_FOLDER = os.path.join('static', 'images', 'results')
-OUTPUT_FOLDER = os.path.join('static', 'images', 'output')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+PROCESSED_FOLDER = os.path.join(BASE_DIR, 'app', 'static', 'images', 'processed')
+RESULTS_FOLDER = os.path.join(BASE_DIR, 'app', 'static', 'images', 'results')
+OUTPUT_FOLDER = os.path.join(BASE_DIR, 'app', 'static', 'images', 'output')
+
+# إنشاء المجلدات إذا لم تكن موجودة
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+os.makedirs(RESULTS_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # إعدادات الملفات
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff'}

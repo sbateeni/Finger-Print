@@ -89,22 +89,56 @@ def visualize_matches(image1, image2, matches):
         else:
             img2 = image2.copy()
         
+        # تعديل حجم الصورة الثانية لتتناسب مع الصورة الأولى
+        height1 = img1.shape[0]
+        height2 = img2.shape[0]
+        target_height = min(height1, height2)
+        
+        # تعديل حجم الصورتين
+        if height1 != target_height:
+            img1 = cv2.resize(img1, (int(img1.shape[1] * target_height / height1), target_height))
+        if height2 != target_height:
+            img2 = cv2.resize(img2, (int(img2.shape[1] * target_height / height2), target_height))
+        
         # دمج الصورتين
         visualization = np.hstack((img1, img2))
         
+        # تعديل إحداثيات النقاط المطابقة
+        scale1 = target_height / height1
+        scale2 = target_height / height2
+        
         # رسم المطابقات
         for m1, m2 in matches:
+            # تعديل إحداثيات النقاط
+            x1 = int(m1['x'] * scale1)
+            y1 = int(m1['y'] * scale1)
+            x2 = int(m2['x'] * scale2) + img1.shape[1]  # إضافة عرض الصورة الأولى
+            y2 = int(m2['y'] * scale2)
+            
             # رسم نقطة في الصورة الأولى
-            cv2.circle(visualization, (m1['x'], m1['y']), 3, (0, 255, 0), -1)
+            cv2.circle(visualization, (x1, y1), 3, (0, 255, 0), -1)
             
             # رسم نقطة في الصورة الثانية
-            x2 = m2['x'] + img1.shape[1]  # إضافة عرض الصورة الأولى للإحداثي x
-            cv2.circle(visualization, (x2, m2['y']), 3, (0, 255, 0), -1)
+            cv2.circle(visualization, (x2, y2), 3, (0, 255, 0), -1)
             
             # رسم خط بين النقطتين
-            cv2.line(visualization, (m1['x'], m1['y']), (x2, m2['y']), (255, 0, 0), 1)
+            cv2.line(visualization, (x1, y1), (x2, y2), (255, 0, 0), 1)
         
         return visualization
     except Exception as e:
         print(f"Error in visualize_matches: {str(e)}")
-        return np.hstack((image1, image2)) 
+        # في حالة الخطأ، نقوم بتعديل حجم الصورتين قبل الدمج
+        try:
+            height1 = image1.shape[0]
+            height2 = image2.shape[0]
+            target_height = min(height1, height2)
+            
+            if height1 != target_height:
+                image1 = cv2.resize(image1, (int(image1.shape[1] * target_height / height1), target_height))
+            if height2 != target_height:
+                image2 = cv2.resize(image2, (int(image2.shape[1] * target_height / height2), target_height))
+            
+            return np.hstack((image1, image2))
+        except Exception as e2:
+            print(f"Error in fallback visualization: {str(e2)}")
+            return image1  # إرجاع الصورة الأولى فقط في حالة فشل كل المحاولات 
