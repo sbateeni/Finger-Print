@@ -56,7 +56,7 @@ def match_fingerprints(minutiae1, minutiae2, features1=None, features2=None):
 def calculate_quality_score(matches, features1, features2):
     """حساب درجة جودة المطابقة"""
     try:
-        if not matches or not features1 or not features2:
+        if not matches:
             return 0
         
         # حساب متوسط المسافة بين النقاط المتطابقة
@@ -68,7 +68,24 @@ def calculate_quality_score(matches, features1, features2):
         avg_distance = np.mean(distances)
         
         # حساب درجة الجودة بناءً على المسافة
-        quality_score = max(0, 1 - avg_distance / 100)
+        distance_score = max(0, 1 - avg_distance / 100)
+        
+        # حساب درجة الجودة بناءً على الخصائص
+        feature_score = 0
+        if features1 and features2:
+            # مقارنة كثافة الحواف
+            edge_density_diff = abs(features1['edge_density'] - features2['edge_density'])
+            edge_score = max(0, 1 - edge_density_diff)
+            
+            # مقارنة التباين المحلي
+            contrast_diff = abs(features1['local_contrast'] - features2['local_contrast'])
+            contrast_score = max(0, 1 - contrast_diff / 1000)
+            
+            # حساب درجة الجودة النهائية
+            feature_score = (edge_score + contrast_score) / 2
+        
+        # دمج الدرجات
+        quality_score = (distance_score + feature_score) / 2
         
         return quality_score
     except Exception as e:

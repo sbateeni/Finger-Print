@@ -43,7 +43,13 @@ def extract_features(image):
         return features
     except Exception as e:
         print(f"Error in extract_features: {str(e)}")
-        return None
+        # إرجاع قاموس فارغ بدلاً من None
+        return {
+            'edge_density': 0.0,
+            'mean_magnitude': 0.0,
+            'local_contrast': 0.0,
+            'direction_histogram': [0] * 36
+        }
 
 def visualize_features(image, features):
     """تصور الخصائص المستخرجة"""

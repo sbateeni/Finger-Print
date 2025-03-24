@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def extract_minutiae(image, max_points=100):
+def extract_minutiae(image, max_points=100, quality_threshold=0.8):
     """استخراج نقاط التفاصيل من البصمة"""
     try:
         # تحويل الصورة إلى تدرج رمادي
@@ -27,12 +27,19 @@ def extract_minutiae(image, max_points=100):
         minutiae = []
         for corner in corners:
             x, y = corner.ravel()
-            angle = direction[int(y), int(x)]
-            minutiae.append({
-                'x': int(x),
-                'y': int(y),
-                'angle': float(angle)
-            })
+            # حساب جودة النقطة بناءً على قوة الحافة
+            edge_strength = np.sqrt(sobelx[int(y), int(x)]**2 + sobely[int(y), int(x)]**2)
+            edge_strength = edge_strength / np.max(edge_strength)  # تطبيع القوة
+            
+            # إضافة النقطة فقط إذا كانت جودتها أعلى من العتبة
+            if edge_strength >= quality_threshold:
+                angle = direction[int(y), int(x)]
+                minutiae.append({
+                    'x': int(x),
+                    'y': int(y),
+                    'angle': float(angle),
+                    'quality': float(edge_strength)
+                })
         
         return minutiae
     except Exception as e:

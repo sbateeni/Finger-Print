@@ -925,3 +925,87 @@
 2025-03-24 12:02:01,809 - __main__ - INFO - Created/verified directory: logs
 2025-03-24 12:02:01,842 - werkzeug - WARNING -  * Debugger is active!
 2025-03-24 12:02:01,854 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 12:04:20,680 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:04:20,680 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:04:20,681 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:04:20,681 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:04:20,682 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:04:20,731 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 12:04:20,731 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 12:04:20,733 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 12:04:21,180 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:04:21,181 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:04:21,181 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:04:21,182 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:04:21,182 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:04:21,214 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 12:04:21,224 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 12:04:24,718 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:04:24] "[35m[1mGET /advanced_compare HTTP/1.1[0m" 500 -
+2025-03-24 12:04:24,905 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:04:24] "[36mGET /advanced_compare?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2025-03-24 12:04:24,907 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:04:24] "[36mGET /advanced_compare?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2025-03-24 12:04:24,969 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:04:24] "GET /advanced_compare?__debugger__=yes&cmd=resource&f=console.png&s=9arI9uU6d6ohX5J2EcjB HTTP/1.1" 200 -
+2025-03-24 12:04:24,977 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:04:24] "[36mGET /advanced_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 12:04:25,028 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:04:25] "[36mGET /advanced_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 12:05:01,113 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:05:01] "GET /advanced_compare HTTP/1.1" 200 -
+2025-03-24 12:05:11,059 - app.routes.fingerprint_routes - INFO - Starting advanced fingerprint upload and processing...
+2025-03-24 12:05:11,072 - app.routes.fingerprint_routes - INFO - Parameters: image_quality=0.8, contrast=1.0, minutiae_count=100, minutiae_quality=0.8, matching_threshold=0.8, rotation_tolerance=30.0, algorithm=minutiae, is_partial_mode=False
+2025-03-24 12:05:11,075 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 12:05:11,075 - app.routes.fingerprint_routes - ERROR - Error in upload_advanced_fingerprint: preprocess_image() takes 1 positional argument but 3 were given
+2025-03-24 12:05:11,076 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:05:11] "[35m[1mPOST /upload_advanced HTTP/1.1[0m" 500 -
+2025-03-24 12:05:50,857 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\image_processing.py', reloading
+2025-03-24 12:05:50,955 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 12:05:51,417 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:05:51,418 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:05:51,419 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:05:51,419 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:05:51,420 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:05:51,451 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 12:05:51,461 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 12:05:57,746 - app.routes.fingerprint_routes - INFO - Starting advanced fingerprint upload and processing...
+2025-03-24 12:05:57,754 - app.routes.fingerprint_routes - INFO - Parameters: image_quality=0.8, contrast=1.0, minutiae_count=100, minutiae_quality=0.8, matching_threshold=0.8, rotation_tolerance=30.0, algorithm=minutiae, is_partial_mode=False
+2025-03-24 12:05:57,756 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 12:05:57,789 - app.routes.fingerprint_routes - ERROR - Error in upload_advanced_fingerprint: extract_minutiae() takes from 1 to 2 positional arguments but 3 were given
+2025-03-24 12:05:57,791 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:05:57] "[35m[1mPOST /upload_advanced HTTP/1.1[0m" 500 -
+2025-03-24 12:06:01,243 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:06:01] "GET /advanced_compare HTTP/1.1" 200 -
+2025-03-24 12:06:08,876 - app.routes.fingerprint_routes - INFO - Starting advanced fingerprint upload and processing...
+2025-03-24 12:06:08,883 - app.routes.fingerprint_routes - INFO - Parameters: image_quality=0.8, contrast=1.0, minutiae_count=100, minutiae_quality=0.8, matching_threshold=0.8, rotation_tolerance=30.0, algorithm=minutiae, is_partial_mode=False
+2025-03-24 12:06:08,886 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-03-24 12:06:08,916 - app.routes.fingerprint_routes - ERROR - Error in upload_advanced_fingerprint: extract_minutiae() takes from 1 to 2 positional arguments but 3 were given
+2025-03-24 12:06:08,917 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 12:06:08] "[35m[1mPOST /upload_advanced HTTP/1.1[0m" 500 -
+2025-03-24 12:06:57,772 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\minutiae_extraction.py', reloading
+2025-03-24 12:06:57,861 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 12:06:58,380 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:06:58,381 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:06:58,382 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:06:58,382 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:06:58,383 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:06:58,417 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 12:06:58,427 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 12:11:43,228 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\routes\\fingerprint_routes.py', reloading
+2025-03-24 12:11:43,296 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 12:11:43,756 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:11:43,756 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:11:43,757 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:11:43,758 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:11:43,758 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:11:43,788 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 12:11:43,798 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 12:12:08,171 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\feature_extraction.py', reloading
+2025-03-24 12:12:08,250 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 12:12:08,757 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:12:08,758 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:12:08,758 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:12:08,759 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:12:08,759 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:12:08,791 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 12:12:08,800 - werkzeug - INFO -  * Debugger PIN: 142-815-324
+2025-03-24 12:12:39,452 - werkzeug - INFO -  * Detected change in 'c:\\Users\\Yosif\\Documents\\GitHub\\Finger-Print\\app\\utils\\matcher.py', reloading
+2025-03-24 12:12:39,540 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 12:12:40,016 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 12:12:40,017 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 12:12:40,017 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 12:12:40,018 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 12:12:40,018 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 12:12:40,060 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 12:12:40,071 - werkzeug - INFO -  * Debugger PIN: 142-815-324

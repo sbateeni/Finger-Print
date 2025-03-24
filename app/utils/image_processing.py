@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def preprocess_image(image_path):
+def preprocess_image(image_path, image_quality=0.8, contrast=1.0):
     """معالجة الصورة الأولية"""
     try:
         # قراءة الصورة
@@ -13,8 +13,11 @@ def preprocess_image(image_path):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
         # تحسين التباين
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=2.0 * contrast, tileGridSize=(8,8))
         enhanced = clahe.apply(gray)
+        
+        # تحسين جودة الصورة
+        enhanced = cv2.convertScaleAbs(enhanced, alpha=image_quality, beta=0)
         
         return enhanced
     except Exception as e:
