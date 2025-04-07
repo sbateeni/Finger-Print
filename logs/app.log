@@ -1204,3 +1204,46 @@
 2025-03-24 13:42:26,352 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:42:26] "[36mGET /grid_compare?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
 2025-03-24 13:42:26,481 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:42:26] "GET /grid_compare?__debugger__=yes&cmd=resource&f=console.png&s=3OJC7gnq1uXYO1tb6j6S HTTP/1.1" 200 -
 2025-03-24 13:42:26,484 - werkzeug - INFO - 127.0.0.1 - - [24/Mar/2025 13:42:26] "[36mGET /grid_compare?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2025-03-24 13:54:05,997 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:54:05,997 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:54:05,998 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:54:05,998 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:54:05,998 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:54:06,049 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-24 13:54:06,049 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-24 13:54:06,051 - werkzeug - INFO -  * Restarting with stat
+2025-03-24 13:54:06,521 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-03-24 13:54:06,522 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-03-24 13:54:06,522 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-03-24 13:54:06,523 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-03-24 13:54:06,523 - __main__ - INFO - Created/verified directory: logs
+2025-03-24 13:54:06,562 - werkzeug - WARNING -  * Debugger is active!
+2025-03-24 13:54:06,571 - werkzeug - INFO -  * Debugger PIN: 121-078-516
+2025-04-01 12:16:57,701 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-04-01 12:16:57,702 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-04-01 12:16:57,702 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-04-01 12:16:57,703 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-04-01 12:16:57,703 - __main__ - INFO - Created/verified directory: logs
+2025-04-01 12:16:57,924 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-04-01 12:16:57,926 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-01 12:16:57,936 - werkzeug - INFO -  * Restarting with stat
+2025-04-01 12:16:58,348 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-04-01 12:16:58,349 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-04-01 12:16:58,350 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-04-01 12:16:58,351 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-04-01 12:16:58,352 - __main__ - INFO - Created/verified directory: logs
+2025-04-01 12:16:58,384 - werkzeug - WARNING -  * Debugger is active!
+2025-04-01 12:16:58,400 - werkzeug - INFO -  * Debugger PIN: 532-905-671
+2025-04-01 12:17:08,052 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:08] "GET / HTTP/1.1" 200 -
+2025-04-01 12:17:08,692 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:08] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-04-01 12:17:10,905 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:10] "GET /normal_compare HTTP/1.1" 200 -
+2025-04-01 12:17:28,274 - app.routes.fingerprint_routes - INFO - Starting normal fingerprint upload and processing...
+2025-04-01 12:17:28,281 - app.routes.fingerprint_routes - INFO - Parameters: minutiae_count=100
+2025-04-01 12:17:28,284 - app.routes.fingerprint_routes - INFO - Files saved successfully
+2025-04-01 12:17:29,087 - app.routes.fingerprint_routes - INFO - Images processed and saved successfully
+2025-04-01 12:17:29,090 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "POST /upload_normal HTTP/1.1" 200 -
+2025-04-01 12:17:29,282 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "GET /static/images/results/20250401_121728_match_visualization.png HTTP/1.1" 200 -
+2025-04-01 12:17:29,290 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "GET /static/images/processed/20250401_121728_1_minutiae.png HTTP/1.1" 200 -
+2025-04-01 12:17:29,291 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "GET /static/images/processed/20250401_121728_2_minutiae.png HTTP/1.1" 200 -
