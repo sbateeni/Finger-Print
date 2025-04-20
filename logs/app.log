@@ -1247,3 +1247,78 @@
 2025-04-01 12:17:29,282 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "GET /static/images/results/20250401_121728_match_visualization.png HTTP/1.1" 200 -
 2025-04-01 12:17:29,290 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "GET /static/images/processed/20250401_121728_1_minutiae.png HTTP/1.1" 200 -
 2025-04-01 12:17:29,291 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2025 12:17:29] "GET /static/images/processed/20250401_121728_2_minutiae.png HTTP/1.1" 200 -
+2025-04-20 17:23:21,421 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-04-20 17:23:21,422 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-04-20 17:23:21,422 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-04-20 17:23:21,423 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-04-20 17:23:21,423 - __main__ - INFO - Created/verified directory: logs
+2025-04-20 17:23:21,480 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-04-20 17:23:21,480 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-20 17:23:21,496 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-20 17:23:22,029 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-04-20 17:23:22,030 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-04-20 17:23:22,030 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-04-20 17:23:22,031 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-04-20 17:23:22,031 - __main__ - INFO - Created/verified directory: logs
+2025-04-20 17:23:22,067 - werkzeug - WARNING -  * Debugger is active!
+2025-04-20 17:23:22,080 - werkzeug - INFO -  * Debugger PIN: 942-969-405
+2025-04-20 17:23:22,117 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\assumptions\\predicates\\sets.py', reloading
+2025-04-20 17:23:22,204 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\functions\\__init__.py', reloading
+2025-04-20 17:23:22,245 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\functions\\elementary\\integers.py', reloading
+2025-04-20 17:23:22,255 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\geometry\\__init__.py', reloading
+2025-04-20 17:23:22,267 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\geometry\\exceptions.py', reloading
+2025-04-20 17:23:22,337 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\matrices\\matrices.py', reloading
+2025-04-20 17:23:22,358 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\matrices\\matrixbase.py', reloading
+2025-04-20 17:23:22,393 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\matrices\\common.py', reloading
+2025-04-20 17:23:22,400 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\matrices\\exceptions.py', reloading
+2025-04-20 17:23:22,406 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\matrices\\sparsetools.py', reloading
+2025-04-20 17:23:22,614 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\printing\\smtlib.py', reloading
+2025-04-20 17:23:22,617 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\release.py', reloading
+2025-04-20 17:23:22,632 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\series\\residues.py', reloading
+2025-04-20 17:23:22,634 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\sympy\\series\\series.py', reloading
+2025-04-20 17:23:22,723 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\__init__.py', reloading
+2025-04-20 17:23:22,737 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\retry.py', reloading
+2025-04-20 17:23:22,739 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\nap.py', reloading
+2025-04-20 17:23:22,740 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\stop.py', reloading
+2025-04-20 17:23:22,742 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\wait.py', reloading
+2025-04-20 17:23:22,743 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\before.py', reloading
+2025-04-20 17:23:22,744 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\after.py', reloading
+2025-04-20 17:23:22,745 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\before_sleep.py', reloading
+2025-04-20 17:23:22,746 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tenacity\\asyncio\\__init__.py', reloading
+2025-04-20 17:23:22,748 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tinyhtml5\\__init__.py', reloading
+2025-04-20 17:23:22,754 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tinyhtml5\\parser.py', reloading
+2025-04-20 17:23:22,762 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\__init__.py', reloading
+2025-04-20 17:23:22,955 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\functional.py', reloading
+2025-04-20 17:23:22,971 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_tensor.py', reloading
+2025-04-20 17:23:22,978 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\storage.py', reloading
+2025-04-20 17:23:22,983 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_tensor_str.py', reloading
+2025-04-20 17:23:22,987 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\amp\\__init__.py', reloading
+2025-04-20 17:23:22,989 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\amp\\autocast_mode.py', reloading
+2025-04-20 17:23:22,994 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\amp\\grad_scaler.py', reloading
+2025-04-20 17:23:22,997 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\random.py', reloading
+2025-04-20 17:23:23,000 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\serialization.py', reloading
+2025-04-20 17:23:23,015 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_lowrank.py', reloading
+2025-04-20 17:23:23,018 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\autograd\\__init__.py', reloading
+2025-04-20 17:23:23,027 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\autograd\\grad_mode.py', reloading
+2025-04-20 17:23:23,029 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\signal\\__init__.py', reloading
+2025-04-20 17:23:23,031 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_ops.py', reloading
+2025-04-20 17:23:23,036 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_classes.py', reloading
+2025-04-20 17:23:23,038 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_lobpcg.py', reloading
+2025-04-20 17:23:23,042 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_higher_order_ops\\__init__.py', reloading
+2025-04-20 17:23:23,049 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_higher_order_ops\\cond.py', reloading
+2025-04-20 17:23:23,059 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_higher_order_ops\\while_loop.py', reloading
+2025-04-20 17:23:23,063 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\func\\__init__.py', reloading
+2025-04-20 17:23:23,066 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\torch\\_functorch\\apis.py', reloading
+2025-04-20 17:23:23,075 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\weasyprint\\__init__.py', reloading
+2025-04-20 17:23:23,086 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\weasyprint\\urls.py', reloading
+2025-04-20 17:23:23,090 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Yosif\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\weasyprint\\document.py', reloading
+2025-04-20 17:23:23,225 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-20 17:23:23,682 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\uploads
+2025-04-20 17:23:23,683 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\processed
+2025-04-20 17:23:23,684 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\results
+2025-04-20 17:23:23,684 - __main__ - INFO - Created/verified directory: c:\Users\Yosif\Documents\GitHub\Finger-Print\app\static\images\output
+2025-04-20 17:23:23,685 - __main__ - INFO - Created/verified directory: logs
+2025-04-20 17:23:23,720 - werkzeug - WARNING -  * Debugger is active!
+2025-04-20 17:23:23,732 - werkzeug - INFO -  * Debugger PIN: 942-969-405
+2025-04-20 17:23:29,668 - werkzeug - INFO - 127.0.0.1 - - [20/Apr/2025 17:23:29] "GET / HTTP/1.1" 200 -
