@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block title %}التقارير{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .report-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: none;
+    }
+    .report-card .card-body {
+        padding: 1.5rem;
+    }
+    .report-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .stat-item {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .report-chart {
+        margin: 1rem 0;
+        height: 300px;
+    }
+    .report-table {
+        margin-top: 1rem;
+    }
+    .report-table th {
+        background-color: #f8f9fa;
+    }
+    .report-actions {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    .filter-section {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .date-range {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    .chart-legend {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: white;
+        padding: 0.5rem;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">التقارير</h4>
+            </div>
+            <div class="card-body">
+                <!-- قسم الفلترة -->
+                <div class="filter-section">
+                    <h5 class="mb-3">فلترة التقارير</h5>
+                    <form id="filterForm">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="reportType" class="form-label">نوع التقرير</label>
+                                    <select class="form-select" id="reportType" name="reportType">
+                                        <option value="daily">يومي</option>
+                                        <option value="weekly">أسبوعي</option>
+                                        <option value="monthly">شهري</option>
+                                        <option value="yearly">سنوي</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="comparisonType" class="form-label">نوع المقارنة</label>
+                                    <select class="form-select" id="comparisonType" name="comparisonType">
+                                        <option value="all">الكل</option>
+                                        <option value="normal">عادية</option>
+                                        <option value="partial">جزئية</option>
+                                        <option value="advanced">متقدمة</option>
+                                        <option value="grid">شبكة</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="resultType" class="form-label">نوع النتيجة</label>
+                                    <select class="form-select" id="resultType" name="resultType">
+                                        <option value="all">الكل</option>
+                                        <option value="success">ناجحة</option>
+                                        <option value="failed">فاشلة</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="date-range">
+                                    <div class="mb-3">
+                                        <label for="startDate" class="form-label">من تاريخ</label>
+                                        <input type="date" class="form-control" id="startDate" name="startDate" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="endDate" class="form-label">إلى تاريخ</label>
+                                        <input type="date" class="form-control" id="endDate" name="endDate" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" class="btn btn-primary d-block">
+                                            <i class="fas fa-filter me-2"></i>
+                                            تطبيق الفلتر
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- إحصائيات عامة -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card report-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">إحصائيات عامة</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="report-stats">
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="totalComparisons">0</div>
+                                        <div class="stat-label">إجمالي المقارنات</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="successRate">0%</div>
+                                        <div class="stat-label">نسبة النجاح</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="avgTime">0s</div>
+                                        <div class="stat-label">متوسط وقت المعالجة</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="avgScore">0%</div>
+                                        <div class="stat-label">متوسط درجة المطابقة</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="comparisonChart"></canvas>
+                                    <div class="chart-legend" id="chartLegend"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تقرير المقارنات حسب النوع -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card report-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">المقارنات حسب النوع</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="typeChart"></canvas>
+                                </div>
+                                <div class="report-table">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>النوع</th>
+                                                <th>العدد</th>
+                                                <th>نسبة النجاح</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="typeTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card report-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">المقارنات حسب النتيجة</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="resultChart"></canvas>
+                                </div>
+                                <div class="report-table">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>النتيجة</th>
+                                                <th>العدد</th>
+                                                <th>النسبة</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="resultTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تقرير الأداء -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card report-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">تقرير الأداء</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="performanceChart"></canvas>
+                                </div>
+                                <div class="report-table">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>المعامل</th>
+                                                <th>القيمة</th>
+                                                <th>التغيير</th>
+                                                <th>التقييم</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="performanceTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تقرير الأخطاء -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card report-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">تقرير الأخطاء</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="errorChart"></canvas>
+                                </div>
+                                <div class="report-table">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>نوع الخطأ</th>
+                                                <th>العدد</th>
+                                                <th>النسبة</th>
+                                                <th>الحل المقترح</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="errorTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- أزرار التصدير -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="report-actions">
+                            <button type="button" class="btn btn-outline-primary" id="exportPDF">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                تصدير PDF
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="exportExcel">
+                                <i class="fas fa-file-excel me-2"></i>
+                                تصدير Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="exportCSV">
+                                <i class="fas fa-file-csv me-2"></i>
+                                تصدير CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // تهيئة التواريخ
+    var today = new Date();
+    var lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    $('#startDate').val(lastMonth.toISOString().split('T')[0]);
+    $('#endDate').val(today.toISOString().split('T')[0]);
+
+    // معالجة تقديم نموذج الفلترة
+    $('#filterForm').submit(function(e) {
+        e.preventDefault();
+        loadReports();
+    });
+
+    // تحميل التقارير
+    function loadReports() {
+        var formData = new FormData($('#filterForm')[0]);
+        
+        $.ajax({
+            url: '{{ url_for("fingerprint.get_reports") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function() {
+                $('.report-card').addClass('loading');
+            },
+            success: function(response) {
+                updateStats(response.stats);
+                updateCharts(response.charts);
+                updateTables(response.tables);
+            },
+            error: function(xhr, status, error) {
+                alert('حدث خطأ أثناء تحميل التقارير: ' + error);
+            },
+            complete: function() {
+                $('.report-card').removeClass('loading');
+            }
+        });
+    }
+
+    // تحديث الإحصائيات
+    function updateStats(stats) {
+        $('#totalComparisons').text(stats.total_comparisons);
+        $('#successRate').text(stats.success_rate + '%');
+        $('#avgTime').text(stats.avg_time + 's');
+        $('#avgScore').text(stats.avg_score + '%');
+    }
+
+    // تحديث الرسوم البيانية
+    function updateCharts(charts) {
+        // رسم بياني المقارنات
+        var comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+        new Chart(comparisonCtx, {
+            type: 'line',
+            data: charts.comparison_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+
+        // رسم بياني الأنواع
+        var typeCtx = document.getElementById('typeChart').getContext('2d');
+        new Chart(typeCtx, {
+            type: 'pie',
+            data: charts.type_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // رسم بياني النتائج
+        var resultCtx = document.getElementById('resultChart').getContext('2d');
+        new Chart(resultCtx, {
+            type: 'doughnut',
+            data: charts.result_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // رسم بياني الأداء
+        var performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(performanceCtx, {
+            type: 'bar',
+            data: charts.performance_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // رسم بياني الأخطاء
+        var errorCtx = document.getElementById('errorChart').getContext('2d');
+        new Chart(errorCtx, {
+            type: 'bar',
+            data: charts.error_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // تحديث الجداول
+    function updateTables(tables) {
+        // جدول الأنواع
+        var typeTableBody = $('#typeTableBody');
+        typeTableBody.empty();
+        tables.type_data.forEach(function(row) {
+            typeTableBody.append(`
+                <tr>
+                    <td>${row.type}</td>
+                    <td>${row.count}</td>
+                    <td>${row.success_rate}%</td>
+                </tr>
+            `);
+        });
+
+        // جدول النتائج
+        var resultTableBody = $('#resultTableBody');
+        resultTableBody.empty();
+        tables.result_data.forEach(function(row) {
+            resultTableBody.append(`
+                <tr>
+                    <td>${row.result}</td>
+                    <td>${row.count}</td>
+                    <td>${row.percentage}%</td>
+                </tr>
+            `);
+        });
+
+        // جدول الأداء
+        var performanceTableBody = $('#performanceTableBody');
+        performanceTableBody.empty();
+        tables.performance_data.forEach(function(row) {
+            performanceTableBody.append(`
+                <tr>
+                    <td>${row.metric}</td>
+                    <td>${row.value}</td>
+                    <td>${row.change}</td>
+                    <td>${row.rating}</td>
+                </tr>
+            `);
+        });
+
+        // جدول الأخطاء
+        var errorTableBody = $('#errorTableBody');
+        errorTableBody.empty();
+        tables.error_data.forEach(function(row) {
+            errorTableBody.append(`
+                <tr>
+                    <td>${row.type}</td>
+                    <td>${row.count}</td>
+                    <td>${row.percentage}%</td>
+                    <td>${row.solution}</td>
+                </tr>
+            `);
+        });
+    }
+
+    // معالجة تصدير التقارير
+    $('#exportPDF').click(function() {
+        window.location.href = '{{ url_for("fingerprint.export_report") }}?format=pdf';
+    });
+
+    $('#exportExcel').click(function() {
+        window.location.href = '{{ url_for("fingerprint.export_report") }}?format=excel';
+    });
+
+    $('#exportCSV').click(function() {
+        window.location.href = '{{ url_for("fingerprint.export_report") }}?format=csv';
+    });
+
+    // تحميل التقارير عند فتح الصفحة
+    loadReports();
+});
+</script>
+{% endblock %} 

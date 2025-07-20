@@ -1,10 +1,9 @@
-from flask import Flask, request, render_template, jsonify, send_file, url_for, redirect
+from flask import Flask, request, render_template, jsonify, send_file, url_for
 import os
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import cv2
 import numpy as np
-import zipfile
 
 from utils.image_processing import preprocess_image
 from utils.minutiae_extraction import extract_minutiae
@@ -13,36 +12,20 @@ from utils.feature_extraction import extract_features, estimate_ridge_frequency
 from utils.scoring import calculate_similarity_score, get_score_details, analyze_match_quality
 from utils.report_generator import generate_report
 from utils.partial_matcher import match_partial_fingerprint, visualize_partial_match
-from utils.grid_matcher import match_normalized_grids, visualize_grid_match, normalize_ridge_distance, divide_into_grids, calculate_grid_match_score
+from utils.grid_matcher import match_normalized_grids, visualize_grid_match, normalize_ridge_distance, divide_into_grids
 
 from config import *
 
 app = Flask(__name__)
-
-# تكوين المسارات
-UPLOAD_FOLDER = os.path.join('static', 'images', 'uploaded')
-PROCESSED_FOLDER = os.path.join('static', 'images', 'processed')
-RESULTS_FOLDER = os.path.join('static', 'images', 'results')
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
-
-# التأكد من وجود المجلدات
-for directory in [UPLOAD_FOLDER, PROCESSED_FOLDER, RESULTS_FOLDER]:
-    os.makedirs(directory, exist_ok=True)
-
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 def index():
-    return render_template('grid_cutter.html')
-
-@app.route('/match')
-def match():
-    return render_template('match.html')
+    return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_fingerprint():
@@ -312,9 +295,7 @@ def upload_fingerprint():
                 'total_score': match_result['best_match']['score'],
                 'minutiae_score': match_result['best_match']['score'],
                 'orientation_score': match_result['best_match']['score'],
-                'density_score': match_result['best_match']['score'],
-                'matched_count': len(minutiae1),
-                'confidence': 'High' if match_result['best_match']['score'] >= 80 else 'Medium' if match_result['best_match']['score'] >= 60 else 'Low'
+                'density_score': match_result['best_match']['score']
             }
             
             # تحديث response_data
@@ -436,123 +417,127 @@ def download_report(timestamp):
 def grid_cutter():
     return render_template('grid_cutter.html')
 
-@app.route('/grid_result/<timestamp>')
-def grid_result(timestamp):
-    try:
-        # استرجاع معلومات النتائج من الملفات المحفوظة
-        original_image = url_for('static', filename=f'images/uploaded/{timestamp}_original.png')
-        visualization = url_for('static', filename=f'images/results/{timestamp}_visualization.png')
-        
-        # قراءة معلومات المربعات
-        grids = []
-        for row in range(3):  # 3x3 grid
-            for col in range(3):
-                grid_url = url_for('static', filename=f'images/results/{timestamp}_grid_{row}_{col}.png')
-                grids.append({
-                    'image_url': grid_url,
-                    'position': {'row': row, 'col': col}
-                })
-        
-        # إنشاء رابط تحميل الملف المضغوط
-        download_url = url_for('static', filename=f'images/results/{timestamp}_grids.zip')
-        
-        return render_template('grid_result.html',
-                             original_image=original_image,
-                             visualization=visualization,
-                             grids=grids,
-                             grid_info={'rows': 3, 'cols': 3},
-                             download_url=download_url)
-                             
-    except Exception as e:
-        return redirect(url_for('grid_cutter'))
-
 @app.route('/process_grids', methods=['POST'])
 def process_grids():
     try:
-        if 'fullFingerprint' not in request.files:
-            return jsonify({'error': 'لم يتم تحديد ملف'}), 400
+        print("بدء معالجة المربعات...")
+        
+        # التحقق من وجود الملفات
+        if 'fullFingerprint' not in request.files or 'referenceFingerprint' not in request.files:
+            return jsonify({'error': 'يجب تحديد كلا الصورتين'}), 400
+        
+        full_fingerprint = request.files['fullFingerprint']
+        reference_fingerprint = request.files['referenceFingerprint']
+        
+        if full_fingerprint.filename == '' or reference_fingerprint.filename == '':
+            return jsonify({'error': 'لم يتم اختيار الملفات'}), 400
             
-        file = request.files['fullFingerprint']
-        if file.filename == '':
-            return jsonify({'error': 'لم يتم اختيار ملف'}), 400
-            
-        if not allowed_file(file.filename):
+        if not (allowed_file(full_fingerprint.filename) and allowed_file(reference_fingerprint.filename)):
             return jsonify({'error': 'نوع الملف غير مدعوم'}), 400
-
-        # إنشاء طابع زمني فريد
+        
+        # إنشاء مجلد للنتائج إذا لم يكن موجوداً
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        grid_results_folder = os.path.join(RESULTS_FOLDER, f'grids_{timestamp}')
+        os.makedirs(grid_results_folder, exist_ok=True)
         
-        # حفظ الصورة الأصلية
-        original_filename = f'{timestamp}_original.png'
-        original_path = os.path.join(UPLOAD_FOLDER, original_filename)
-        file.save(original_path)
+        # حفظ الصور المرفوعة
+        full_path = os.path.join(grid_results_folder, 'full.png')
+        ref_path = os.path.join(grid_results_folder, 'reference.png')
+        full_fingerprint.save(full_path)
+        reference_fingerprint.save(ref_path)
         
-        # معالجة الصورة
-        img = cv2.imread(original_path)
-        height, width = img.shape[:2]
+        print("تم حفظ الصور المرفوعة")
         
-        # حساب حجم المربع
-        grid_size = min(height, width) // 3
+        # معالجة الصور
+        processed_full = preprocess_image(full_path)
+        processed_ref = preprocess_image(ref_path)
         
-        # إنشاء صورة توضيحية
-        visualization = img.copy()
+        print("تم معالجة الصور")
         
-        # تقطيع الصورة إلى مربعات وحفظها
-        grids = []
-        for row in range(3):
-            for col in range(3):
-                # حساب إحداثيات المربع
-                y = row * grid_size
-                x = col * grid_size
-                
-                # قص المربع
-                grid = img[y:y+grid_size, x:x+grid_size]
-                
-                # حفظ المربع
-                grid_filename = f'{timestamp}_grid_{row}_{col}.png'
-                grid_path = os.path.join(RESULTS_FOLDER, grid_filename)
-                cv2.imwrite(grid_path, grid)
-                
-                # رسم مستطيل حول المربع في الصورة التوضيحية
-                cv2.rectangle(visualization, (x, y), (x+grid_size, y+grid_size), (0, 255, 0), 2)
-                # إضافة رقم المربع
-                cv2.putText(visualization, f'{row},{col}', (x+10, y+30), 
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # تحديد عدد المربعات في كل صف وعمود
+        grid_rows = 3  # عدد الصفوف
+        grid_cols = 3  # عدد الأعمدة
         
+        # حساب حجم كل مربع
+        height, width = processed_full.shape
+        grid_height = height // grid_rows
+        grid_width = width // grid_cols
+        
+        print(f"تقسيم الصورة {width}x{height} إلى شبكة {grid_rows}x{grid_cols}")
+        print(f"حجم كل مربع: {grid_width}x{grid_height}")
+        
+        # معالجة كل مربع وحفظ النتائج
+        processed_grids = []
+        
+        for row in range(grid_rows):
+            for col in range(grid_cols):
+                try:
+                    # تحديد حدود المربع
+                    y1 = row * grid_height
+                    y2 = (row + 1) * grid_height
+                    x1 = col * grid_width
+                    x2 = (col + 1) * grid_width
+                    
+                    # استخراج المربع
+                    grid = processed_full[y1:y2, x1:x2].copy()
+                    
+                    # حفظ المربع
+                    grid_filename = f'grid_r{row+1}_c{col+1}.png'
+                    grid_path = os.path.join(grid_results_folder, grid_filename)
+                    cv2.imwrite(grid_path, grid)
+                    
+                    # حساب المسافة بين الخطوط في المربع
+                    grid_freq = estimate_ridge_frequency(grid)
+                    valid_grid_freq = grid_freq[grid_freq > 0]
+                    if len(valid_grid_freq) > 0:
+                        grid_distance = 1.0 / np.mean(valid_grid_freq)
+                    else:
+                        grid_distance = 0
+                    
+                    processed_grids.append({
+                        'image_url': url_for('static', filename=f'images/results/grids_{timestamp}/{grid_filename}'),
+                        'position': {'row': row + 1, 'col': col + 1},
+                        'coordinates': {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2},
+                        'ridge_distance': float(grid_distance)
+                    })
+                    
+                    print(f"تمت معالجة المربع ({row+1}, {col+1}) بنجاح")
+                    
+                except Exception as e:
+                    print(f"خطأ في معالجة المربع ({row+1}, {col+1}): {str(e)}")
+                    continue
+        
+        # إنشاء صورة توضيحية للتقسيم
+        visualization = cv2.cvtColor(processed_full.copy(), cv2.COLOR_GRAY2BGR)
+        
+        # رسم خطوط الشبكة
+        for row in range(1, grid_rows):
+            y = row * grid_height
+            cv2.line(visualization, (0, y), (width, y), (0, 255, 0), 2)
+        
+        for col in range(1, grid_cols):
+            x = col * grid_width
+            cv2.line(visualization, (x, 0), (x, height), (0, 255, 0), 2)
+            
         # حفظ الصورة التوضيحية
-        vis_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_visualization.png')
+        vis_filename = 'grid_visualization.png'
+        vis_path = os.path.join(grid_results_folder, vis_filename)
         cv2.imwrite(vis_path, visualization)
-
-        # إنشاء ملف مضغوط يحتوي على جميع المربعات
-        zip_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_grids.zip')
-        with zipfile.ZipFile(zip_path, 'w') as zipf:
-            for row in range(3):
-                for col in range(3):
-                    grid_filename = f'{timestamp}_grid_{row}_{col}.png'
-                    grid_path = os.path.join(RESULTS_FOLDER, grid_filename)
-                    zipf.write(grid_path, grid_filename)
-
-        # إعداد قائمة المربعات
-        grids = [
-            {
-                'image_url': url_for('static', filename=f'images/results/{timestamp}_grid_{row}_{col}.png'),
-                'position': {'row': row, 'col': col}
-            }
-            for row in range(3) for col in range(3)
-        ]
-
-        # إرجاع جميع البيانات المطلوبة
+        
         return jsonify({
-            'grids': grids,
-            'grid_info': {'rows': 3, 'cols': 3},
-            'visualization': url_for('static', filename=f'images/results/{timestamp}_visualization.png'),
-            'original': url_for('static', filename=f'images/uploaded/{timestamp}_original.png'),
-            'result_url': url_for('grid_result', timestamp=timestamp)
+            'grids': processed_grids,
+            'grid_info': {
+                'rows': grid_rows,
+                'cols': grid_cols,
+                'width': grid_width,
+                'height': grid_height
+            },
+            'visualization': url_for('static', filename=f'images/results/grids_{timestamp}/{vis_filename}')
         })
         
     except Exception as e:
-        print(f"خطأ: {str(e)}")
         import traceback
+        print("حدث خطأ:")
         print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
@@ -668,16 +653,7 @@ def match_fingerprints_route():
         
         if matching_mode == 'normalized':
             print("استخدام المطابقة بالمربعات المعدلة...")
-            grid_match_result = match_normalized_grids(processed2, processed1)
-            
-            # تحويل النتيجة إلى الصيغة المطلوبة
-            match_result = {
-                'matched_minutiae': [],  # لا نحتفظ بالنقاط المتطابقة في هذا الوضع
-                'minutiae_score': grid_match_result['best_match']['score'],
-                'orientation_score': grid_match_result['best_match']['score'],
-                'density_score': grid_match_result['best_match']['score'],
-                'grid_match': grid_match_result
-            }
+            match_result = match_normalized_grids(processed2, processed1)
             
         elif matching_mode == 'grid_cut':
             print("استخدام المطابقة مع المربعات المقطعة...")
@@ -707,16 +683,9 @@ def match_fingerprints_route():
                         'position': grid['position']
                     }
             
-            # تحويل النتيجة إلى الصيغة المطلوبة
             match_result = {
-                'matched_minutiae': [],  # لا نحتفظ بالنقاط المتطابقة في هذا الوضع
-                'minutiae_score': best_match['score'],
-                'orientation_score': best_match['score'],
-                'density_score': best_match['score'],
-                'grid_match': {
-                    'best_match': best_match,
-                    'grid_size': grid_size
-                }
+                'best_match': best_match,
+                'grid_size': grid_size
             }
             
         else:
@@ -728,37 +697,23 @@ def match_fingerprints_route():
                 features2
             )
         
-        # تحليل النتائج وإنشاء التقرير المرئي
+        # تحليل النتائج
+        score_details = get_score_details(match_result)
         quality_analysis = analyze_match_quality(match_result)
         
-        # حفظ صورة المطابقة
+        # إنشاء الصورة التوضيحية
         if matching_mode in ['normalized', 'grid_cut']:
-            # إنشاء صورة توضيحية للمطابقة بالمربعات
-            visualization = cv2.cvtColor(processed1.copy(), cv2.COLOR_GRAY2BGR)
-            best_pos = match_result['grid_match']['best_match']['position']
-            grid_size = match_result['grid_match']['grid_size']
-            
-            # رسم المربع الأفضل تطابقاً
-            cv2.rectangle(visualization,
-                        best_pos,
-                        (best_pos[0] + grid_size, best_pos[1] + grid_size),
-                        (0, 255, 0), 2)
-            
-            match_img = visualization
+            visualization = visualize_grid_match(processed2, processed1, match_result)
+            match_vis_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
+            cv2.imwrite(match_vis_path, visualization['main_visualization'])
         else:
-            # استخدام التصور العادي للمطابقة
-            match_img = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
-        
-        # حفظ الصورة
-        match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
-        cv2.imwrite(match_path, match_img)
-        
-        # إعداد تفاصيل النتيجة
-        score_details = get_score_details(match_result)
+            match_vis = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
+            match_vis_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
+            cv2.imwrite(match_vis_path, match_vis)
         
         return jsonify({
-            'timestamp': timestamp,
-            'scores': {
+            'is_match': score_details['total_score'] >= MATCHING_THRESHOLD,
+            'score': {
                 'total': score_details['total_score'],
                 'minutiae': score_details['minutiae_score'],
                 'orientation': score_details['orientation_score'],
@@ -770,15 +725,8 @@ def match_fingerprints_route():
         
     except Exception as e:
         print(f"خطأ: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Create necessary directories if they don't exist
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs(PROCESSED_FOLDER, exist_ok=True)
-    os.makedirs(RESULTS_FOLDER, exist_ok=True)
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-    
+    app = create_app()
     app.run(debug=True) 

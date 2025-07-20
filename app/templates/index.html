@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}الرئيسية{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">مرحباً بك في نظام مطابقة البصمات</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-exchange-alt fa-3x mb-3 text-primary"></i>
+                                <h5 class="card-title">مقارنة عادية</h5>
+                                <p class="card-text">مقارنة بصمتين بشكل كامل</p>
+                                <a href="{{ url_for('fingerprint.normal_compare') }}" class="btn btn-primary">ابدأ المقارنة</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-puzzle-piece fa-3x mb-3 text-success"></i>
+                                <h5 class="card-title">مقارنة جزئية</h5>
+                                <p class="card-text">مقارنة جزء من البصمة مع بصمة كاملة</p>
+                                <a href="{{ url_for('fingerprint.partial_compare') }}" class="btn btn-success">ابدأ المقارنة</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cogs fa-3x mb-3 text-info"></i>
+                                <h5 class="card-title">مقارنة متقدمة</h5>
+                                <p class="card-text">مقارنة متقدمة مع خيارات إضافية</p>
+                                <a href="{{ url_for('fingerprint.advanced_compare') }}" class="btn btn-info">ابدأ المقارنة</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cut fa-3x mb-3 text-warning"></i>
+                                <h5 class="card-title">قطع الشبكة</h5>
+                                <p class="card-text">تقسيم البصمة إلى شبكة</p>
+                                <a href="{{ url_for('fingerprint.grid_cutter') }}" class="btn btn-warning">ابدأ القطع</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-th fa-3x mb-3 text-danger"></i>
+                                <h5 class="card-title">مقارنة الشبكة</h5>
+                                <p class="card-text">مقارنة شبكات البصمات</p>
+                                <a href="{{ url_for('fingerprint.grid_compare') }}" class="btn btn-danger">ابدأ المقارنة</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-bar fa-3x mb-3 text-secondary"></i>
+                                <h5 class="card-title">التقارير</h5>
+                                <p class="card-text">عرض التقارير والإحصائيات</p>
+                                <a href="{{ url_for('fingerprint.reports') }}" class="btn btn-secondary">عرض التقارير</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
