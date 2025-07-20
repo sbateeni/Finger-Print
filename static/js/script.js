@@ -339,6 +339,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // معالجة النتائج
+    function handleResults(data) {
+        console.log('Processing results:', data);
+        
+        // إخفاء منطقة التحميل
+        loadingArea.classList.add('d-none');
+        
+        // عرض المربعات المقطعة
+        if (data.grids && data.grids.length > 0) {
+            gridCutArea.classList.remove('d-none');
+            gridSquares.innerHTML = data.grids.map((grid, index) => `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="/static/images/processed/${data.timestamp}_grid_${grid.position.row}_${grid.position.col}.png" 
+                             class="card-img-top" 
+                             alt="مربع ${index + 1}">
+                        <div class="card-body">
+                            <p class="card-text">الموقع: (${grid.position.row}, ${grid.position.col})</p>
+                            ${grid.ridge_distance ? `
+                                <p class="card-text">
+                                    <small class="text-muted">المسافة بين الخطوط: ${grid.ridge_distance.toFixed(2)}</small>
+                                </p>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // تفعيل أزرار المطابقة
+            matchingButtons.classList.remove('d-none');
+            normalizedGridsButton.disabled = false;
+            gridCutMatchingButton.disabled = false;
+        } else {
+            gridCutArea.innerHTML = '<div class="alert alert-warning">لم يتم العثور على مربعات مقطعة</div>';
+        }
+    }
+
     // عرض نتائج المطابقة
     function displayMatchingResults(data) {
         console.log('Displaying matching results:', data);
@@ -451,15 +488,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function showError(message) {
-        const resultsArea = document.getElementById('resultsArea');
-        document.getElementById('loadingArea').classList.add('d-none');
-        resultsArea.classList.remove('d-none');
-        resultsArea.innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-circle"></i>
-                ${message}
-            </div>
-        `;
+    function getConfidenceLevel(score) {
+        if (score >= 90) return 'عالي جداً';
+        if (score >= 80) return 'عالي';
+        if (score >= 70) return 'متوسط';
+        if (score >= 60) return 'منخفض';
+        return 'غير موثوق';
     }
 }); 

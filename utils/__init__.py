@@ -8,6 +8,7 @@ from .matcher import match_fingerprints
 from .feature_extraction import extract_features
 from .scoring import calculate_similarity_score
 from .report_generator import generate_report
+from .grid_matcher import calculate_grid_match_score
 
 __all__ = [
     'preprocess_image',
@@ -15,5 +16,6 @@ __all__ = [
     'match_fingerprints',
     'extract_features',
     'calculate_similarity_score',
-    'generate_report'
+    'generate_report',
+    'calculate_grid_match_score'
 ] 

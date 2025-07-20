@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مطابقة البصمات</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-fingerprint"></i>
+                نظام مطابقة البصمات
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-grid-3x3"></i>
+                            تقطيع البصمة
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/match">
+                            <i class="bi bi-search"></i>
+                            مطابقة البصمات
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">مطابقة البصمات</h2>
+                        
+                        <form id="uploadForm" action="{{ url_for('match_fingerprints') }}" method="POST" enctype="multipart/form-data">
+                            <div class="row">
+                                <!-- البصمة الأولى -->
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">البصمة الكاملة</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="upload-area" id="fingerprint1Area">
+                                                <i class="bi bi-cloud-upload"></i>
+                                                <p>اختر صورة البصمة الكاملة أو اسحبها إلى هنا</p>
+                                                <input type="file" id="fingerprint1" name="fingerprint1" class="form-control" accept="image/*" required>
+                                            </div>
+                                            <div class="preview" id="preview1"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- البصمة الثانية -->
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">البصمة الجزئية</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="upload-area" id="fingerprint2Area">
+                                                <i class="bi bi-cloud-upload"></i>
+                                                <p>اختر صورة البصمة الجزئية أو اسحبها إلى هنا</p>
+                                                <input type="file" id="fingerprint2" name="fingerprint2" class="form-control" accept="image/*" required>
+                                            </div>
+                                            <div class="preview" id="preview2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- خيارات المطابقة -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">خيارات المطابقة</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="minutiaeCount" class="form-label">عدد النقاط المميزة</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="range" class="form-range flex-grow-1" id="minutiaeCount" name="minutiaeCount" min="50" max="200" value="100">
+                                            <span class="ms-2" id="minutiaeCountValue">100 نقطة</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- منطقة التحميل -->
+                            <div id="loadingArea" class="d-none">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">جاري التحميل...</span>
+                                </div>
+                                <div id="loadingText" class="mt-3">جاري معالجة البصمات...</div>
+                            </div>
+
+                            <!-- زر التقديم -->
+                            <div class="text-center mt-3">
+                                <button type="submit" id="submitButton" class="btn btn-primary" disabled>
+                                    <i class="bi bi-search"></i>
+                                    مطابقة البصمات
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- منطقة عرض النتائج -->
+                        <div id="resultsArea" class="mt-4 d-none">
+                            <h4 class="mb-3">نتائج المطابقة</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="matchVisualization"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="matchDetails"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 
