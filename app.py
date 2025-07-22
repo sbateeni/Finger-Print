@@ -1,732 +1,356 @@
-from flask import Flask, request, render_template, jsonify, send_file, url_for
-import os
-from werkzeug.utils import secure_filename
-from datetime import datetime
+import streamlit as st
 import cv2
 import numpy as np
-
-from utils.image_processing import preprocess_image
-from utils.minutiae_extraction import extract_minutiae
+from PIL import Image
+import logging
+import traceback
+from utils.image_processing import preprocess_image, detect_edges, enhance_image
+from utils.minutiae_extractor import extract_minutiae, visualize_minutiae
 from utils.matcher import match_fingerprints, visualize_matches
-from utils.feature_extraction import extract_features, estimate_ridge_frequency
-from utils.scoring import calculate_similarity_score, get_score_details, analyze_match_quality
 from utils.report_generator import generate_report
-from utils.partial_matcher import match_partial_fingerprint, visualize_partial_match
-from utils.grid_matcher import match_normalized_grids, visualize_grid_match, normalize_ridge_distance, divide_into_grids
-
 from config import *
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+# تكوين التسجيل
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# تكوين الصفحة
+st.set_page_config(
+    page_title="نظام تحليل البصمات",
+    page_icon="🔍",
+    layout="wide"
+)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# العنوان الرئيسي
+st.title("نظام تحليل البصمات الجنائي")
+st.markdown("""
+### نظام متقدم لتحليل ومطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي
+""")
 
-@app.route('/upload', methods=['POST'])
-def upload_fingerprint():
-    try:
-        print("Starting fingerprint upload and processing...")
-        
-        # Create necessary directories if they don't exist
-        print("Creating directories...")
-        for directory in [app.config['UPLOAD_FOLDER'], PROCESSED_FOLDER, RESULTS_FOLDER, OUTPUT_FOLDER]:
-            os.makedirs(directory, exist_ok=True)
-            print(f"Directory created/verified: {directory}")
+# إنشاء أعمدة للصور
+col1, col2 = st.columns(2)
 
-        print("Checking request files...")
-        if 'fingerprint1' not in request.files or 'fingerprint2' not in request.files:
-            print("Error: Missing files in request")
-            return jsonify({'error': 'Both fingerprint images are required'}), 400
-        
-        fingerprint1 = request.files['fingerprint1']
-        fingerprint2 = request.files['fingerprint2']
-        
-        # Get parameters from request
-        minutiae_count = int(request.form.get('minutiaeCount', 100))
-        is_partial_mode = request.form.get('matchingMode') == 'true'
-        use_grid_matching = request.form.get('useGridMatching') == 'true'
-        use_grid_cut_matching = request.form.get('useGridCutMatching') == 'true'
-        
-        print(f"Requested minutiae count: {minutiae_count}")
-        print(f"Partial matching mode: {is_partial_mode}")
-        print(f"Grid matching mode: {use_grid_matching}")
-        print(f"Grid cut matching mode: {use_grid_cut_matching}")
-        
-        print(f"Received files: {fingerprint1.filename}, {fingerprint2.filename}")
-        
-        if fingerprint1.filename == '' or fingerprint2.filename == '':
-            print("Error: Empty filenames")
-            return jsonify({'error': 'No selected files'}), 400
-        
-        if not (allowed_file(fingerprint1.filename) and allowed_file(fingerprint2.filename)):
-            print(f"Error: Invalid file types. Allowed types are: {ALLOWED_EXTENSIONS}")
-            return jsonify({'error': 'Invalid file type. Allowed types are: ' + ', '.join(ALLOWED_EXTENSIONS)}), 400
+# إعداد معايير الفلترة من الواجهة
+st.sidebar.header("إعدادات فلترة النقاط الدقيقة")
+DEFAULT_BORDER_MARGIN = 10
+DEFAULT_MIN_DISTANCE = 10
+DEFAULT_MIN_CONTRAST = 15
+DEFAULT_MIN_ANGLE_DIFF = 10
 
-        # Create timestamp for unique filenames
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        print(f"Generated timestamp: {timestamp}")
-        
-        # Save original images
-        filename1 = f"{timestamp}_1_{secure_filename(fingerprint1.filename)}"
-        filename2 = f"{timestamp}_2_{secure_filename(fingerprint2.filename)}"
-        
-        filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
-        filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
-        
-        print(f"Saving files to: {filepath1}, {filepath2}")
-        fingerprint1.save(filepath1)
-        fingerprint2.save(filepath2)
-        
-        # Process images
-        print("Processing images...")
-        processed1 = preprocess_image(filepath1)
-        processed2 = preprocess_image(filepath2)
-        
-        # Save processed images
-        proc1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_processed.png')
-        proc2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_processed.png')
-        print(f"Saving processed images to: {proc1_path}, {proc2_path}")
-        cv2.imwrite(proc1_path, processed1)
-        cv2.imwrite(proc2_path, processed2)
-        
-        # Extract minutiae
-        print("Extracting minutiae...")
-        minutiae1 = extract_minutiae(processed1, max_points=minutiae_count)
-        minutiae2 = extract_minutiae(processed2, max_points=minutiae_count)
-        print(f"Found minutiae points: {len(minutiae1)} in image 1, {len(minutiae2)} in image 2")
-        
-        # Save minutiae visualizations
-        print("Generating minutiae visualizations...")
-        from utils.minutiae_extraction import visualize_minutiae
-        min1_img = visualize_minutiae(processed1, minutiae1)
-        min2_img = visualize_minutiae(processed2, minutiae2)
-        
-        min1_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_1_minutiae.png')
-        min2_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_2_minutiae.png')
-        print(f"Saving minutiae visualizations to: {min1_path}, {min2_path}")
-        cv2.imwrite(min1_path, min1_img)
-        cv2.imwrite(min2_path, min2_img)
-        
-        # Extract features
-        print("Extracting features...")
-        features1 = extract_features(processed1)
-        features2 = extract_features(processed2)
-        
-        # Match fingerprints based on mode
-        print("Matching fingerprints...")
-        if use_grid_cut_matching:
-            print("بدء المطابقة مع المربعات المقطعة...")
-            
-            # تقسيم البصمة الأولى إلى مربعات
-            grid_rows = 3
-            grid_cols = 3
-            height, width = processed1.shape
-            grid_height = height // grid_rows
-            grid_width = width // grid_cols
-            
-            print(f"تقسيم البصمة الأولى {width}x{height} إلى شبكة {grid_rows}x{grid_cols}")
-            
-            best_match = {
-                'score': 0,
-                'grid_position': None,
-                'match_result': None
-            }
-            
-            all_grid_matches = []
-            
-            # مقارنة البصمة الجزئية مع كل مربع
-            for row in range(grid_rows):
-                for col in range(grid_cols):
-                    try:
-                        # تحديد حدود المربع
-                        y1 = row * grid_height
-                        y2 = (row + 1) * grid_height
-                        x1 = col * grid_width
-                        x2 = (col + 1) * grid_width
-                        
-                        # استخراج المربع
-                        grid = processed1[y1:y2, x1:x2].copy()
-                        
-                        # مقارنة المربع مع البصمة الجزئية
-                        grid_match = match_partial_fingerprint(grid, processed2, 
-                                                            extract_features(grid),
-                                                            features2)
-                        
-                        match_score = grid_match['best_match_score']
-                        
-                        grid_result = {
-                            'position': {'row': row + 1, 'col': col + 1},
-                            'coordinates': {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2},
-                            'score': match_score
-                        }
-                        
-                        all_grid_matches.append(grid_result)
-                        
-                        if match_score > best_match['score']:
-                            best_match = {
-                                'score': match_score,
-                                'grid_position': grid_result['position'],
-                                'match_result': grid_match
-                            }
-                        
-                        print(f"مطابقة المربع ({row+1}, {col+1}) - النتيجة: {match_score:.2f}%")
-                        
-                    except Exception as e:
-                        print(f"خطأ في معالجة المربع ({row+1}, {col+1}): {str(e)}")
-                        continue
-            
-            # إنشاء صورة توضيحية للنتائج
-            visualization = cv2.cvtColor(processed1.copy(), cv2.COLOR_GRAY2BGR)
-            
-            # رسم كل المربعات مع درجات تطابقها
-            for grid_match in all_grid_matches:
-                pos = grid_match['position']
-                coords = grid_match['coordinates']
-                score = grid_match['score']
-                
-                # تحديد لون المربع بناءً على درجة التطابق
-                color_intensity = int(score * 2.55)  # تحويل النسبة المئوية إلى قيمة لونية
-                color = (0, color_intensity, 0)  # اللون الأخضر بدرجات متفاوتة
-                
-                # رسم المربع
-                cv2.rectangle(visualization, 
-                            (coords['x1'], coords['y1']), 
-                            (coords['x2'], coords['y2']), 
-                            color, 2)
-                
-                # كتابة درجة التطابق
-                cv2.putText(visualization, 
-                          f"{score:.1f}%",
-                          (coords['x1'] + 5, coords['y1'] + 20),
-                          cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-            
-            # تمييز أفضل مربع باللون الأصفر
-            best_coords = all_grid_matches[0]['coordinates']  # الموقع الافتراضي
-            for grid_match in all_grid_matches:
-                if (grid_match['position']['row'] == best_match['grid_position']['row'] and 
-                    grid_match['position']['col'] == best_match['grid_position']['col']):
-                    best_coords = grid_match['coordinates']
-                    break
-            
-            cv2.rectangle(visualization,
-                        (best_coords['x1'], best_coords['y1']),
-                        (best_coords['x2'], best_coords['y2']),
-                        (0, 255, 255), 3)  # لون أصفر وخط أعرض
-            
-            # حفظ الصورة التوضيحية
-            match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
-            cv2.imwrite(match_path, visualization)
-            
-            # تحضير تفاصيل النتيجة
-            score_details = {
-                'total_score': best_match['score'],
-                'minutiae_score': best_match['score'],
-                'orientation_score': best_match['score'],
-                'density_score': best_match['score']
-            }
-            
-            quality_analysis = {
-                'quality_level': 'جيد' if best_match['score'] >= 70 else 'متوسط' if best_match['score'] >= 50 else 'ضعيف',
-                'issues': [],
-                'recommendations': []
-            }
-            
-            if best_match['score'] < 50:
-                quality_analysis['issues'].append('درجة التطابق منخفضة')
-                quality_analysis['recommendations'].append('حاول استخدام جزء أكبر من البصمة')
-            
-            response_data = {
-                'processed_images': {
-                    'img1': url_for('static', filename=f'images/processed/{timestamp}_1_processed.png'),
-                    'img2': url_for('static', filename=f'images/processed/{timestamp}_2_processed.png')
-                },
-                'minutiae_images': {
-                    'img1': url_for('static', filename=f'images/processed/{timestamp}_1_minutiae.png'),
-                    'img2': url_for('static', filename=f'images/processed/{timestamp}_2_minutiae.png')
-                },
-                'minutiae_count': {
-                    'img1': int(len(minutiae1)),
-                    'img2': int(len(minutiae2))
-                },
-                'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png'),
-                'score': {
-                    'total': float(score_details['total_score']),
-                    'minutiae': float(score_details['minutiae_score']),
-                    'orientation': float(score_details['orientation_score']),
-                    'density': float(score_details['density_score'])
-                },
-                'is_match': bool(score_details['total_score'] >= MATCHING_THRESHOLD),
-                'quality': quality_analysis,
-                'grid_cut_match': {
-                    'best_match': {
-                        'position': best_match['grid_position'],
-                        'score': float(best_match['score'])
-                    },
-                    'all_matches': all_grid_matches
-                }
-            }
-            
-        elif use_grid_matching:
-            # استخدام المطابقة بالمربعات المعدلة
-            print("بدء المطابقة باستخدام المربعات المعدلة...")
-            print("معالجة البصمة الثانية كبصمة جزئية...")
-            
-            # تبديل البصمات إذا كانت البصمة الثانية أكبر من الأولى
-            if processed2.shape[0] * processed2.shape[1] > processed1.shape[0] * processed1.shape[1]:
-                processed1, processed2 = processed2, processed1
-                print("تم تبديل البصمتين لأن البصمة الثانية أكبر")
-            
-            match_result = match_normalized_grids(processed2, processed1)  # البصمة الثانية هي الجزئية
-            visualizations = visualize_grid_match(processed2, processed1, match_result)
-            
-            # حفظ الصور
-            match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
-            grids_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_grids_visualization.png')
-            
-            cv2.imwrite(match_path, visualizations['main_visualization'])
-            cv2.imwrite(grids_path, visualizations['grids_visualization'])
-            
-            score_details = {
-                'total_score': match_result['best_match']['score'],
-                'minutiae_score': match_result['best_match']['score'],
-                'orientation_score': match_result['best_match']['score'],
-                'density_score': match_result['best_match']['score']
-            }
-            
-            # تحديث response_data
-            response_data = {
-                'processed_images': {
-                    'img1': url_for('static', filename=f'images/processed/{timestamp}_1_processed.png'),
-                    'img2': url_for('static', filename=f'images/processed/{timestamp}_2_processed.png')
-                },
-                'minutiae_images': {
-                    'img1': url_for('static', filename=f'images/processed/{timestamp}_1_minutiae.png'),
-                    'img2': url_for('static', filename=f'images/processed/{timestamp}_2_minutiae.png')
-                },
-                'minutiae_count': {
-                    'img1': int(len(minutiae1)),
-                    'img2': int(len(minutiae2))
-                },
-                'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png'),
-                'score': {
-                    'total': float(score_details['total_score']),
-                    'minutiae': float(score_details['minutiae_score']),
-                    'orientation': float(score_details['orientation_score']),
-                    'density': float(score_details['density_score'])
-                },
-                'is_match': bool(score_details['total_score'] >= MATCHING_THRESHOLD),
-                'quality': {
-                    'level': str(quality_analysis['quality_level']),
-                    'issues': [str(issue) for issue in quality_analysis['issues']],
-                    'recommendations': [str(rec) for rec in quality_analysis['recommendations']]
-                },
-                'is_partial_mode': is_partial_mode,
-                'use_grid_matching': use_grid_matching,
-                'grid_match': {
-                    'position': match_result['best_match']['position'],
-                    'score': float(match_result['best_match']['score']),
-                    'grids_visualization': url_for('static', filename=f'images/results/{timestamp}_grids_visualization.png')
-                }
-            }
-        elif is_partial_mode:
-            match_result = match_partial_fingerprint(processed1, processed2, features1, features2)
-            match_img = visualize_partial_match(processed1, processed2, match_result)
-            score_details = get_score_details(match_result)
-        else:
-            match_result = match_fingerprints(minutiae1, minutiae2, features1, features2)
-            match_img = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
-            score_details = get_score_details(match_result)
-        
-        match_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
-        print(f"Saving matching visualization to: {match_path}")
-        cv2.imwrite(match_path, match_img)
-        
-        # Calculate scores and analysis
-        print("Calculating scores and analysis...")
-        quality_analysis = analyze_match_quality(match_result)
-        
-        print(f"Score details: {score_details}")
-        print(f"Quality analysis: {quality_analysis}")
-        
-        # Prepare response data
-        response_data = {
-            'processed_images': {
-                'img1': url_for('static', filename=f'images/processed/{timestamp}_1_processed.png'),
-                'img2': url_for('static', filename=f'images/processed/{timestamp}_2_processed.png')
-            },
-            'minutiae_images': {
-                'img1': url_for('static', filename=f'images/processed/{timestamp}_1_minutiae.png'),
-                'img2': url_for('static', filename=f'images/processed/{timestamp}_2_minutiae.png')
-            },
-            'minutiae_count': {
-                'img1': int(len(minutiae1)),
-                'img2': int(len(minutiae2))
-            },
-            'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png'),
-            'score': {
-                'total': float(score_details['total_score']),
-                'minutiae': float(score_details['minutiae_score']),
-                'orientation': float(score_details['orientation_score']),
-                'density': float(score_details['density_score'])
-            },
-            'is_match': bool(score_details['total_score'] >= MATCHING_THRESHOLD),
-            'quality': {
-                'level': str(quality_analysis['quality_level']),
-                'issues': [str(issue) for issue in quality_analysis['issues']],
-                'recommendations': [str(rec) for rec in quality_analysis['recommendations']]
-            },
-            'is_partial_mode': is_partial_mode,
-            'use_grid_matching': use_grid_matching
-        }
-        
-        if is_partial_mode:
-            response_data['partial_match'] = {
-                'location': match_result['match_location'],
-                'region': match_result['best_match_region']
-            }
-        
-        print("Sending response data...")
-        print(f"Response URLs: {response_data['processed_images']}")
-        return jsonify(response_data)
-        
-    except Exception as e:
-        import traceback
-        print("Error occurred during processing:")
-        print("Error message:", str(e))
-        print("Traceback:")
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+if 'border_margin' not in st.session_state:
+    st.session_state['border_margin'] = DEFAULT_BORDER_MARGIN
+if 'min_distance' not in st.session_state:
+    st.session_state['min_distance'] = DEFAULT_MIN_DISTANCE
+if 'min_contrast' not in st.session_state:
+    st.session_state['min_contrast'] = DEFAULT_MIN_CONTRAST
+if 'min_angle_diff' not in st.session_state:
+    st.session_state['min_angle_diff'] = DEFAULT_MIN_ANGLE_DIFF
 
-@app.route('/report/<timestamp>')
-def view_report(timestamp):
-    return render_template('report.html', timestamp=timestamp)
+if st.sidebar.button("إعادة ضبط إعدادات الفلترة للوضع الافتراضي"):
+    st.session_state['border_margin'] = DEFAULT_BORDER_MARGIN
+    st.session_state['min_distance'] = DEFAULT_MIN_DISTANCE
+    st.session_state['min_contrast'] = DEFAULT_MIN_CONTRAST
+    st.session_state['min_angle_diff'] = DEFAULT_MIN_ANGLE_DIFF
 
-@app.route('/download_report/<timestamp>')
-def download_report(timestamp):
-    report_path = os.path.join(OUTPUT_FOLDER, f'report_{timestamp}.pdf')
-    if os.path.exists(report_path):
-        return send_file(report_path, as_attachment=True)
-    return jsonify({'error': 'Report not found'}), 404
+border_margin = st.sidebar.slider(
+    "هامش الحواف (بكسل) !",
+    min_value=0, max_value=50, value=st.session_state['border_margin'], step=1, key='border_margin',
+    help="النقاط القريبة من الحافة سيتم تجاهلها. زيادة القيمة تقلل النقاط القريبة من الأطراف."
+)
+min_distance = st.sidebar.slider(
+    "أقل مسافة بين النقاط (بكسل) !",
+    min_value=1, max_value=50, value=st.session_state['min_distance'], step=1, key='min_distance',
+    help="أقل مسافة مسموحة بين نقطتين مميزتين. زيادة القيمة تقلل النقاط المتقاربة."
+)
+min_contrast = st.sidebar.slider(
+    "أقل تباين محلي (للفلترة الذكية) !",
+    min_value=0, max_value=50, value=st.session_state['min_contrast'], step=1, key='min_contrast',
+    help="النقاط في مناطق قليلة التباين (غامقة أو باهتة) سيتم تجاهلها."
+)
+min_angle_diff = st.sidebar.slider(
+    "أقل فرق زاوية بين النقاط المتقاربة (درجة) !",
+    min_value=0, max_value=90, value=st.session_state['min_angle_diff'], step=1, key='min_angle_diff',
+    help="النقاط المتقاربة جدًا في الاتجاه (الزاوية) سيتم تجاهلها."
+)
 
-@app.route('/grid_cutter')
-def grid_cutter():
-    return render_template('grid_cutter.html')
+# إعدادات إزالة الضوضاء
+st.sidebar.header("إعدادات إزالة الضوضاء")
+DEFAULT_DENOISE_METHOD = "fastNlMeans"
+DEFAULT_FAST_DENOISE_H = 10
+DEFAULT_GAUSS_KSIZE = 3
 
-@app.route('/process_grids', methods=['POST'])
-def process_grids():
-    try:
-        print("بدء معالجة المربعات...")
-        
-        # التحقق من وجود الملفات
-        if 'fullFingerprint' not in request.files or 'referenceFingerprint' not in request.files:
-            return jsonify({'error': 'يجب تحديد كلا الصورتين'}), 400
-        
-        full_fingerprint = request.files['fullFingerprint']
-        reference_fingerprint = request.files['referenceFingerprint']
-        
-        if full_fingerprint.filename == '' or reference_fingerprint.filename == '':
-            return jsonify({'error': 'لم يتم اختيار الملفات'}), 400
+if 'denoise_method' not in st.session_state:
+    st.session_state['denoise_method'] = DEFAULT_DENOISE_METHOD
+if 'fast_denoise_h' not in st.session_state:
+    st.session_state['fast_denoise_h'] = DEFAULT_FAST_DENOISE_H
+if 'gauss_ksize' not in st.session_state:
+    st.session_state['gauss_ksize'] = DEFAULT_GAUSS_KSIZE
+
+if st.sidebar.button("إعادة ضبط إعدادات إزالة الضوضاء للوضع الافتراضي"):
+    st.session_state['denoise_method'] = DEFAULT_DENOISE_METHOD
+    st.session_state['fast_denoise_h'] = DEFAULT_FAST_DENOISE_H
+    st.session_state['gauss_ksize'] = DEFAULT_GAUSS_KSIZE
+
+denoise_method = st.sidebar.selectbox(
+    "طريقة إزالة الضوضاء !",
+    ["None", "fastNlMeans", "GaussianBlur"],
+    index=["None", "fastNlMeans", "GaussianBlur"].index(st.session_state['denoise_method']),
+    key='denoise_method',
+    help="اختر طريقة إزالة الضوضاء من الصورة: None (بدون)، fastNlMeans (فلترة متقدمة)، GaussianBlur (تمويه غاوسي)."
+)
+fast_denoise_h = st.sidebar.slider(
+    "قوة fastNlMeans (h) !",
+    min_value=1, max_value=30, value=st.session_state['fast_denoise_h'], step=1, key='fast_denoise_h',
+    help="كلما زادت القيمة زادت قوة إزالة الضوضاء (قد تؤثر على التفاصيل الدقيقة)."
+)
+gauss_ksize = st.sidebar.slider(
+    "حجم نواة GaussianBlur !",
+    min_value=1, max_value=21, value=st.session_state['gauss_ksize'], step=2, key='gauss_ksize',
+    help="حجم النواة المستخدمة في GaussianBlur. يجب أن تكون فردية. زيادة القيمة تزيد التمويه."
+)
+
+# البصمة الأصلية
+with col1:
+    st.subheader("البصمة الأصلية")
+    original_file = st.file_uploader("اختر البصمة الأصلية", type=['png', 'jpg', 'jpeg', 'bmp', 'tiff'], key="original")
+    
+    if original_file is not None:
+        try:
+            # قراءة الصورة
+            original_pil = Image.open(original_file)
+            original_img = np.array(original_pil.convert('L'))
             
-        if not (allowed_file(full_fingerprint.filename) and allowed_file(reference_fingerprint.filename)):
-            return jsonify({'error': 'نوع الملف غير مدعوم'}), 400
-        
-        # إنشاء مجلد للنتائج إذا لم يكن موجوداً
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        grid_results_folder = os.path.join(RESULTS_FOLDER, f'grids_{timestamp}')
-        os.makedirs(grid_results_folder, exist_ok=True)
-        
-        # حفظ الصور المرفوعة
-        full_path = os.path.join(grid_results_folder, 'full.png')
-        ref_path = os.path.join(grid_results_folder, 'reference.png')
-        full_fingerprint.save(full_path)
-        reference_fingerprint.save(ref_path)
-        
-        print("تم حفظ الصور المرفوعة")
-        
-        # معالجة الصور
-        processed_full = preprocess_image(full_path)
-        processed_ref = preprocess_image(ref_path)
-        
-        print("تم معالجة الصور")
-        
-        # تحديد عدد المربعات في كل صف وعمود
-        grid_rows = 3  # عدد الصفوف
-        grid_cols = 3  # عدد الأعمدة
-        
-        # حساب حجم كل مربع
-        height, width = processed_full.shape
-        grid_height = height // grid_rows
-        grid_width = width // grid_cols
-        
-        print(f"تقسيم الصورة {width}x{height} إلى شبكة {grid_rows}x{grid_cols}")
-        print(f"حجم كل مربع: {grid_width}x{grid_height}")
-        
-        # معالجة كل مربع وحفظ النتائج
-        processed_grids = []
-        
-        for row in range(grid_rows):
-            for col in range(grid_cols):
-                try:
-                    # تحديد حدود المربع
-                    y1 = row * grid_height
-                    y2 = (row + 1) * grid_height
-                    x1 = col * grid_width
-                    x2 = (col + 1) * grid_width
-                    
-                    # استخراج المربع
-                    grid = processed_full[y1:y2, x1:x2].copy()
-                    
-                    # حفظ المربع
-                    grid_filename = f'grid_r{row+1}_c{col+1}.png'
-                    grid_path = os.path.join(grid_results_folder, grid_filename)
-                    cv2.imwrite(grid_path, grid)
-                    
-                    # حساب المسافة بين الخطوط في المربع
-                    grid_freq = estimate_ridge_frequency(grid)
-                    valid_grid_freq = grid_freq[grid_freq > 0]
-                    if len(valid_grid_freq) > 0:
-                        grid_distance = 1.0 / np.mean(valid_grid_freq)
+            # عرض الصورة الأصلية
+            st.image(original_pil, caption="البصمة الأصلية", use_column_width=True)
+            
+            # معالجة البصمة الأصلية
+            with st.spinner("جاري معالجة البصمة الأصلية..."):
+                # المعالجة المسبقة
+                processed_original = preprocess_image(
+                    original_img,
+                    denoise_method=denoise_method,
+                    fast_denoise_h=fast_denoise_h,
+                    gauss_ksize=gauss_ksize
+                )
+                if processed_original is not None:
+                    st.image(processed_original, caption="بعد المعالجة المسبقة (ثنائية)", use_column_width=True)
+                    st.write(f"عدد البكسلات البيضاء بعد المعالجة المسبقة: {np.sum(processed_original == 255)}")
+                    # استخراج الحواف
+                    ridges_original, orientation_map_original = detect_edges(processed_original)
+                    if ridges_original is not None:
+                        st.image(ridges_original, caption="بعد استخراج الحواف (Gabor)", use_column_width=True)
+                        st.write(f"عدد البكسلات البيضاء بعد استخراج الحواف: {np.sum(ridges_original == 255)}")
+                        # تحسين الصورة
+                        enhanced_original = enhance_image(ridges_original)
+                        if enhanced_original is not None:
+                            st.image(enhanced_original, caption="بعد الهيكلة (Skeleton)", use_column_width=True)
+                            st.write(f"عدد البكسلات البيضاء بعد الهيكلة: {np.sum(enhanced_original == 255)}")
+                            # استخراج النقاط الدقيقة مع الفلترة
+                            minutiae_original = extract_minutiae(
+                                enhanced_original,
+                                border_margin=border_margin,
+                                min_distance=min_distance,
+                                original_image=processed_original,
+                                min_contrast=min_contrast,
+                                min_angle_diff=min_angle_diff
+                            )
+                            st.write(f"عدد النقاط الدقيقة بعد الفلترة: {len(minutiae_original)}")
+                            st.session_state['minutiae_original'] = minutiae_original
+                            if minutiae_original:
+                                # تصور النقاط
+                                vis_original = visualize_minutiae(enhanced_original, minutiae_original)
+                                if vis_original is not None:
+                                    st.image(vis_original, caption="البصمة المعالجة", use_column_width=True)
+                                    st.success(f"تم استخراج {len(minutiae_original)} نقطة مميزة")
+                                else:
+                                    st.error("فشل في تصور النقاط")
+                            else:
+                                st.error("لم يتم العثور على نقاط مميزة")
+                        else:
+                            st.error("فشل في تحسين الصورة")
                     else:
-                        grid_distance = 0
+                        st.error("فشل في استخراج الحواف")
+                else:
+                    st.error("فشل في المعالجة المسبقة")
+        except Exception as e:
+            logger.error(f"Error processing original image: {str(e)}")
+            st.error("حدث خطأ أثناء معالجة الصورة الأصلية")
+
+# البصمة الجزئية
+with col2:
+    st.subheader("البصمة الجزئية")
+    partial_file = st.file_uploader("اختر البصمة الجزئية", type=['png', 'jpg', 'jpeg', 'bmp', 'tiff'], key="partial")
+    
+    if partial_file is not None:
+        try:
+            # قراءة الصورة
+            partial_pil = Image.open(partial_file)
+            partial_img = np.array(partial_pil.convert('L'))
+            
+            # عرض الصورة الجزئية
+            st.image(partial_pil, caption="البصمة الجزئية", use_column_width=True)
+            
+            # معالجة البصمة الجزئية
+            with st.spinner("جاري معالجة البصمة الجزئية..."):
+                # المعالجة المسبقة
+                processed_partial = preprocess_image(
+                    partial_img,
+                    denoise_method=denoise_method,
+                    fast_denoise_h=fast_denoise_h,
+                    gauss_ksize=gauss_ksize
+                )
+                if processed_partial is not None:
+                    st.image(processed_partial, caption="بعد المعالجة المسبقة (ثنائية)", use_column_width=True)
+                    st.write(f"عدد البكسلات البيضاء بعد المعالجة المسبقة: {np.sum(processed_partial == 255)}")
+                    # استخراج الحواف
+                    ridges_partial, orientation_map_partial = detect_edges(processed_partial)
+                    if ridges_partial is not None:
+                        st.image(ridges_partial, caption="بعد استخراج الحواف (Gabor)", use_column_width=True)
+                        st.write(f"عدد البكسلات البيضاء بعد استخراج الحواف: {np.sum(ridges_partial == 255)}")
+                        # تحسين الصورة
+                        enhanced_partial = enhance_image(ridges_partial)
+                        if enhanced_partial is not None:
+                            st.image(enhanced_partial, caption="بعد الهيكلة (Skeleton)", use_column_width=True)
+                            st.write(f"عدد البكسلات البيضاء بعد الهيكلة: {np.sum(enhanced_partial == 255)}")
+                            # استخراج النقاط الدقيقة مع الفلترة
+                            minutiae_partial = extract_minutiae(
+                                enhanced_partial,
+                                border_margin=border_margin,
+                                min_distance=min_distance,
+                                original_image=processed_partial,
+                                min_contrast=min_contrast,
+                                min_angle_diff=min_angle_diff
+                            )
+                            st.write(f"عدد النقاط الدقيقة بعد الفلترة: {len(minutiae_partial)}")
+                            st.session_state['minutiae_partial'] = minutiae_partial
+                            if minutiae_partial:
+                                # تصور النقاط
+                                vis_partial = visualize_minutiae(enhanced_partial, minutiae_partial)
+                                if vis_partial is not None:
+                                    st.image(vis_partial, caption="البصمة المعالجة", use_column_width=True)
+                                    st.success(f"تم استخراج {len(minutiae_partial)} نقطة مميزة")
+                                else:
+                                    st.error("فشل في تصور النقاط")
+                            else:
+                                st.error("لم يتم العثور على نقاط مميزة")
+                        else:
+                            st.error("فشل في تحسين الصورة")
+                    else:
+                        st.error("فشل في استخراج الحواف")
+                else:
+                    st.error("فشل في المعالجة المسبقة")
+        except Exception as e:
+            logger.error(f"Error processing partial image: {str(e)}")
+            st.error("حدث خطأ أثناء معالجة الصورة الجزئية")
+
+minutiae_original = None
+minutiae_partial = None
+enhanced_original = None
+enhanced_partial = None
+# زر المطابقة
+if st.button("بدء المطابقة", type="primary"):
+    minutiae_original = st.session_state.get('minutiae_original')
+    minutiae_partial = st.session_state.get('minutiae_partial')
+    if original_file is not None and partial_file is not None:
+        if minutiae_original is not None and minutiae_partial is not None and len(minutiae_original) > 0 and len(minutiae_partial) > 0:
+            with st.spinner("جاري مطابقة البصمات..."):
+                try:
+                    # مطابقة البصمات
+                    match_result = match_fingerprints(minutiae_original, minutiae_partial)
                     
-                    processed_grids.append({
-                        'image_url': url_for('static', filename=f'images/results/grids_{timestamp}/{grid_filename}'),
-                        'position': {'row': row + 1, 'col': col + 1},
-                        'coordinates': {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2},
-                        'ridge_distance': float(grid_distance)
-                    })
+                    # تصور النقاط المتطابقة
+                    matches_vis = visualize_matches(enhanced_original, enhanced_partial, match_result)
+                    if matches_vis is not None:
+                        st.image(matches_vis, caption="النقاط المتطابقة", use_column_width=True)
                     
-                    print(f"تمت معالجة المربع ({row+1}, {col+1}) بنجاح")
+                    # عرض النتائج
+                    st.markdown("---")
+                    st.subheader("📊 ملخص النتائج")
+                    
+                    # صندوق النتائج
+                    st.markdown("""
+                    <style>
+                    .result-box {
+                        background-color: #f0f2f6;
+                        border-radius: 10px;
+                        padding: 20px;
+                        margin: 10px 0;
+                        font-family: 'Arial', sans-serif;
+                        direction: rtl;
+                    }
+                    .result-item {
+                        font-size: 18px;
+                        margin: 10px 0;
+                    }
+                    .highlight {
+                        color: #0068c9;
+                        font-weight: bold;
+                    }
+                    .success {
+                        color: #09ab3b;
+                        font-weight: bold;
+                    }
+                    .high-match {
+                        color: #09ab3b;
+                        font-weight: bold;
+                        font-size: 24px;
+                        padding: 10px;
+                        background-color: rgba(9, 171, 59, 0.1);
+                        border-radius: 5px;
+                    }
+                    .medium-match {
+                        color: #f0a202;
+                        font-weight: bold;
+                        font-size: 24px;
+                        padding: 10px;
+                        background-color: rgba(240, 162, 2, 0.1);
+                        border-radius: 5px;
+                    }
+                    .low-match {
+                        color: #ff0000;
+                        font-weight: bold;
+                        font-size: 24px;
+                        padding: 10px;
+                        background-color: rgba(255, 0, 0, 0.1);
+                        border-radius: 5px;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown('<div class="result-box">', unsafe_allow_html=True)
+                    
+                    # عدد النقاط
+                    st.markdown(f'<div class="result-item">🔎 عدد النقاط المستخرجة من الأصلية: <span class="highlight">{match_result["total_original"]}</span></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="result-item">🔎 عدد النقاط المستخرجة من الجزئية: <span class="highlight">{match_result["total_partial"]}</span></div>', unsafe_allow_html=True)
+                    
+                    # نتائج المطابقة
+                    st.markdown(f'<div class="result-item">✅ نقاط التطابق: <span class="success">{match_result["matched_points"]}</span></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="result-item">✅ نسبة التشابه: <span class="success">{match_result["match_score"]:.2f}%</span></div>', unsafe_allow_html=True)
+                    
+                    # القرار
+                    decision_class = "high-match" if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['HIGH'] else "medium-match" if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['MEDIUM'] else "low-match"
+                    decision_text = f'HIGH MATCH - احتمالية التطابق كبيرة جدًا' if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['HIGH'] else f'MEDIUM MATCH - احتمالية التطابق متوسطة' if match_result["match_score"] > MATCH_SCORE_THRESHOLDS['MEDIUM'] else f'LOW MATCH - احتمالية التطابق منخفضة'
+                    
+                    st.markdown(f'<div class="result-item">✅ القرار: <span class="{decision_class}">{decision_text}</span></div>', unsafe_allow_html=True)
+                    
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # توليد التقرير
+                    report_path = generate_report(enhanced_original, enhanced_partial, match_result)
+                    if report_path:
+                        with open(report_path, 'rb') as f:
+                            st.download_button(
+                                label="تحميل التقرير",
+                                data=f,
+                                file_name="matched_result.pdf",
+                                mime="application/pdf"
+                            )
                     
                 except Exception as e:
-                    print(f"خطأ في معالجة المربع ({row+1}, {col+1}): {str(e)}")
-                    continue
-        
-        # إنشاء صورة توضيحية للتقسيم
-        visualization = cv2.cvtColor(processed_full.copy(), cv2.COLOR_GRAY2BGR)
-        
-        # رسم خطوط الشبكة
-        for row in range(1, grid_rows):
-            y = row * grid_height
-            cv2.line(visualization, (0, y), (width, y), (0, 255, 0), 2)
-        
-        for col in range(1, grid_cols):
-            x = col * grid_width
-            cv2.line(visualization, (x, 0), (x, height), (0, 255, 0), 2)
-            
-        # حفظ الصورة التوضيحية
-        vis_filename = 'grid_visualization.png'
-        vis_path = os.path.join(grid_results_folder, vis_filename)
-        cv2.imwrite(vis_path, visualization)
-        
-        return jsonify({
-            'grids': processed_grids,
-            'grid_info': {
-                'rows': grid_rows,
-                'cols': grid_cols,
-                'width': grid_width,
-                'height': grid_height
-            },
-            'visualization': url_for('static', filename=f'images/results/grids_{timestamp}/{vis_filename}')
-        })
-        
-    except Exception as e:
-        import traceback
-        print("حدث خطأ:")
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/cut_fingerprint', methods=['POST'])
-def cut_fingerprint():
-    """
-    تقطيع البصمة الأولى إلى مربعات وتعديل حجمها حسب البصمة الثانية
-    """
-    try:
-        print("بدء عملية تقطيع البصمة...")
-        
-        # التحقق من وجود الملفات
-        if 'fingerprint1' not in request.files or 'fingerprint2' not in request.files:
-            return jsonify({'error': 'يجب تحديد كلا البصمتين'}), 400
-        
-        fingerprint1 = request.files['fingerprint1']
-        fingerprint2 = request.files['fingerprint2']
-        
-        # إنشاء المجلدات اللازمة
-        for directory in [app.config['UPLOAD_FOLDER'], PROCESSED_FOLDER, RESULTS_FOLDER]:
-            os.makedirs(directory, exist_ok=True)
-        
-        # حفظ الصور
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        fp1_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{timestamp}_1.png')
-        fp2_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{timestamp}_2.png')
-        fingerprint1.save(fp1_path)
-        fingerprint2.save(fp2_path)
-        
-        # معالجة الصور
-        processed1 = preprocess_image(fp1_path)
-        processed2 = preprocess_image(fp2_path)
-        
-        # حساب المسافة بين الخطوط في البصمة الثانية
-        freq2 = estimate_ridge_frequency(processed2)
-        target_distance = 1.0 / np.mean(freq2[freq2 > 0])
-        print(f"المسافة المستهدفة بين الخطوط: {target_distance:.2f}")
-        
-        # تقسيم البصمة الأولى إلى مربعات
-        grid_size = max(processed2.shape)
-        grids = divide_into_grids(processed1, grid_size)
-        print(f"تم تقسيم البصمة إلى {len(grids)} مربع")
-        
-        # معالجة كل مربع
-        processed_grids = []
-        for i, grid in enumerate(grids):
-            try:
-                # تعديل حجم المربع
-                normalized_grid, scale_factor = normalize_ridge_distance(grid['image'], target_distance)
-                
-                # حفظ المربع
-                grid_path = os.path.join(PROCESSED_FOLDER, f'{timestamp}_grid_{i+1}.png')
-                cv2.imwrite(grid_path, normalized_grid)
-                
-                # حساب المسافة بين الخطوط في المربع
-                grid_freq = estimate_ridge_frequency(normalized_grid)
-                grid_distance = 1.0 / np.mean(grid_freq[grid_freq > 0])
-                
-                processed_grids.append({
-                    'image': url_for('static', filename=f'images/processed/{timestamp}_grid_{i+1}.png'),
-                    'position': {
-                        'row': i // 3 + 1,
-                        'col': i % 3 + 1
-                    },
-                    'ridge_distance': float(grid_distance),
-                    'scale_factor': float(scale_factor)
-                })
-                
-            except Exception as e:
-                print(f"خطأ في معالجة المربع {i+1}: {str(e)}")
-                continue
-        
-        return jsonify({
-            'grids': processed_grids,
-            'timestamp': timestamp
-        })
-        
-    except Exception as e:
-        print(f"خطأ: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/match_fingerprints', methods=['POST'])
-def match_fingerprints_route():
-    """
-    مطابقة البصمات باستخدام الطريقة المحددة
-    """
-    try:
-        print("بدء عملية المطابقة...")
-        
-        # التحقق من وجود الملفات
-        if 'fingerprint1' not in request.files or 'fingerprint2' not in request.files:
-            return jsonify({'error': 'يجب تحديد كلا البصمتين'}), 400
-        
-        fingerprint1 = request.files['fingerprint1']
-        fingerprint2 = request.files['fingerprint2']
-        matching_mode = request.form.get('matchingMode', 'normal')
-        minutiae_count = int(request.form.get('minutiaeCount', 100))
-        
-        # حفظ الصور
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        fp1_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{timestamp}_1.png')
-        fp2_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{timestamp}_2.png')
-        fingerprint1.save(fp1_path)
-        fingerprint2.save(fp2_path)
-        
-        # معالجة الصور
-        processed1 = preprocess_image(fp1_path)
-        processed2 = preprocess_image(fp2_path)
-        
-        # استخراج الخصائص
-        features1 = extract_features(processed1)
-        features2 = extract_features(processed2)
-        
-        if matching_mode == 'normalized':
-            print("استخدام المطابقة بالمربعات المعدلة...")
-            match_result = match_normalized_grids(processed2, processed1)
-            
-        elif matching_mode == 'grid_cut':
-            print("استخدام المطابقة مع المربعات المقطعة...")
-            # تقسيم البصمة الأولى إلى مربعات
-            grid_size = max(processed2.shape)
-            grids = divide_into_grids(processed1, grid_size)
-            
-            # مطابقة البصمة الجزئية مع كل مربع
-            best_match = {
-                'score': 0,
-                'grid': None,
-                'position': None
-            }
-            
-            for grid in grids:
-                match_score = calculate_grid_match_score(
-                    extract_minutiae(processed2),
-                    extract_minutiae(grid['image']),
-                    processed2,
-                    grid['image']
-                )
-                
-                if match_score > best_match['score']:
-                    best_match = {
-                        'score': match_score,
-                        'grid': grid['image'],
-                        'position': grid['position']
-                    }
-            
-            match_result = {
-                'best_match': best_match,
-                'grid_size': grid_size
-            }
-            
+                    logger.error(f"Error in matching: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    st.error("حدث خطأ أثناء المطابقة")
         else:
-            print("استخدام المطابقة العادية...")
-            match_result = match_fingerprints(
-                extract_minutiae(processed1),
-                extract_minutiae(processed2),
-                features1,
-                features2
-            )
-        
-        # تحليل النتائج
-        score_details = get_score_details(match_result)
-        quality_analysis = analyze_match_quality(match_result)
-        
-        # إنشاء الصورة التوضيحية
-        if matching_mode in ['normalized', 'grid_cut']:
-            visualization = visualize_grid_match(processed2, processed1, match_result)
-            match_vis_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
-            cv2.imwrite(match_vis_path, visualization['main_visualization'])
-        else:
-            match_vis = visualize_matches(processed1, processed2, match_result['matched_minutiae'])
-            match_vis_path = os.path.join(RESULTS_FOLDER, f'{timestamp}_match_visualization.png')
-            cv2.imwrite(match_vis_path, match_vis)
-        
-        return jsonify({
-            'is_match': score_details['total_score'] >= MATCHING_THRESHOLD,
-            'score': {
-                'total': score_details['total_score'],
-                'minutiae': score_details['minutiae_score'],
-                'orientation': score_details['orientation_score'],
-                'density': score_details['density_score']
-            },
-            'quality': quality_analysis,
-            'matching_image': url_for('static', filename=f'images/results/{timestamp}_match_visualization.png')
-        })
-        
-    except Exception as e:
-        print(f"خطأ: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True) 
+            st.error("يرجى التأكد من معالجة البصمتين بنجاح واستخراج نقاط مميزة كافية")
+    else:
+        st.error("يرجى تحميل البصمتين أولاً") 
