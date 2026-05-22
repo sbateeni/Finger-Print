@@ -3,14 +3,15 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# Build headers (Pillow/OpenCV wheels usually prebuilt; needed if pip falls back to source)
+# Build/PDF system libs on Debian/Kali (only if pip fails on pycairo/cairo)
+KALI_APT_PACKAGES="pkg-config libcairo2-dev libgirepository-2.0-dev build-essential libjpeg-dev zlib1g-dev"
 if command -v apt-get >/dev/null 2>&1; then
   missing=""
   for pkg in python3-dev build-essential libjpeg-dev zlib1g-dev; do
     dpkg -s "$pkg" >/dev/null 2>&1 || missing="$missing $pkg"
   done
   if [ -n "$missing" ]; then
-    echo "Optional (for pip source builds): sudo apt install -y$missing"
+    echo "If pip fails, run: sudo apt install -y$missing $KALI_APT_PACKAGES"
   fi
 fi
 
