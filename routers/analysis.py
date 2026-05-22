@@ -1,5 +1,9 @@
+import asyncio
+import json
 import logging
 from pathlib import Path
+from typing import AsyncIterator
+
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
@@ -23,6 +27,7 @@ from services.analysis_service import (
     _sanitize_match_for_json,
 )
 from utils.sse_utils import _sse_line
+from services.analysis_queue import get_analysis_queue, schedule_web_telegram_notify
 
 logger = logging.getLogger(__name__)
 
@@ -74,27 +79,65 @@ async def analyze_stream(request: Request):
     operator_name = str(form.get("operator_name") or "")
     case_reference = str(form.get("case_reference") or "")
 
-    gen = analysis_event_generator(
-        o_raw,
-        p_raw,
-        border_margin,
-        min_distance,
-        min_contrast,
-        min_angle_diff,
-        denoise_method,
-        fast_denoise_h,
-        gauss_ksize,
-        original_zoom,
-        partial_zoom,
-        partial_shift_x,
-        partial_shift_y,
-        apply_preview_scale,
-        auto_scale_normalization,
-        operator_name,
-        case_reference,
-    )
+    async def queued_stream() -> AsyncIterator[bytes]:
+        q = get_analysis_queue()
+        ahead = await q.run_exclusive(label="web-stream")
+        if ahead > 0:
+            yield _sse_line(
+                {
+                    "type": "log",
+                    "message": f"⏳ في انتظار دورك — {ahead} طلب(ات) أمامك في الطابور…",
+                }
+            )
+        try:
+            gen = analysis_event_generator(
+                o_raw,
+                p_raw,
+                border_margin,
+                min_distance,
+                min_contrast,
+                min_angle_diff,
+                denoise_method,
+                fast_denoise_h,
+                gauss_ksize,
+                original_zoom,
+                partial_zoom,
+                partial_shift_x,
+                partial_shift_y,
+                apply_preview_scale,
+                auto_scale_normalization,
+                operator_name,
+                case_reference,
+            )
+            same_file_warning = False
+            for chunk in gen:
+                if chunk:
+                    try:
+                        line = chunk.decode("utf-8").strip()
+                        if line.startswith("data:"):
+                            payload = json.loads(line[5:].strip())
+                            if payload.get("type") == "hashes":
+                                same_file_warning = bool(payload.get("same_file_warning"))
+                            elif payload.get("type") == "done":
+                                schedule_web_telegram_notify(
+                                    payload.get("match") or {},
+                                    payload.get("report_download"),
+                                    same_file_warning=same_file_warning,
+                                    forensic_quality_warning=bool(
+                                        payload.get("forensic_quality_warning")
+                                    ),
+                                    operator_name=operator_name,
+                                    case_reference=case_reference,
+                                )
+                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        pass
+                yield chunk
+                await asyncio.sleep(0)
+        finally:
+            q.release_exclusive()
+
     return StreamingResponse(
-        gen,
+        queued_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -298,4 +341,12 @@ async def analyze(
     ctx["match"] = match_result
     ctx["report_download"] = report_rel
     ctx["audit"] = audit
+    schedule_web_telegram_notify(
+        match_result,
+        report_rel,
+        same_file_warning=same_file,
+        forensic_quality_warning=forensic_quality_warning,
+        operator_name=operator_name,
+        case_reference=case_reference,
+    )
     return _render(request, ctx)

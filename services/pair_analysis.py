@@ -4,6 +4,7 @@ Unified fingerprint pair analysis for web, CLI, Telegram, etc.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Optional
 
@@ -16,8 +17,18 @@ from config import (
 from services.analysis_service import (
     _ensure_pdf_from_html,
     process_form_analysis,
+    run_auto_sweep,
     run_matching_pipeline,
 )
+
+
+def telegram_deep_analysis_enabled() -> bool:
+    raw = (os.getenv("TELEGRAM_DEEP_ANALYSIS") or "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def telegram_sweep_mode() -> str:
+    return (os.getenv("TELEGRAM_SWEEP_MODE") or "wide").strip().lower() or "wide"
 
 
 def analyze_fingerprint_pair(
@@ -40,16 +51,26 @@ def analyze_fingerprint_pair(
     operator_name: str = "",
     case_reference: str = "",
     write_report_and_audit: bool = True,
+    auto_sweep_before: bool = False,
+    sweep_mode: str = "wide",
 ) -> dict[str, Any]:
     """
     Run full pipeline on two image byte blobs.
     Returns dict with keys: ok, error, match, report_html, report_pdf, audit, ...
+
+    When auto_sweep_before=True (Telegram deep mode), searches best zoom/shift
+    like the web Auto-sweep, then runs the same pipeline as the workstation.
     """
     if not reference_bytes or not query_bytes:
         return {"ok": False, "error": "ملفان فارغان أو غير صالحين."}
 
-    try:
-        same_file, sha_o, sha_p, ro, rp, dm = process_form_analysis(
+    sweep_meta: Optional[dict[str, Any]] = None
+    eff_zoom = partial_zoom
+    eff_shift_x = partial_shift_x
+    eff_shift_y = partial_shift_y
+
+    if auto_sweep_before:
+        sweep_meta = run_auto_sweep(
             reference_bytes,
             query_bytes,
             border_margin,
@@ -63,6 +84,31 @@ def analyze_fingerprint_pair(
             partial_zoom,
             partial_shift_x,
             partial_shift_y,
+            apply_preview_scale,
+            auto_scale_normalization,
+            sweep_mode=sweep_mode,
+        )
+        if sweep_meta.get("ok") and sweep_meta.get("best"):
+            best = sweep_meta["best"]
+            eff_zoom = int(best["partial_zoom"])
+            eff_shift_x = int(best["partial_shift_x"])
+            eff_shift_y = int(best["partial_shift_y"])
+
+    try:
+        same_file, sha_o, sha_p, ro, rp, dm = process_form_analysis(
+            reference_bytes,
+            query_bytes,
+            border_margin,
+            min_distance,
+            min_contrast,
+            min_angle_diff,
+            denoise_method,
+            fast_denoise_h,
+            gauss_ksize,
+            original_zoom,
+            eff_zoom,
+            eff_shift_x,
+            eff_shift_y,
             apply_preview_scale,
             auto_scale_normalization,
             operator_name or "api",
@@ -93,12 +139,14 @@ def analyze_fingerprint_pair(
         "fast_denoise_h": fast_denoise_h,
         "gauss_ksize": gauss_ksize,
         "original_zoom": original_zoom,
-        "partial_zoom": partial_zoom,
-        "partial_shift_x": partial_shift_x,
-        "partial_shift_y": partial_shift_y,
+        "partial_zoom": eff_zoom,
+        "partial_shift_x": eff_shift_x,
+        "partial_shift_y": eff_shift_y,
         "apply_preview_scale": apply_preview_scale,
         "auto_scale_normalization": auto_scale_normalization,
         "auto_scale_factor_applied": round(float(ro.get("auto_scale_factor_applied", 1.0)), 4),
+        "auto_sweep_applied": bool(auto_sweep_before),
+        "auto_sweep_mode": sweep_mode if auto_sweep_before else None,
     }
 
     match_result, _vis, report_rel, audit, quality_warning = run_matching_pipeline(
@@ -131,7 +179,7 @@ def analyze_fingerprint_pair(
             except Exception:
                 report_pdf = None
 
-    return {
+    out: dict[str, Any] = {
         "ok": True,
         "error": None,
         "same_file_warning": same_file,
@@ -141,7 +189,11 @@ def analyze_fingerprint_pair(
         "report_html": str(report_html) if report_html and report_html.exists() else None,
         "report_pdf": str(report_pdf) if report_pdf and report_pdf.exists() else None,
         "forensic_quality_warning": quality_warning,
+        "deep_analysis": bool(auto_sweep_before),
     }
+    if sweep_meta is not None:
+        out["auto_sweep"] = sweep_meta
+    return out
 
 
 def format_match_summary_ar(result: dict[str, Any]) -> str:
@@ -153,13 +205,28 @@ def format_match_summary_ar(result: dict[str, Any]) -> str:
     lines = [
         "🔬 *نتيجة مطابقة البصمات*",
         "",
+    ]
+    if result.get("deep_analysis"):
+        lines.append("• التحليل: *عميق* (نفس محرك الواجهة + محاذاة تلقائية)")
+        sweep = result.get("auto_sweep") or {}
+        if sweep.get("ok") and sweep.get("best"):
+            b = sweep["best"]
+            lines.append(
+                f"• محاذاة: zoom *{b.get('partial_zoom')}%* | "
+                f"إزاحة ({b.get('partial_shift_x')}, {b.get('partial_shift_y')}) | "
+                f"اختبر {sweep.get('tested', '?')} توليفة"
+            )
+        elif sweep and not sweep.get("ok"):
+            lines.append("• محاذاة: افتراضية (فشل Auto-sweep)")
+        lines.append("")
+    lines.extend([
         f"• الحالة: *{m.get('status', '—')}*",
         f"• Fused Score: *{float(m.get('fused_score') or 0):.2f}%*",
         f"• Match score: *{float(m.get('match_score') or 0):.2f}%*",
         f"• MCC: *{float(m.get('mcc_score') or 0):.2f}%*",
         f"• تطابقات: *{m.get('matched_points', 0)}*",
         f"• نقاط مرجعية: {m.get('total_original', 0)} | مقارنة: {m.get('total_partial', 0)}",
-    ]
+    ])
     if m.get("decision_mode"):
         lines.append(f"• وضع القرار: `{m.get('decision_mode')}`")
     if m.get("combined_verdict"):

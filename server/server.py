@@ -8,15 +8,18 @@
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 import threading
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from config import APP_VERSION
 from routers import pages, report, analysis
+from services.analysis_queue import start_analysis_queue, stop_analysis_queue
 from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
 
 logging.basicConfig(level=logging.INFO)
@@ -25,12 +28,50 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _telegram_enabled() -> bool:
+    if (os.getenv("TELEGRAM_ENABLED") or "").strip().lower() in ("0", "false", "no", "off"):
+        return False
+    return bool((os.getenv("TELEGRAM_BOT_TOKEN") or "").strip())
+
+
+def _telegram_embedded() -> bool:
+    return (os.getenv("TELEGRAM_EMBEDDED") or "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    load_dotenv()
     run_startup_auto_update()
     stop_event = threading.Event()
     start_periodic_auto_update(stop_event)
+
+    embedded_bot = None
+    if _telegram_enabled() and _telegram_embedded():
+        try:
+            from bot.telegram_bot import start_embedded_bot
+
+            embedded_bot = await start_embedded_bot()
+        except Exception as e:
+            logger.error("Embedded Telegram bot failed to start: %s", e)
+    else:
+        await start_analysis_queue()
+
     yield
+
+    if embedded_bot is not None:
+        try:
+            from bot.telegram_bot import stop_embedded_bot
+
+            await stop_embedded_bot()
+        except Exception as e:
+            logger.warning("Embedded Telegram shutdown: %s", e)
+    else:
+        await stop_analysis_queue()
     stop_event.set()
 
 

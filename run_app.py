@@ -86,9 +86,18 @@ def main() -> None:
         "off",
     )
 
+    embedded = (os.getenv("TELEGRAM_EMBEDDED") or "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
+    )
     if _telegram_enabled(args.no_telegram):
-        print("Telegram bot: starting…")
-        children.append(_popen([sys.executable, "-m", "bot"]))
+        if embedded:
+            print("Telegram bot: embedded in web server (طابور انتظار موحّد).")
+        else:
+            print("Telegram bot: separate process (TELEGRAM_EMBEDDED=0)…")
+            children.append(_popen([sys.executable, "-m", "bot"]))
     elif not args.no_telegram:
         print("Telegram bot: skipped (set TELEGRAM_BOT_TOKEN in .env to enable).")
 

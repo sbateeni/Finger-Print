@@ -12,7 +12,6 @@ import asyncio
 import logging
 import os
 import ssl
-from pathlib import Path
 from typing import Optional, Set
 
 from dotenv import load_dotenv
@@ -27,11 +26,13 @@ from telegram.ext import (
 )
 from telegram.request import HTTPXRequest
 
-from services.pair_analysis import analyze_fingerprint_pair, format_match_summary_ar
+from services.analysis_queue import get_analysis_queue
+from services.pair_analysis import format_match_summary_ar
 
 logger = logging.getLogger(__name__)
 
 SESSION_KEY = "fp_session"
+_embedded_app: Optional[Application] = None
 
 
 def _allowed_chat_ids() -> Optional[Set[int]]:
@@ -99,7 +100,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/start — البداية\n"
         "/reset — إلغاء الصور الحالية\n"
         "/status — ما تم استلامه\n\n"
-        "يمكنك أيضًا استخدام الواجهة على http://127.0.0.1:8000",
+        "يمكنك أيضًا استخدام الواجهة على http://127.0.0.1:8000\n\n"
+        "عند وجود طلبات متعددة يُوضَع طلبك في *طابور انتظار* ويُرسل موقعك في الدور.\n\n"
+        "التحليل *عميق* على الكمبيوتر (محاذاة تلقائية + نفس المحرك كالواجهة) — "
+        "تيليجرام يرسل الصور ويستقبل النتائج فقط.",
         parse_mode=ParseMode.MARKDOWN,
     )
 
@@ -132,42 +136,34 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user = update.effective_user
     operator = user.username or str(user.id) if user else "telegram"
 
-    await update.message.reply_text("⏳ جاري التحليل… قد يستغرق دقيقة.")
+    q = get_analysis_queue()
+    job, ahead = await q.enqueue_pair(
+        ref_b,
+        qry_b,
+        source="telegram",
+        chat_id=chat_id,
+        source_label="تيليجرام",
+        operator_name=f"telegram:{operator}",
+        case_reference=f"TG-{chat_id}",
+        write_report_and_audit=True,
+    )
+    if ahead == 0:
+        await update.message.reply_text(
+            "⏳ تم استلام طلبك — *تحليل عميق* على الكمبيوتر (قد يستغرق دقائق)…",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    else:
+        await update.message.reply_text(
+            f"✅ تم إدخال طلبك في الطابور.\n"
+            f"موقعك: *{ahead + 1}* — ستصل النتيجة هنا تلقائيًا.",
+            parse_mode=ParseMode.MARKDOWN,
+        )
 
     try:
-        result = await asyncio.to_thread(
-            analyze_fingerprint_pair,
-            ref_b,
-            qry_b,
-            operator_name=f"telegram:{operator}",
-            case_reference=f"TG-{chat_id}",
-            write_report_and_audit=True,
-        )
+        await q.wait_result(job)
     except Exception as e:
         logger.exception("telegram analysis failed")
         await update.message.reply_text(f"❌ خطأ أثناء التحليل: {e}")
-        context.user_data.pop(SESSION_KEY, None)
-        return
-
-    summary = format_match_summary_ar(result)
-    await update.message.reply_text(summary, parse_mode=ParseMode.MARKDOWN)
-
-    pdf_path = result.get("report_pdf")
-    html_path = result.get("report_html")
-    if pdf_path and Path(pdf_path).is_file():
-        with open(pdf_path, "rb") as f:
-            await update.message.reply_document(
-                document=f,
-                filename=Path(pdf_path).name,
-                caption="تقرير PDF",
-            )
-    elif html_path and Path(html_path).is_file():
-        with open(html_path, "rb") as f:
-            await update.message.reply_document(
-                document=f,
-                filename=Path(html_path).name,
-                caption="تقرير HTML",
-            )
 
     context.user_data.pop(SESSION_KEY, None)
 
@@ -208,16 +204,81 @@ def _telegram_request() -> HTTPXRequest:
     return HTTPXRequest(httpx_kwargs={"verify": verify})
 
 
-def build_application(token: str) -> Application:
+def _telegram_embedded() -> bool:
+    return (os.getenv("TELEGRAM_EMBEDDED") or "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
+    )
+
+
+async def _bot_send_markdown(chat_id: int, text: str) -> None:
+    if _embedded_app is None:
+        raise RuntimeError("embedded bot not started")
+    await _embedded_app.bot.send_message(chat_id, text, parse_mode=ParseMode.MARKDOWN)
+
+
+async def start_embedded_bot() -> Application:
+    """Start polling inside the web server process (shared analysis queue)."""
+    global _embedded_app
+    token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+    if not token:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN missing")
+
+    from services.analysis_queue import start_analysis_queue
+
+    await start_analysis_queue()
+    q = get_analysis_queue()
+    q.set_telegram_sender(_bot_send_markdown)
+
+    application = build_application(token)
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    _embedded_app = application
+    logger.info("Telegram bot polling (embedded in web server)")
+    return application
+
+
+async def stop_embedded_bot() -> None:
+    global _embedded_app
+    from services.analysis_queue import stop_analysis_queue
+
+    if _embedded_app is not None:
+        try:
+            if _embedded_app.updater.running:
+                await _embedded_app.updater.stop()
+        except Exception as e:
+            logger.warning("updater stop: %s", e)
+        try:
+            await _embedded_app.stop()
+            await _embedded_app.shutdown()
+        except Exception as e:
+            logger.warning("application shutdown: %s", e)
+        _embedded_app = None
+    await stop_analysis_queue()
+
+
+def build_application(
+    token: str,
+    *,
+    post_init=None,
+    post_shutdown=None,
+) -> Application:
     # PTB uses a separate HTTP client for long-polling getUpdates — both need SSL config.
     request = _telegram_request()
-    app = (
+    builder = (
         Application.builder()
         .token(token)
         .request(request)
         .get_updates_request(_telegram_request())
-        .build()
     )
+    if post_init is not None:
+        builder = builder.post_init(post_init)
+    if post_shutdown is not None:
+        builder = builder.post_shutdown(post_shutdown)
+    app = builder.build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
@@ -226,9 +287,32 @@ def build_application(token: str) -> Application:
     return app
 
 
+async def _post_init(application: Application) -> None:
+    from services.analysis_queue import start_analysis_queue
+
+    await start_analysis_queue()
+    q = get_analysis_queue()
+
+    async def send_md(chat_id: int, text: str) -> None:
+        await application.bot.send_message(chat_id, text, parse_mode=ParseMode.MARKDOWN)
+
+    q.set_telegram_sender(send_md)
+
+
+async def _post_shutdown(application: Application) -> None:
+    from services.analysis_queue import stop_analysis_queue
+
+    await stop_analysis_queue()
+
+
 def main() -> None:
     load_dotenv()
     logging.basicConfig(level=logging.INFO)
+    if _telegram_embedded():
+        raise SystemExit(
+            "TELEGRAM_EMBEDDED=1: run the web server (python run.py / run_dev.ps1) "
+            "instead of python -m bot alone."
+        )
     token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
         raise SystemExit(
@@ -240,8 +324,12 @@ def main() -> None:
     else:
         logger.warning("TELEGRAM_ALLOWED_CHAT_IDS not set — bot accepts any user.")
 
-    application = build_application(token)
-    logger.info("Telegram bot polling…")
+    application = build_application(
+        token,
+        post_init=_post_init,
+        post_shutdown=_post_shutdown,
+    )
+    logger.info("Telegram bot polling (standalone process)…")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
