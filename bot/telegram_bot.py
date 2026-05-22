@@ -41,6 +41,16 @@ logger = logging.getLogger(__name__)
 
 SESSION_KEY = "fp_session"
 REGISTER_PENDING_KEY = "fp_register_pending"
+SWEEP_MODE_KEY = "fp_sweep_mode"
+
+
+def _telegram_auto_sweep_enabled() -> bool:
+    return (os.getenv("TELEGRAM_AUTO_SWEEP") or "1").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _get_sweep_mode(context: ContextTypes.DEFAULT_TYPE) -> str:
+    mode = (context.user_data.get(SWEEP_MODE_KEY) or os.getenv("TELEGRAM_SWEEP_MODE") or "quick").strip().lower()
+    return "wide" if mode == "wide" else "quick"
 
 
 def _allowed_chat_ids() -> Optional[Set[int]]:
@@ -110,8 +120,31 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/status — ما تم استلامه\n"
         "/register — تسجيل بصمتك في قاعدة البوت\n"
         "/match — مقارنة صورة مع المسجّلين\n"
-        "/templates — عرض المسجّلين\n\n"
+        "/templates — عرض المسجّلين\n"
+        "/sweep — وضع بحث واسع (wide) للتكبير التلقائي\n"
+        "/sweep_quick — وضع بحث سريع (افتراضي)\n\n"
+        "عند إرسال صورتين يُطبَّق *Auto-sweep* تلقائيًا لتحسين النتيجة.\n\n"
         "يمكنك أيضًا استخدام الواجهة على http://127.0.0.1:8000",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_sweep_wide(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[SWEEP_MODE_KEY] = "wide"
+    await update.message.reply_text(
+        "✅ وضع Auto-sweep: *wide* (بحث أوسع — أبطأ قليلًا).\nأرسل الصورتين للتحليل.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_sweep_quick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[SWEEP_MODE_KEY] = "quick"
+    await update.message.reply_text(
+        "✅ وضع Auto-sweep: *quick* (افتراضي).\nأرسل الصورتين للتحليل.",
         parse_mode=ParseMode.MARKDOWN,
     )
 
@@ -144,7 +177,13 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user = update.effective_user
     operator = user.username or str(user.id) if user else "telegram"
 
-    await update.message.reply_text("⏳ جاري التحليل… قد يستغرق دقيقة.")
+    await update.message.reply_text("⏳ جاري التحليل… قد يستغرق 1–3 دقائق.")
+    if _telegram_auto_sweep_enabled():
+        mode = _get_sweep_mode(context)
+        await update.message.reply_text(
+            f"🔍 Auto-sweep ({mode}) — البحث عن أفضل تكبير/موضع للبصمة الجزئية…",
+            parse_mode=ParseMode.MARKDOWN,
+        )
 
     try:
         result = await asyncio.to_thread(
@@ -154,6 +193,8 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             operator_name=f"telegram:{operator}",
             case_reference=f"TG-{chat_id}",
             write_report_and_audit=True,
+            auto_sweep=_telegram_auto_sweep_enabled(),
+            sweep_mode=_get_sweep_mode(context),
         )
     except Exception as e:
         logger.exception("telegram analysis failed")
@@ -350,6 +391,8 @@ def build_application(token: str) -> Application:
     app.add_handler(CommandHandler("register", cmd_register))
     app.add_handler(CommandHandler("match", cmd_match_db))
     app.add_handler(CommandHandler("templates", cmd_templates))
+    app.add_handler(CommandHandler("sweep", cmd_sweep_wide))
+    app.add_handler(CommandHandler("sweep_quick", cmd_sweep_quick))
     app.add_handler(MessageHandler(filters.PHOTO, handle_image))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_image))
     return app

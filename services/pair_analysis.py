@@ -16,6 +16,7 @@ from config import (
 from services.analysis_service import (
     _ensure_pdf_from_html,
     process_form_analysis,
+    run_auto_sweep,
     run_matching_pipeline,
 )
 
@@ -40,6 +41,8 @@ def analyze_fingerprint_pair(
     operator_name: str = "",
     case_reference: str = "",
     write_report_and_audit: bool = True,
+    auto_sweep: bool = False,
+    sweep_mode: str = "quick",
 ) -> dict[str, Any]:
     """
     Run full pipeline on two image byte blobs.
@@ -48,8 +51,13 @@ def analyze_fingerprint_pair(
     if not reference_bytes or not query_bytes:
         return {"ok": False, "error": "ملفان فارغان أو غير صالحين."}
 
-    try:
-        same_file, sha_o, sha_p, ro, rp, dm = process_form_analysis(
+    sweep_meta: dict[str, Any] | None = None
+    eff_zoom = partial_zoom
+    eff_sx = partial_shift_x
+    eff_sy = partial_shift_y
+
+    if auto_sweep:
+        sweep = run_auto_sweep(
             reference_bytes,
             query_bytes,
             border_margin,
@@ -63,6 +71,39 @@ def analyze_fingerprint_pair(
             partial_zoom,
             partial_shift_x,
             partial_shift_y,
+            apply_preview_scale,
+            auto_scale_normalization,
+            sweep_mode=sweep_mode,
+        )
+        if sweep.get("ok") and sweep.get("best"):
+            best = sweep["best"]
+            eff_zoom = int(best["partial_zoom"])
+            eff_sx = int(best["partial_shift_x"])
+            eff_sy = int(best["partial_shift_y"])
+            sweep_meta = {
+                "mode": sweep.get("mode", sweep_mode),
+                "tested": sweep.get("tested"),
+                "best": best,
+                "top3": sweep.get("top3"),
+            }
+        elif not sweep.get("ok"):
+            sweep_meta = {"failed": True, "message": sweep.get("message", "Auto-sweep failed")}
+
+    try:
+        same_file, sha_o, sha_p, ro, rp, dm = process_form_analysis(
+            reference_bytes,
+            query_bytes,
+            border_margin,
+            min_distance,
+            min_contrast,
+            min_angle_diff,
+            denoise_method,
+            fast_denoise_h,
+            gauss_ksize,
+            original_zoom,
+            eff_zoom,
+            eff_sx,
+            eff_sy,
             apply_preview_scale,
             auto_scale_normalization,
             operator_name or "api",
@@ -93,13 +134,16 @@ def analyze_fingerprint_pair(
         "fast_denoise_h": fast_denoise_h,
         "gauss_ksize": gauss_ksize,
         "original_zoom": original_zoom,
-        "partial_zoom": partial_zoom,
-        "partial_shift_x": partial_shift_x,
-        "partial_shift_y": partial_shift_y,
+        "partial_zoom": eff_zoom,
+        "partial_shift_x": eff_sx,
+        "partial_shift_y": eff_sy,
         "apply_preview_scale": apply_preview_scale,
         "auto_scale_normalization": auto_scale_normalization,
         "auto_scale_factor_applied": round(float(ro.get("auto_scale_factor_applied", 1.0)), 4),
+        "telegram_auto_sweep": auto_sweep,
     }
+    if sweep_meta:
+        form_ctx["auto_sweep"] = sweep_meta
 
     match_result, _vis, report_rel, audit, quality_warning = run_matching_pipeline(
         ro,
@@ -141,6 +185,7 @@ def analyze_fingerprint_pair(
         "report_html": str(report_html) if report_html and report_html.exists() else None,
         "report_pdf": str(report_pdf) if report_pdf and report_pdf.exists() else None,
         "forensic_quality_warning": quality_warning,
+        "auto_sweep": sweep_meta,
     }
 
 
@@ -170,6 +215,20 @@ def format_match_summary_ar(result: dict[str, Any]) -> str:
         lines.append(f"• وضع القرار: `{m.get('decision_mode')}`")
     if m.get("combined_verdict"):
         lines.append(f"• الحكم: {m.get('combined_verdict')}")
+    sweep = result.get("auto_sweep")
+    if sweep and sweep.get("best"):
+        b = sweep["best"]
+        lines.append("")
+        lines.append("🔍 *Auto-sweep* (ضبط تلقائي للجزئية)")
+        lines.append(
+            f"• zoom `{b.get('partial_zoom')}%` | shift `({b.get('partial_shift_x')}, {b.get('partial_shift_y')})`"
+        )
+        lines.append(
+            f"• MCC `{b.get('mcc_score')}%` | match `{b.get('match_score')}%` | تطابقات `{b.get('matched_points')}`"
+        )
+    elif sweep and sweep.get("failed"):
+        lines.append("")
+        lines.append(f"⚠️ Auto-sweep: {sweep.get('message', 'فشل')}")
     if result.get("same_file_warning"):
         lines.append("")
         lines.append("⚠️ الملفان متطابقان بايتًا.")
