@@ -44,6 +44,10 @@ fi
 
 pip install -q -r requirements.txt
 
+if [ "${AUTO_SYNC_ENV:-1}" != "0" ] && [ -f scripts/sync_env_from_example.py ]; then
+  python scripts/sync_env_from_example.py || true
+fi
+
 if [ ! -f .env ] && [ -f .env.example ]; then
   echo "Copy .env.example to .env and set TELEGRAM_BOT_TOKEN"
 fi

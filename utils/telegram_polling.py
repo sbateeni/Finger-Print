@@ -99,15 +99,17 @@ def kill_stale_local_bot_processes(
     root_s = str(root).lower()
     killed = 0
     my_pid = os.getpid()
-    try:
-        my_pgid = os.getpgid(my_pid)
-    except OSError:
-        my_pgid = None
+    my_pgid = None
+    if platform.system() != "Windows" and hasattr(os, "getpgid"):
+        try:
+            my_pgid = os.getpgid(my_pid)
+        except OSError:
+            my_pgid = None
 
     def _should_kill(cmd: str, pid: int) -> bool:
         if pid == my_pid or pid <= 0:
             return False
-        if my_pgid is not None:
+        if my_pgid is not None and hasattr(os, "getpgid"):
             try:
                 if os.getpgid(pid) == my_pgid:
                     return False
