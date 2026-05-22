@@ -1,9 +1,7 @@
 """
-تشغيل بوت Telegram (بجانب الواجهة web — لا يستبدلها).
+تشغيل بوت Telegram فقط (اختياري — للتشخيص).
 
-  python run_telegram.py
-
-يحتاج TELEGRAM_BOT_TOKEN في ملف .env
+التشغيل العادي: python run.py  (web + Telegram معًا)
 """
 import sys
 from pathlib import Path
@@ -16,9 +14,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from bot.telegram_bot import main
-from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
 
 if __name__ == "__main__":
-    run_startup_auto_update()
-    start_periodic_auto_update()
     main()

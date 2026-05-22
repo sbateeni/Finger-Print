@@ -1,5 +1,5 @@
-# تشغيل التطوير: dev_server.py يقتل شجرة عمليات uvicorn (--reload) عند Ctrl+C على Windows
+# تشغيل موحّد: web + Telegram
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 $env:LIVE_RELOAD = "1"
-python server\dev_server.py @args
+python run_app.py @args

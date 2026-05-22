@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kali / Linux — تشغيل الواجهة + (اختياري) بوت Telegram في طرفين منفصلين
+# Kali / Linux — تشغيل موحّد: الواجهة web + بوت Telegram
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -10,7 +10,13 @@ fi
 source venv/bin/activate
 pip install -q -r requirements.txt
 
+if [ ! -f .env ] && [ -f .env.example ]; then
+  echo "Copy .env.example to .env and set TELEGRAM_BOT_TOKEN"
+fi
+
 export LIVE_RELOAD="${LIVE_RELOAD:-1}"
-echo "Web UI: http://127.0.0.1:8000"
-echo "Telegram (optional, other terminal): python run_telegram.py"
-exec python server/dev_server.py --host 0.0.0.0 --port 8000
+export HOST="${HOST:-0.0.0.0}"
+export PORT="${PORT:-8000}"
+
+echo "Unified launcher: Web UI + Telegram (single process tree)"
+exec python run_app.py --host "$HOST" --port "$PORT" "$@"

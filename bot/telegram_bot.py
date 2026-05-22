@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import ssl
 from pathlib import Path
 from typing import Optional, Set
 
@@ -24,6 +25,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.request import HTTPXRequest
 
 from services.pair_analysis import analyze_fingerprint_pair, format_match_summary_ar
 
@@ -194,8 +196,28 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
 
+def _telegram_request() -> HTTPXRequest:
+    """SSL for httpx on Windows — default context uses OS store (works with urllib)."""
+    raw = (os.getenv("TELEGRAM_SSL_VERIFY") or "").strip()
+    if raw.lower() in ("0", "false", "no", "off"):
+        verify: bool | ssl.SSLContext = False
+    elif raw:
+        verify = raw
+    else:
+        verify = ssl.create_default_context()
+    return HTTPXRequest(httpx_kwargs={"verify": verify})
+
+
 def build_application(token: str) -> Application:
-    app = Application.builder().token(token).build()
+    # PTB uses a separate HTTP client for long-polling getUpdates — both need SSL config.
+    request = _telegram_request()
+    app = (
+        Application.builder()
+        .token(token)
+        .request(request)
+        .get_updates_request(_telegram_request())
+        .build()
+    )
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
