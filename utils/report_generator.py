@@ -7,6 +7,23 @@ import cv2
 
 from config import APP_VERSION, OUTPUT_DIR, SOFTWARE_NAME
 
+# English labels for PDF/HTML reports (xhtml2pdf does not render Arabic reliably)
+VERDICT_EN_BY_STATUS = {
+    "HIGH MATCH": "Forensic match confirmed (very high confidence)",
+    "MEDIUM MATCH": "Probable partial match — expert review recommended",
+    "LOW MATCH": "Weak or inconclusive similarity — expert review advised",
+    "NO MATCH": "Insufficient similarity under configured thresholds",
+    "INCONCLUSIVE": "Inconclusive — quality or minutiae count below gate",
+    "ERROR": "Matching error",
+}
+
+
+def _combined_verdict_en(match_result: dict) -> str:
+    st = str(match_result.get("decision_status") or match_result.get("status") or "")
+    if st in VERDICT_EN_BY_STATUS:
+        return VERDICT_EN_BY_STATUS[st]
+    return str(match_result.get("combined_verdict") or st or "Unknown")
+
 
 def _png_data_uri(img) -> str:
     if img is None:
@@ -163,10 +180,10 @@ def generate_report(original_img, partial_img, match_result, output_dir=OUTPUT_D
         fused_html = ""
         if match_result.get("fused_score") is not None:
             fused_html = f"<p>Fused Score: <span class='success'>{float(match_result.get('fused_score', 0)):.2f}%</span></p>"
-        if match_result.get("combined_verdict"):
+        if match_result.get("combined_verdict") or match_result.get("status"):
+            verdict_en = html.escape(_combined_verdict_en(match_result))
             fused_html += (
-                f"<p>Combined verdict: <span class='success'>"
-                f"{html.escape(str(match_result.get('combined_verdict')))}</span></p>"
+                f"<p>Combined verdict: <span class='success'>{verdict_en}</span></p>"
             )
         if match_result.get("decision_mode"):
             fused_html += (
