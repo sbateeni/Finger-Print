@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 
-from preprocessing.image_quality import assess_image_quality
+from preprocessing.quality import quality_result_dict
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -44,27 +44,6 @@ def check_fingerprint_quality(gray_image: np.ndarray, *, label: str = "image") -
             "metrics": {},
         }
 
-    assessment = assess_image_quality(gray_image)
-    # assess_image_quality returns 0–1 overall
-    score_100 = round(float(assessment.get("quality_score", 0)) * 100.0, 1)
     min_score = quality_min_score()
-    ok = score_100 >= min_score
-
-    if ok:
-        message = ""
-    else:
-        recs = assessment.get("recommendations") or []
-        hint = "؛ ".join(recs[:2]) if recs else "أعد التقاط الصورة بإضاءة وتباين أفضل"
-        message = (
-            f"{label}: جودة الصورة منخفضة ({score_100:.0f}/100، الحد الأدنى {min_score:.0f}). "
-            f"{hint}"
-        )
-
-    return {
-        "ok": ok,
-        "quality_score": score_100,
-        "message": message,
-        "metrics": assessment.get("metrics") or {},
-        "recommendations": assessment.get("recommendations") or [],
-        "quality_method": "heuristic_v1",
-    }
+    result = quality_result_dict(gray_image, label=label, threshold=min_score)
+    return result

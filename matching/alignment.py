@@ -89,6 +89,110 @@ def refine_alignment_ransac(
     }
 
 
+def find_core_point(
+    minutiae: list[dict[str, Any]],
+    *,
+    cores: list[dict[str, Any]] | None = None,
+    image_shape: tuple[int, ...] | None = None,
+) -> tuple[float, float] | None:
+    """
+    Core reference: Poincaré cores if provided, else ridge-density centroid of minutiae.
+    """
+    if cores:
+        return float(cores[0]["x"]), float(cores[0]["y"])
+
+    if not minutiae:
+        if image_shape:
+            h, w = image_shape[:2]
+            return w / 2.0, h / 2.0
+        return None
+
+    xs = np.array([float(m["x"]) for m in minutiae], dtype=np.float64)
+    ys = np.array([float(m["y"]) for m in minutiae], dtype=np.float64)
+    if image_shape:
+        h, w = image_shape[:2]
+        cell = max(16, min(w, h) // 12)
+        best_count = -1
+        best_xy = (float(np.median(xs)), float(np.median(ys)))
+        for cy in range(cell, h - cell, cell):
+            for cx in range(cell, w - cell, cell):
+                mask = (np.abs(xs - cx) < cell) & (np.abs(ys - cy) < cell)
+                cnt = int(mask.sum())
+                if cnt > best_count:
+                    best_count = cnt
+                    best_xy = (float(cx), float(cy))
+        return best_xy
+
+    return float(np.median(xs)), float(np.median(ys))
+
+
+def align_by_core_point(
+    minutiae_ref: list[dict[str, Any]],
+    minutiae_qry: list[dict[str, Any]],
+    *,
+    cores_ref: list[dict[str, Any]] | None = None,
+    cores_qry: list[dict[str, Any]] | None = None,
+    image_shape: tuple[int, ...] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """
+    Coarse translation: align query core onto reference core (query stays fixed in ref frame).
+    Returns (ref unchanged, transformed query, alignment meta).
+    """
+    c_ref = find_core_point(minutiae_ref, cores=cores_ref, image_shape=image_shape)
+    c_qry = find_core_point(minutiae_qry, cores=cores_qry, image_shape=image_shape)
+    if c_ref is None or c_qry is None:
+        return minutiae_ref, minutiae_qry, {"method": "core_skip"}
+
+    dx = c_ref[0] - c_qry[0]
+    dy = c_ref[1] - c_qry[1]
+    aligned_qry = []
+    for m in minutiae_qry:
+        aligned_qry.append({**m, "x": float(m["x"]) + dx, "y": float(m["y"]) + dy})
+
+    return (
+        minutiae_ref,
+        aligned_qry,
+        {
+            "method": "core_point",
+            "dx": int(round(dx)),
+            "dy": int(round(dy)),
+            "core_ref": c_ref,
+            "core_qry": c_qry,
+        },
+    )
+
+
+def use_core_alignment() -> bool:
+    import os
+
+    return (os.getenv("USE_CORE_ALIGNMENT") or "1").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def apply_core_prealignment(
+    original_minutiae: list[dict[str, Any]],
+    partial_minutiae: list[dict[str, Any]],
+    image_shape: tuple[int, ...],
+    *,
+    cores_ref: list[dict[str, Any]] | None = None,
+    cores_qry: list[dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
+    if not use_core_alignment():
+        return original_minutiae, partial_minutiae, None
+    _, aligned_qry, meta = align_by_core_point(
+        original_minutiae,
+        partial_minutiae,
+        cores_ref=cores_ref,
+        cores_qry=cores_qry,
+        image_shape=image_shape,
+    )
+    return original_minutiae, aligned_qry, meta
+
+
 def align_using_best_triplets(
     original_minutiae: list[dict[str, Any]],
     partial_minutiae: list[dict[str, Any]],

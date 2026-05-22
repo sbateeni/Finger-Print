@@ -1,17 +1,25 @@
-# Matching upgrades
+# Matching pipeline
 
-## Implemented
+## Modules
 
-- **Minutiae filter** (`features/minutiae_filter.py`): border + isolated-ridge cleanup for partial prints.
-- **RANSAC alignment** (`matching/alignment.py`): refines translation/rotation/scale after grid search (`utils/matcher.py`).
-- **Fusion** (`utils/fusion.py`): Minutiae + MCC by default; ORB only if `USE_ORB_FUSION=1`.
-- **Quality gate** (`utils/quality_gate.py`): heuristic pre-check (NFIQ2-style threshold via `QUALITY_GATE_MIN_SCORE`).
+| Module | Role |
+|--------|------|
+| `features/extractor.py` | Skeleton CN + optional **pyfing** (`USE_PYFING_EXTRACTION=1`) |
+| `preprocessing/quality.py` | **QualityChecker** — heuristic or **NFIQ2 CLI** (`QUALITY_BACKEND`, `NFIQ2_CLI_PATH`) |
+| `matching/alignment.py` | Core pre-align + RANSAC refinement |
+| `matching/compare_engine.py` | **FingerprintMatcher** — grid/RANSAC + MCC (`MATCH_ENGINE_THRESHOLD=40`) |
+| `matching/matcher.py` | Public `Matcher` facade |
+| `utils/fusion.py` | Minutiae + MCC fusion (ORB off by default) |
 
-## SourceAFIS / Bozorth3
+## Pip packages that do **not** exist
 
-There is no maintained `pip install sourceafis` for Python. For certified Bozorth3/NFIQ2 you would need:
+- `pip install nfiq2` — use NIST NFIQ2 binary + `NFIQ2_CLI_PATH`
+- `pip install fingerprint-matcher` — use `matching/compare_engine.py` instead
+- `pip install sourceafis` — not available for Python
 
-- NIST NBIS (C) via subprocess, or
-- SourceAFIS (.NET/Java) via CLI/JPype.
+## Optional ML
 
-Current stack targets the same goals with RANSAC + MCC + improved minutiae filtering without a JVM.
+```bash
+pip install -r requirements-ml.txt
+# then in .env: USE_PYFING_EXTRACTION=1
+```

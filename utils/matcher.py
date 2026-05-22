@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from config import *
 from utils.mcc import compute_mcc_descriptors, match_mcc
-from matching.alignment import refine_alignment_ransac
+from matching.alignment import apply_core_prealignment, refine_alignment_ransac
 
 def _angle_diff_deg(a, b):
     d = abs(float(a) - float(b)) % 360.0
@@ -101,6 +101,18 @@ def match_fingerprints_with_partial_alignment(original_minutiae, partial_minutia
     h, w = image_shape[:2]
     cx, cy = w / 2.0, h / 2.0
 
+    cores_ref = kwargs.get("cores_ref")
+    cores_qry = kwargs.get("cores_qry")
+    original_minutiae, partial_work, core_meta = apply_core_prealignment(
+        original_minutiae,
+        partial_minutiae,
+        image_shape,
+        cores_ref=cores_ref,
+        cores_qry=cores_qry,
+    )
+    if core_meta:
+        partial_minutiae = partial_work
+
     distance_threshold = kwargs.get("distance_threshold", MATCH_DISTANCE_THRESHOLD)
     angle_threshold = kwargs.get("angle_threshold_deg", MATCH_ANGLE_THRESHOLD_DEG)
     angle_sort_weight = kwargs.get("angle_sort_weight", MATCH_ANGLE_SORT_WEIGHT)
@@ -170,6 +182,8 @@ def match_fingerprints_with_partial_alignment(original_minutiae, partial_minutia
     best_res["partial_verify"] = True
     best_res["partial_verify_step_px_config"] = int(step_requested)
     best_res["partial_verify_step_px_effective"] = int(step_effective)
+    if core_meta:
+        best_res["core_prealignment"] = core_meta
 
     # RANSAC refinement on tentative matches (similarity: shift + rot + scale)
     details = best_res.get("matched_details") or []

@@ -29,6 +29,7 @@ from utils.matcher import (
     visualize_alignment_on_reference,
     visualize_matches,
 )
+from features.extractor import enhance_minutiae_from_image
 from utils.minutiae_extractor import (
     extract_minutiae,
     visualize_minutiae,
@@ -196,12 +197,16 @@ def _process_branch(
     quality_score, _qm = assess_fingerprint_quality(proc)
     out["quality_score"] = quality_score
 
-    ridges, _omap = detect_edges(proc)
+    ridges, omap = detect_edges(proc)
     if ridges is None:
         out["error"] = "فشل استخراج التموجات"
         return out
     out["ridges"] = ridges
     out["white_ridges"] = int(np.sum(ridges == 255))
+
+    cores, deltas = detect_singular_points(omap, proc > 127)
+    out["cores"] = cores
+    out["deltas"] = deltas
 
     skel = enhance_image(ridges)
     if skel is None:
@@ -218,6 +223,10 @@ def _process_branch(
         min_contrast=min_contrast,
         min_angle_diff=min_angle_diff,
     )
+    minutiae, ext_note = enhance_minutiae_from_image(
+        proc, minutiae, min_distance=float(min_distance)
+    )
+    out["minutiae_extraction"] = ext_note
     out["minutiae"] = minutiae
     out["minutiae_count"] = len(minutiae)
     if minutiae:
@@ -269,7 +278,7 @@ def _iter_branch_live(
         "quality_score": round(quality_score, 1)
     }
 
-    ridges, _omap = detect_edges(proc)
+    ridges, omap = detect_edges(proc)
     if ridges is None:
         yield {"type": "error", "branch": branch_key, "message": "فشل استخراج التموجات"}
         return
@@ -280,6 +289,8 @@ def _iter_branch_live(
         "src": _img_data_uri(ridges),
         "white": int(np.sum(ridges > 127)),
     }
+
+    cores, deltas = detect_singular_points(omap, proc > 127)
 
     skel = enhance_image(ridges)
     if skel is None:
@@ -301,6 +312,9 @@ def _iter_branch_live(
         min_contrast=min_contrast,
         min_angle_diff=min_angle_diff,
     )
+    minutiae, ext_note = enhance_minutiae_from_image(
+        proc, minutiae, min_distance=float(min_distance)
+    )
     vis = None
     if minutiae:
         vis = visualize_minutiae(skel, minutiae)
@@ -313,8 +327,6 @@ def _iter_branch_live(
             "n_min": len(minutiae),
         }
 
-    # 6. اكتشاف النقاط المفردة (Singular Points)
-    cores, deltas = detect_singular_points(_omap, proc > 127)
     if cores or deltas:
         vis_sp = visualize_singular_points(proc, cores, deltas)
         yield {
@@ -330,6 +342,7 @@ def _iter_branch_live(
         "skeleton": skel,
         "minutiae": minutiae,
         "minutiae_count": len(minutiae),
+        "minutiae_extraction": ext_note,
         "quality_score": quality_score,
         "quality_map": q_map_color,
         "cores": cores,
@@ -671,7 +684,11 @@ def analysis_event_generator(
         sk_o = ro["skeleton"]
         sk_p = rp["skeleton"]
         match_result = enrich_match_for_forensics(
-            match_fingerprints_with_partial_alignment(mo, mp, sk_o.shape)
+            match_fingerprints_with_partial_alignment(
+                mo, mp, sk_o.shape,
+                cores_ref=ro.get("cores"),
+                cores_qry=rp.get("cores"),
+            )
         )
         yield _sse_line(
             {"type": "log", "message": "اكتمل بحث المحاذاة — جاري تجهيز تصور المطابقة…"}
@@ -975,7 +992,11 @@ def run_matching_pipeline(
     sk_o = ro["skeleton"]
     sk_p = rp["skeleton"]
     match_result = enrich_match_for_forensics(
-        match_fingerprints_with_partial_alignment(mo, mp, sk_o.shape)
+        match_fingerprints_with_partial_alignment(
+            mo, mp, sk_o.shape,
+            cores_ref=ro.get("cores"),
+            cores_qry=rp.get("cores"),
+        )
     )
     matches_vis = visualize_alignment_on_reference(sk_o, match_result)
     if matches_vis is None:
@@ -1133,7 +1154,11 @@ def run_auto_sweep(
                 if not mo or not mp:
                     continue
 
-                mr = match_fingerprints_with_partial_alignment(mo, mp, ro["skeleton"].shape)
+                mr = match_fingerprints_with_partial_alignment(
+                    mo, mp, ro["skeleton"].shape,
+                    cores_ref=ro.get("cores"),
+                    cores_qry=rp.get("cores"),
+                )
                 match_score = float(mr.get("match_score") or 0.0)
                 mcc_score = float(mr.get("mcc_score") or 0.0)
                 matched_points = int(mr.get("matched_points") or 0)
