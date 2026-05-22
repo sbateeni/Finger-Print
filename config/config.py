@@ -62,11 +62,11 @@ FUSION_W_MCC = 0.25
 FUSION_W_ORB = 0.10
 FUSION_W_BOZORTH = 0.15
 
-# أوزان الدمج عند البصمة الجزئية
-PARTIAL_FUSION_W_MINUTIAE = 0.30
-PARTIAL_FUSION_W_MCC = 0.40
+# أوزان الدمج عند البصمة الجزئية (عند تعطيل Bozorth يُعاد التطبيع تلقائياً)
+PARTIAL_FUSION_W_MINUTIAE = 0.25
+PARTIAL_FUSION_W_MCC = 0.50
 PARTIAL_FUSION_W_ORB = 0.10
-PARTIAL_FUSION_W_BOZORTH = 0.20
+PARTIAL_FUSION_W_BOZORTH = 0.15
 
 # عتبات القرار النهائي بعد الدمج (كامل)
 FUSED_THRESHOLD_HIGH = 65

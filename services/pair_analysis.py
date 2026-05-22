@@ -157,9 +157,15 @@ def format_match_summary_ar(result: dict[str, Any]) -> str:
         f"• Fused Score: *{float(m.get('fused_score') or 0):.2f}%*",
         f"• Match score: *{float(m.get('match_score') or 0):.2f}%*",
         f"• MCC: *{float(m.get('mcc_score') or 0):.2f}%*",
+    ]
+    if m.get("bozorth_score_pct") is not None:
+        lines.append(f"• Bozorth: *{float(m.get('bozorth_score_pct') or 0):.2f}%*")
+    if m.get("bozorth_match") is not None:
+        lines.append(f"• Bozorth match: *{'نعم' if m.get('bozorth_match') else 'لا'}*")
+    lines.extend([
         f"• تطابقات: *{m.get('matched_points', 0)}*",
         f"• نقاط مرجعية: {m.get('total_original', 0)} | مقارنة: {m.get('total_partial', 0)}",
-    ]
+    ])
     if m.get("decision_mode"):
         lines.append(f"• وضع القرار: `{m.get('decision_mode')}`")
     if m.get("combined_verdict"):

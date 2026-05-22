@@ -31,7 +31,7 @@ python scripts/init_db.py
 |---------|-----------|--------|
 | `USE_GABOR_ENHANCER` | `1` | تفعيل محسّن Gabor قبل الثنائية |
 | `USE_SKIMAGE_SKELETON` | `1` | هيكلة عبر scikit-image |
-| `USE_BOZORTH_MATCHER` | `0` | دمج Bozorth في المسار الرئيسي (تجريبي) |
+| `USE_BOZORTH_MATCHER` | `1` | دمج Bozorth في القرار النهائي |
 | `BOZORTH_MATCH_THRESHOLD` | `25` | عتبة Bozorth |
 | `FVC2004_PATH` | — | مسار قاعدة FVC للاختبار |
 
@@ -53,8 +53,8 @@ pytest tests/test_on_fvc.py -v   # يتطلب FVC2004_PATH
 ## ملاحظات
 
 - المسار الإنتاجي الحالي: `services/analysis_service.py` + `utils/orb_matcher.py` (MCC + ORB + minutiae).
-- Bozorth وNFIQ2 **اختياريان**؛ عند غياب المكتبة يُستخدم بديل مدمج.
-- لا تشغّل نسختين من بوت Telegram (خطأ 409).
+- Bozorth **مفعّل افتراضياً** في `combined_verdict` (وزن ~15–20%).
+- Telegram: `/register` `/match` `/templates` + المسار القديم (صورتان + PDF).
 
 ## Pull Request
 

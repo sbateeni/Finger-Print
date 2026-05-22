@@ -28,10 +28,17 @@ from telegram.ext import (
 from telegram.request import HTTPXRequest
 
 from services.pair_analysis import analyze_fingerprint_pair, format_match_summary_ar
+from bot.fingerprint_store import (
+    extract_minutiae_from_bytes,
+    list_templates,
+    register_template,
+    search_best_match,
+)
 
 logger = logging.getLogger(__name__)
 
 SESSION_KEY = "fp_session"
+REGISTER_PENDING_KEY = "fp_register_pending"
 
 
 def _allowed_chat_ids() -> Optional[Set[int]]:
@@ -98,7 +105,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "الأوامر:\n"
         "/start — البداية\n"
         "/reset — إلغاء الصور الحالية\n"
-        "/status — ما تم استلامه\n\n"
+        "/status — ما تم استلامه\n"
+        "/register — تسجيل بصمتك في قاعدة البوت\n"
+        "/match — مقارنة صورة مع المسجّلين\n"
+        "/templates — عرض المسجّلين\n\n"
         "يمكنك أيضًا استخدام الواجهة على http://127.0.0.1:8000",
         parse_mode=ParseMode.MARKDOWN,
     )
@@ -172,6 +182,103 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     context.user_data.pop(SESSION_KEY, None)
 
 
+async def cmd_templates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    rows = list_templates(context.application.bot_data)
+    if not rows:
+        await update.message.reply_text("لا يوجد مسجّلون بعد. استخدم /register")
+        return
+    lines = ["📋 *قوالب مسجّلة:*", ""]
+    for uid, label, n in rows:
+        lines.append(f"• `{uid}` — {label} ({n} نقطة)")
+    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[REGISTER_PENDING_KEY] = True
+    await update.message.reply_text(
+        "📥 *تسجيل بصمة*\nأرسل صورة بصمة واحدة (photo أو ملف) لتُخزَّن للمقارنة لاحقًا.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_match_db(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data["fp_match_pending"] = True
+    await update.message.reply_text(
+        "🔍 *مقارنة مع القاعدة*\nأرسل صورة بصمة للبحث عن أقرب تطابق بين المسجّلين.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def _handle_register_image(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, raw: bytes
+) -> bool:
+    """Process register flow. Returns True if consumed."""
+    if not context.user_data.get(REGISTER_PENDING_KEY):
+        return False
+    context.user_data.pop(REGISTER_PENDING_KEY, None)
+    uid = update.effective_user.id if update.effective_user else 0
+    await update.message.reply_text("⏳ جاري استخراج النقاط الدقيقة…")
+
+    def _work():
+        return extract_minutiae_from_bytes(raw)
+
+    mins, err = await asyncio.to_thread(_work)
+    if err or not mins:
+        await update.message.reply_text(f"❌ {err or 'فشل التسجيل'}")
+        return True
+
+    register_template(context.application.bot_data, uid, mins)
+    await update.message.reply_text(
+        f"✅ تم تسجيل بصمتك ({len(mins)} نقطة دقيقة).\n"
+        f"المعرّف: `{uid}`\nاستخدم /match للمقارنة.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+    return True
+
+
+async def _handle_match_db_image(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, raw: bytes
+) -> bool:
+    if not context.user_data.pop("fp_match_pending", None):
+        return False
+    uid = update.effective_user.id if update.effective_user else 0
+    await update.message.reply_text("⏳ جاري البحث في القاعدة…")
+
+    bot_data = context.application.bot_data
+
+    def _work():
+        mins, err = extract_minutiae_from_bytes(raw)
+        if err or not mins:
+            return None, err, 0.0, False
+        best_uid, score, matched = search_best_match(bot_data, mins, exclude_user_id=None)
+        return best_uid, None, score, matched
+
+    best_uid, err, score, matched = await asyncio.to_thread(_work)
+    if err:
+        await update.message.reply_text(f"❌ {err}")
+        return True
+    if best_uid is None:
+        await update.message.reply_text("❌ لا يوجد مسجّلون. استخدم /register أولًا.")
+        return True
+    if matched:
+        await update.message.reply_text(
+            f"✅ *تطابق* مع المستخدم `{best_uid}`\nدرجة Bozorth: *{score:.1f}*",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    else:
+        await update.message.reply_text(
+            f"❌ *لا تطابق كافٍ*\nأعلى درجة: `{score:.1f}` (مع `{best_uid}`)",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    return True
+
+
 async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not _is_allowed(update):
         await update.message.reply_text("غير مصرح.")
@@ -182,6 +289,11 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         raw = await _download_document_bytes(update, context)
     if raw is None:
         await update.message.reply_text("أرسل صورة (photo) أو ملف png/jpg.")
+        return
+
+    if await _handle_register_image(update, context, raw):
+        return
+    if await _handle_match_db_image(update, context, raw):
         return
 
     s = _get_session(context)
@@ -221,6 +333,9 @@ def build_application(token: str) -> Application:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("register", cmd_register))
+    app.add_handler(CommandHandler("match", cmd_match_db))
+    app.add_handler(CommandHandler("templates", cmd_templates))
     app.add_handler(MessageHandler(filters.PHOTO, handle_image))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_image))
     return app
