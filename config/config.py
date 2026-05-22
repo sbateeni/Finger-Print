@@ -62,9 +62,13 @@ FUSION_W_MCC = 0.3
 FUSION_W_ORB = 0.1
 
 # أوزان الدمج عند البصمة الجزئية — MCC يأخذ وزناً أعلى (match_score يظلم الجزء)
-PARTIAL_FUSION_W_MINUTIAE = 0.35
-PARTIAL_FUSION_W_MCC = 0.55
-PARTIAL_FUSION_W_ORB = 0.10
+PARTIAL_FUSION_W_MINUTIAE = 0.70
+PARTIAL_FUSION_W_MCC = 0.30
+PARTIAL_FUSION_W_ORB = 0.0
+
+# USE_ORB_FUSION=1 في .env لتفعيل ORB (افتراضي: معطّل — ضعيف على البصمات)
+AUTO_SCALE_MAX_FACTOR = 2.0
+AUTO_SCALE_MIN_FACTOR = 0.70
 
 # عتبات القرار النهائي بعد الدمج (كامل)
 FUSED_THRESHOLD_HIGH = 65

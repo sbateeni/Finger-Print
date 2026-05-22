@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from config import *
+from features.minutiae_filter import filter_minutiae_by_confidence
 
 def calculate_angle(skeleton, x, y, window_size=5):
     """
@@ -165,8 +166,15 @@ def extract_minutiae(skeleton, border_margin=10, min_distance=10, original_image
         
         # 1. إزالة النقاط الزائفة هندسياً (Spurs, Islands)
         refined = remove_false_minutiae(skeleton, raw_minutiae)
-        
-        # 2. الفلترة المكانية والتباين
+
+        # 2. فلترة الثقة (حواف + نقاط معزولة على الهيكل)
+        refined = filter_minutiae_by_confidence(
+            refined,
+            skeleton,
+            edge_margin=max(border_margin, 10),
+        )
+
+        # 3. الفلترة المكانية والتباين
         filtered = filter_minutiae(refined, skeleton.shape, border_margin, min_distance, original_image, min_contrast, min_angle_diff)
         
         return filtered

@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from config import *
 from utils.mcc import compute_mcc_descriptors, match_mcc
+from matching.alignment import refine_alignment_ransac
 
 def _angle_diff_deg(a, b):
     d = abs(float(a) - float(b)) % 360.0
@@ -166,7 +167,53 @@ def match_fingerprints_with_partial_alignment(original_minutiae, partial_minutia
                         best_res = dict(res)
                         best_res["alignment"] = {"dx": int(dx), "dy": int(dy), "rot_deg": float(rot)}
 
-    # حقول baseline/gain يجب أن تكون مبنية على baseline الحقيقي قبل أي محاذاة
+    best_res["partial_verify"] = True
+    best_res["partial_verify_step_px_config"] = int(step_requested)
+    best_res["partial_verify_step_px_effective"] = int(step_effective)
+
+    # RANSAC refinement on tentative matches (similarity: shift + rot + scale)
+    details = best_res.get("matched_details") or []
+    if len(details) >= 3:
+        ransac_al = refine_alignment_ransac(
+            original_minutiae,
+            partial_minutiae,
+            details,
+            image_shape,
+            reproj_threshold=float(distance_threshold) * 0.85,
+        )
+        if ransac_al is not None:
+            transformed = _transform_points(
+                partial_minutiae,
+                ransac_al["dx"],
+                ransac_al["dy"],
+                ransac_al["rot_deg"],
+                cx,
+                cy,
+            )
+            ransac_res = _match_minutiae_pair(
+                original_minutiae,
+                transformed,
+                distance_threshold,
+                angle_threshold,
+                angle_sort_weight,
+            )
+            if ransac_res["matched_points"] >= best_res["matched_points"]:
+                best_res = dict(ransac_res)
+                best_res["alignment"] = {
+                    "dx": ransac_al["dx"],
+                    "dy": ransac_al["dy"],
+                    "rot_deg": ransac_al["rot_deg"],
+                }
+                best_res["alignment_method"] = "ransac"
+                best_res["ransac_inliers"] = ransac_al.get("ransac_inliers", 0)
+                best_res["alignment_scale"] = ransac_al.get("scale", 1.0)
+            else:
+                best_res["alignment_method"] = "grid_search"
+        else:
+            best_res["alignment_method"] = "grid_search"
+    else:
+        best_res["alignment_method"] = "grid_search"
+
     best_res["baseline_matched"] = int(baseline.get("matched_points", 0))
     best_res["baseline_match_score"] = float(baseline.get("match_score", 0.0))
     best_res["alignment_gain_matches"] = int(best_res.get("matched_points", 0)) - int(
@@ -175,9 +222,6 @@ def match_fingerprints_with_partial_alignment(original_minutiae, partial_minutia
     best_res["alignment_gain_score"] = float(best_res.get("match_score", 0.0)) - float(
         baseline.get("match_score", 0.0)
     )
-    best_res["partial_verify"] = True
-    best_res["partial_verify_step_px_config"] = int(step_requested)
-    best_res["partial_verify_step_px_effective"] = int(step_effective)
 
     # --- إضافة محرك MCC للتحقق الجوهري ---
     try:

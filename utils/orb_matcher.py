@@ -170,11 +170,22 @@ def _is_partial_case(
     return False
 
 
-def _fuse_scores(min_norm: float, mcc_norm: float, orb_norm: float, partial: bool) -> float:
+def _fuse_scores(
+    min_norm: float,
+    mcc_norm: float,
+    orb_norm: float,
+    partial: bool,
+    *,
+    use_orb: bool = True,
+) -> float:
     if partial:
         w_m, w_c, w_o = PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB
     else:
         w_m, w_c, w_o = FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB
+    if not use_orb:
+        w_o = 0.0
+        w_sum = float(w_m + w_c) or 1.0
+        return (min_norm * float(w_m) + mcc_norm * float(w_c)) / w_sum
     w_sum = float(w_m + w_c + w_o) or 1.0
     return (
         min_norm * float(w_m) + mcc_norm * float(w_c) + orb_norm * float(w_o)
@@ -192,6 +203,7 @@ def combined_verdict(
     alignment_gain_matches: int = 0,
     total_original: int = 0,
     total_partial: int = 0,
+    use_orb: bool = True,
 ) -> dict:
     """
     يجمع نتيجتَي مطابقة النقاط الدقيقة، ORB، و MCC في حكم نهائي واحد.
@@ -236,7 +248,7 @@ def combined_verdict(
         mcc_score,
         matched_points,
     )
-    fused_score = _fuse_scores(min_norm, mcc_norm, orb_norm, is_partial)
+    fused_score = _fuse_scores(min_norm, mcc_norm, orb_norm, is_partial, use_orb=use_orb)
 
     # عتبات القرار — للجزئية نستخدم حدوداً مخصصة
     th_high = FUSED_THRESHOLD_HIGH

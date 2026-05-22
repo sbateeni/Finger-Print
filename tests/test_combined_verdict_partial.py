@@ -15,10 +15,12 @@ def test_partial_real_case_reaches_medium_match():
         alignment_gain_matches=10,
         total_original=182,
         total_partial=143,
+        use_orb=False,
     )
     assert out["is_partial_case"] is True
     assert out["decision_mode"] == "partial-first"
-    assert out["fused_score"] >= 38.0
+    # Without ORB: 0.7×min + 0.3×MCC ≈ 30; partial-first still upgrades via MCC+alignment
+    assert out["fused_score"] >= 28.0
     assert out["decision_status"] == "MEDIUM MATCH"
     assert "مراجعة خبير" in out["combined_verdict"]
 

@@ -34,13 +34,28 @@ from utils.minutiae_extractor import (
     visualize_minutiae,
     visualize_singular_points,
 )
-from utils.orb_matcher import combined_verdict, match_with_orb
+from utils.fusion import apply_fusion_to_match, use_orb_fusion
+from utils.orb_matcher import match_with_orb
+from utils.quality_gate import check_fingerprint_quality, quality_gate_enabled
 from utils.forensic import append_audit_record, build_audit_record, enrich_match_for_forensics
 from utils.report_generator import generate_report
 from utils.image_utils import _img_data_uri, _decode_upload_type
 from utils.sse_utils import _sse_line
 
 logger = logging.getLogger(__name__)
+
+
+def _reject_low_upload_quality(o_gray, p_gray) -> dict | None:
+    """Return error dict for ro/rp if pre-processing quality gate fails."""
+    if not quality_gate_enabled():
+        return None
+    q_ref = check_fingerprint_quality(o_gray, label="المرجعية")
+    if not q_ref["ok"]:
+        return {"error": q_ref["message"], "quality_score": q_ref["quality_score"]}
+    q_qry = check_fingerprint_quality(p_gray, label="المقارنة")
+    if not q_qry["ok"]:
+        return {"error": q_qry["message"], "quality_score": q_qry["quality_score"]}
+    return None
 
 
 def _clamp_zoom_percent(v: int) -> int:
@@ -143,8 +158,10 @@ def _normalize_query_scale(reference_gray: np.ndarray, query_gray: np.ndarray, e
         return query_gray, 1.0
 
     # Stable scaling: area-ratio converted to linear factor.
+    from config import AUTO_SCALE_MAX_FACTOR, AUTO_SCALE_MIN_FACTOR
+
     factor = (ref_area / qry_area) ** 0.5
-    factor = float(max(0.70, min(1.40, factor)))
+    factor = float(max(AUTO_SCALE_MIN_FACTOR, min(AUTO_SCALE_MAX_FACTOR, factor)))
     if abs(factor - 1.0) < 0.03:
         return query_gray, 1.0
 
@@ -466,6 +483,11 @@ def analysis_event_generator(
             yield _sse_line({"type": "fatal", "message": f"تعذر فك ترميز الصورة: {e}"})
             return
 
+        qerr = _reject_low_upload_quality(o_gray, p_gray)
+        if qerr:
+            yield _sse_line({"type": "fatal", "message": qerr["error"]})
+            return
+
         o_gray = _apply_manual_transform(
             o_gray,
             original_zoom,
@@ -667,40 +689,27 @@ def analysis_event_generator(
             }
         )
 
-        # 10. طبقة التحقق الثانية: ORB Matching
-        yield _sse_line({"type": "log", "message": "جاري التحقق البصري المستقل (ORB)…"})
+        yield _sse_line({"type": "log", "message": "جاري دمج النتائج (Minutiae + MCC)…"})
         try:
-            orb_res = match_with_orb(ro["processed"], rp["processed"])
-            if orb_res.get("visualization") is not None:
-                orb_res["orb_visualization"] = _img_data_uri(orb_res["visualization"])
-                yield _sse_line({
-                    "type": "image",
-                    "branch": "orb",
-                    "stage": "orb_vis",
-                    "src": orb_res["orb_visualization"],
-                })
-                # إزالة مصفوفة البكسلات لجعل الكائن JSON serializable
-                del orb_res["visualization"]
-            
-            verdict = combined_verdict(
-                match_result["match_score"], 
-                orb_res["orb_confidence"],
-                mcc_score=match_result.get("mcc_score", 0.0),
-                orb_score=orb_res.get("orb_score", 0.0),
-                partial_verify=bool(match_result.get("partial_verify")),
-                matched_points=int(match_result.get("matched_points") or 0),
-                alignment_gain_matches=int(match_result.get("alignment_gain_matches") or 0),
-                total_original=int(match_result.get("total_original") or 0),
-                total_partial=int(match_result.get("total_partial") or 0),
+            if use_orb_fusion():
+                yield _sse_line({"type": "log", "message": "جاري التحقق البصري (ORB)…"})
+                orb_res = match_with_orb(ro["processed"], rp["processed"])
+                if orb_res.get("visualization") is not None:
+                    orb_res["orb_visualization"] = _img_data_uri(orb_res["visualization"])
+                    yield _sse_line({
+                        "type": "image",
+                        "branch": "orb",
+                        "stage": "orb_vis",
+                        "src": orb_res["orb_visualization"],
+                    })
+                    del orb_res["visualization"]
+            match_result = apply_fusion_to_match(
+                match_result, ro["processed"], rp["processed"]
             )
-            match_result.update(orb_res)
-            match_result.update(verdict)
-            if verdict.get("decision_status"):
-                match_result["status"] = verdict["decision_status"]
             match_result = enrich_match_for_forensics(match_result)
-        except Exception as orb_err:
-            logger.error(f"ORB matching failed: {orb_err}")
-            yield _sse_line({"type": "log", "message": "فشل التحقق البصري (ORB) - سيتم الاعتماد على النقاط الدقيقة فقط."})
+        except Exception as fusion_err:
+            logger.error("Fusion failed: %s", fusion_err)
+            yield _sse_line({"type": "log", "message": "فشل دمج النتائج — الاعتماد على مطابقة النقاط فقط."})
 
         form_params = {
             "border_margin": border_margin,
@@ -821,6 +830,11 @@ def process_form_analysis(
     
     o_gray = _decode_upload_type(o_raw)
     p_gray = _decode_upload_type(p_raw)
+    qerr = _reject_low_upload_quality(o_gray, p_gray)
+    if qerr:
+        dm = denoise_method if denoise_method in ("None", "fastNlMeans", "GaussianBlur") else "fastNlMeans"
+        return same_file, sha_o, sha_p, qerr, qerr, dm
+
     o_gray = _apply_manual_transform(
         o_gray,
         original_zoom,
@@ -967,30 +981,13 @@ def run_matching_pipeline(
     if matches_vis is None:
         matches_vis = visualize_matches(sk_o, sk_p, match_result)
 
-    # طبقة ORB + قرار دمج نهائي (مماثل لمسار البث المباشر)
     try:
-        orb_res = match_with_orb(ro["processed"], rp["processed"])
-        if orb_res.get("visualization") is not None:
-            orb_res["orb_visualization"] = _img_data_uri(orb_res["visualization"])
-            del orb_res["visualization"]
-        verdict = combined_verdict(
-            match_result["match_score"],
-            orb_res["orb_confidence"],
-            mcc_score=match_result.get("mcc_score", 0.0),
-            orb_score=orb_res.get("orb_score", 0.0),
-            partial_verify=bool(match_result.get("partial_verify")),
-            matched_points=int(match_result.get("matched_points") or 0),
-            alignment_gain_matches=int(match_result.get("alignment_gain_matches") or 0),
-            total_original=int(match_result.get("total_original") or 0),
-            total_partial=int(match_result.get("total_partial") or 0),
+        match_result = apply_fusion_to_match(
+            match_result, ro["processed"], rp["processed"]
         )
-        match_result.update(orb_res)
-        match_result.update(verdict)
-        if verdict.get("decision_status"):
-            match_result["status"] = verdict["decision_status"]
         match_result = enrich_match_for_forensics(match_result)
-    except Exception as orb_err:
-        logger.error("ORB matching failed (form path): %s", orb_err)
+    except Exception as fusion_err:
+        logger.error("Fusion failed (form path): %s", fusion_err)
 
     form_params = dict(form_ctx)
     form_params["MATCH_DISTANCE_THRESHOLD"] = MATCH_DISTANCE_THRESHOLD
