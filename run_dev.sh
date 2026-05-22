@@ -3,6 +3,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Build headers (Pillow/OpenCV wheels usually prebuilt; needed if pip falls back to source)
+if command -v apt-get >/dev/null 2>&1; then
+  missing=""
+  for pkg in python3-dev build-essential libjpeg-dev zlib1g-dev; do
+    dpkg -s "$pkg" >/dev/null 2>&1 || missing="$missing $pkg"
+  done
+  if [ -n "$missing" ]; then
+    echo "Optional (for pip source builds): sudo apt install -y$missing"
+  fi
+fi
+
 if [ ! -d "venv" ]; then
   python3 -m venv venv
 fi
