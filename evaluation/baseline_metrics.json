@@ -1,0 +1,36 @@
+{
+  "pipeline": "Finger-Print process_form_analysis + run_matching_pipeline",
+  "score_used": "fused",
+  "genuine_count": 1,
+  "impostor_count": 1,
+  "eer": 0.0,
+  "threshold_at_eer": 26.0,
+  "far_at_eer": 0.0,
+  "frr_at_eer": 0.0,
+  "confusion_at_eer": {
+    "tp": 1,
+    "tn": 1,
+    "fp": 0,
+    "fn": 0
+  },
+  "per_row": [
+    {
+      "img1": "C:\\Users\\HP\\Documents\\GitHub\\Finger-Print\\evaluation\\data\\id1_a.png",
+      "img2": "C:\\Users\\HP\\Documents\\GitHub\\Finger-Print\\evaluation\\data\\id1_b.png",
+      "label": "genuine",
+      "score_field": "fused",
+      "score_value": 63.03,
+      "status": "MEDIUM MATCH",
+      "same_file_bytes": false
+    },
+    {
+      "img1": "C:\\Users\\HP\\Documents\\GitHub\\Finger-Print\\evaluation\\data\\id1_a.png",
+      "img2": "C:\\Users\\HP\\Documents\\GitHub\\Finger-Print\\evaluation\\data\\id2_a.png",
+      "label": "impostor",
+      "score_field": "fused",
+      "score_value": 24.87,
+      "status": "LOW MATCH",
+      "same_file_bytes": false
+    }
+  ]
+}

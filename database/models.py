@@ -1,62 +1,72 @@
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, JSON
+from sqlalchemy.orm import relationship
+from database import Base
 
-db = SQLAlchemy()
 
-class User(db.Model):
+class User(Base):
     __tablename__ = 'users'
     
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
-    role = db.Column(db.String(20), nullable=False, default='user')  # user, expert, admin
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(80), unique=True, nullable=False, index=True)
+    email = Column(String(120), unique=True, nullable=False, index=True)
+    password_hash = Column(String(128))
+    role = Column(String(20), nullable=False, default='user')
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    fingerprints = relationship("Fingerprint", back_populates="owner")
+    reviews = relationship("Review", back_populates="reviewer")
 
-class Fingerprint(db.Model):
+
+class Fingerprint(Base):
     __tablename__ = 'fingerprints'
     
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(255), nullable=False)
-    filepath = db.Column(db.String(255), nullable=False)
-    quality_score = db.Column(db.Float)
-    minutiae_count = db.Column(db.Integer)
-    ridge_patterns = db.Column(db.JSON)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String(255), nullable=False)
+    filepath = Column(String(255), nullable=False)
+    quality_score = Column(Float)
+    minutiae_count = Column(Integer)
+    minutiae_data = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    
+    owner = relationship("User", back_populates="fingerprints")
+    original_matches = relationship("Match", foreign_keys="Match.original_fingerprint_id", back_populates="original_fingerprint")
+    partial_matches = relationship("Match", foreign_keys="Match.partial_fingerprint_id", back_populates="partial_fingerprint")
 
-class Match(db.Model):
+
+class Match(Base):
     __tablename__ = 'matches'
     
-    id = db.Column(db.Integer, primary_key=True)
-    original_fingerprint_id = db.Column(db.Integer, db.ForeignKey('fingerprints.id'))
-    partial_fingerprint_id = db.Column(db.Integer, db.ForeignKey('fingerprints.id'))
-    match_score = db.Column(db.Float)
-    matched_points = db.Column(db.Integer)
-    minutiae_analysis = db.Column(db.JSON)
-    ridge_patterns = db.Column(db.JSON)
-    status = db.Column(db.String(50))  # pending, reviewed, confirmed, rejected
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    reviewed_at = db.Column(db.DateTime)
-    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    id = Column(Integer, primary_key=True, index=True)
+    case_reference = Column(String(255))
+    operator_name = Column(String(255))
+    original_fingerprint_id = Column(Integer, ForeignKey('fingerprints.id'))
+    partial_fingerprint_id = Column(Integer, ForeignKey('fingerprints.id'))
+    match_score = Column(Float)
+    fused_score = Column(Float)
+    matched_points = Column(Integer)
+    status = Column(String(50))
+    match_details = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    reviewed_at = Column(DateTime)
+    reviewed_by = Column(Integer, ForeignKey('users.id'))
+    
+    original_fingerprint = relationship("Fingerprint", foreign_keys=[original_fingerprint_id], back_populates="original_matches")
+    partial_fingerprint = relationship("Fingerprint", foreign_keys=[partial_fingerprint_id], back_populates="partial_matches")
+    reviews = relationship("Review", back_populates="match")
 
-class Review(db.Model):
+
+class Review(Base):
     __tablename__ = 'reviews'
     
-    id = db.Column(db.Integer, primary_key=True)
-    match_id = db.Column(db.Integer, db.ForeignKey('matches.id'))
-    reviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    decision = db.Column(db.String(50))  # match, possible_match, no_match
-    confidence = db.Column(db.String(20))  # high, medium, low
-    comments = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Relationships
-    match = db.relationship('Match', backref=db.backref('reviews', lazy=True))
-    reviewer = db.relationship('User', backref=db.backref('reviews', lazy=True))
-
-def init_db(app):
-    """Initialize database with app"""
-    db.init_app(app)
-    with app.app_context():
-        db.create_all() 
+    id = Column(Integer, primary_key=True, index=True)
+    match_id = Column(Integer, ForeignKey('matches.id'))
+    reviewer_id = Column(Integer, ForeignKey('users.id'))
+    decision = Column(String(50))
+    confidence = Column(String(20))
+    comments = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    match = relationship("Match", back_populates="reviews")
+    reviewer = relationship("User", back_populates="reviews")

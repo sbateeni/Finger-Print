@@ -1,0 +1,12 @@
+# Task: Extract and summarize "تقرير فني — مقارنة بصمات.pdf"
+
+## Plan
+1. [ ] Open the PDF file in the browser.
+2. [ ] Extract text and identify images/diagrams from the PDF.
+3. [ ] Summarize key points (technical requirements, algorithms, comparison results).
+4. [ ] Translate key findings to English.
+5. [ ] Describe any images or diagrams found.
+
+## Notes
+- File Path: `c:\Users\HP\Documents\GitHub\Finger-Print\تقرير فني — مقارنة بصمات.pdf`
+- Title (Arabic): تقرير فني — مقارنة بصمات (Technical Report - Fingerprint Comparison)

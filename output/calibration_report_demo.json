@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "n_samples": 6,
+    "n_genuine": 3,
+    "n_impostor": 3,
+    "weights": {
+      "FUSION_W_MINUTIAE": 0.6,
+      "FUSION_W_MCC": 0.3,
+      "FUSION_W_ORB": 0.1
+    },
+    "auc": 1.0,
+    "eer": 0.0,
+    "eer_threshold": 59.0
+  },
+  "recommended_thresholds": {
+    "FUSED_THRESHOLD_HIGH": 59.0,
+    "FUSED_THRESHOLD_MEDIUM": 59.0,
+    "FUSED_THRESHOLD_LOW": 59.0
+  },
+  "target_far": {
+    "high": 0.01,
+    "medium": 0.05,
+    "low": 0.1
+  },
+  "config_snippet": {
+    "FUSION_W_MINUTIAE": 0.6,
+    "FUSION_W_MCC": 0.3,
+    "FUSION_W_ORB": 0.1,
+    "FUSED_THRESHOLD_HIGH": 59.0,
+    "FUSED_THRESHOLD_MEDIUM": 59.0,
+    "FUSED_THRESHOLD_LOW": 59.0
+  }
+}

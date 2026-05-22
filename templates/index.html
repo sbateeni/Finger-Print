@@ -1,292 +1,344 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="{{ lang }}" dir="{{ trans.dir }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تحليل البصمات الجنائي</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f8f9fa;
-        }
-        .result-box {
-            background-color: #f0f2f6;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 10px 0;
-        }
-        .result-item {
-            font-size: 18px;
-            margin: 10px 0;
-        }
-        .highlight {
-            color: #0068c9;
-            font-weight: bold;
-        }
-        .success {
-            color: #09ab3b;
-            font-weight: bold;
-        }
-        .high-match {
-            color: #09ab3b;
-            font-weight: bold;
-            font-size: 24px;
-            padding: 10px;
-            background-color: rgba(9, 171, 59, 0.1);
-            border-radius: 5px;
-        }
-        .medium-match {
-            color: #f0a202;
-            font-weight: bold;
-            font-size: 24px;
-            padding: 10px;
-            background-color: rgba(240, 162, 2, 0.1);
-            border-radius: 5px;
-        }
-        .low-match {
-            color: #ff0000;
-            font-weight: bold;
-            font-size: 24px;
-            padding: 10px;
-            background-color: rgba(255, 0, 0, 0.1);
-            border-radius: 5px;
-        }
-        .image-container {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .image-container img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .error-message {
-            color: #dc3545;
-            margin: 10px 0;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .lang-switcher {
+      position: absolute;
+      top: 2rem;
+      z-index: 100;
+    }
+    [dir='rtl'] .lang-switcher { left: 2rem; }
+    [dir='ltr'] .lang-switcher { right: 2rem; }
+    .lang-btn {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      backdrop-filter: var(--glass);
+    }
+    .lang-btn:hover {
+      border-color: var(--accent);
+    }
+  </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">نظام تحليل البصمات الجنائي</h1>
-        <h3 class="text-center mb-4">نظام متقدم لتحليل ومطابقة البصمات باستخدام تقنيات الذكاء الاصطناعي</h3>
+  <div class="lang-switcher">
+    <a href="?lang={{ trans.lang_code }}" class="lang-btn">{{ trans.lang_name }}</a>
+  </div>
+  <div class="wrap">
+    <span class="badge">🔬 {{ trans.software_name }} · v{{ app_version }}</span>
+    <header class="hero">
+      <h1>{{ trans.title }}</h1>
+      <p>{{ trans.forensic_note }}</p>
+      <p class="small" style="margin-top:0.5rem;color:var(--muted);font-size:0.88rem;">{{ trans.search_hint }}</p>
+    </header>
 
-        <div class="row">
-            <!-- البصمة الأصلية -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>البصمة الأصلية</h4>
-                    </div>
-                    <div class="card-body">
-                        <form id="originalForm">
-                            <div class="mb-3">
-                                <input type="file" class="form-control" id="originalFile" accept=".png,.jpg,.jpeg,.bmp,.tiff">
-                            </div>
-                            <button type="submit" class="btn btn-primary">تحميل</button>
-                        </form>
-                        <div id="originalImage" class="image-container"></div>
-                        <div id="originalProcessed" class="image-container"></div>
-                        <div id="originalLoading" class="loading">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">جاري التحميل...</span>
-                            </div>
-                        </div>
-                        <div id="originalError" class="error-message"></div>
-                    </div>
-                </div>
-            </div>
+    <section class="forensic-panel">
+      <strong>{{ trans.lab_frame }}</strong> {{ trans.lab_frame_desc }} (<code>output/audit_log.jsonl</code>)
+    </section>
 
-            <!-- البصمة الجزئية -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>البصمة الجزئية</h4>
-                    </div>
-                    <div class="card-body">
-                        <form id="partialForm">
-                            <div class="mb-3">
-                                <input type="file" class="form-control" id="partialFile" accept=".png,.jpg,.jpeg,.bmp,.tiff">
-                            </div>
-                            <button type="submit" class="btn btn-primary">تحميل</button>
-                        </form>
-                        <div id="partialImage" class="image-container"></div>
-                        <div id="partialProcessed" class="image-container"></div>
-                        <div id="partialLoading" class="loading">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">جاري التحميل...</span>
-                            </div>
-                        </div>
-                        <div id="partialError" class="error-message"></div>
-                    </div>
-                </div>
-            </div>
+    {% if error %}
+    <div class="alert err">{{ error }}</div>
+    {% endif %}
+    {% if same_file_warning %}
+    <div class="alert warn">{{ trans.same_file_warning }}</div>
+    {% endif %}
+    {% if forensic_quality_warning %}
+    <div class="alert warn">{{ trans.quality_warning }}</div>
+    {% endif %}
+
+    <form id="fp-analyze-form" class="layout" method="post" action="/analyze?lang={{ lang }}" enctype="multipart/form-data">
+      <aside class="panel">
+        <h2>{{ trans.minutiae_filtering }}</h2>
+        {% set f = form if form is defined else {} %}
+        <div class="field">
+          <label for="border_margin">{{ trans.border_margin }}</label>
+          <input type="range" id="border_margin" name="border_margin" min="0" max="50" value="{{ f.get('border_margin', DEFAULT_BORDER_MARGIN) }}"
+            oninput="document.getElementById('bv').textContent=this.value" />
+          <span class="range-val" id="bv">{{ f.get('border_margin', DEFAULT_BORDER_MARGIN) }}</span>
+        </div>
+        <div class="field">
+          <label for="min_distance">{{ trans.min_distance }}</label>
+          <input type="range" id="min_distance" name="min_distance" min="1" max="50" value="{{ f.get('min_distance', DEFAULT_MIN_DISTANCE) }}"
+            oninput="document.getElementById('dv').textContent=this.value" />
+          <span class="range-val" id="dv">{{ f.get('min_distance', DEFAULT_MIN_DISTANCE) }}</span>
+        </div>
+        <div class="field">
+          <label for="min_contrast">{{ trans.min_contrast }}</label>
+          <input type="range" id="min_contrast" name="min_contrast" min="0" max="50" value="{{ f.get('min_contrast', DEFAULT_MIN_CONTRAST) }}"
+            oninput="document.getElementById('cv').textContent=this.value" />
+          <span class="range-val" id="cv">{{ f.get('min_contrast', DEFAULT_MIN_CONTRAST) }}</span>
+        </div>
+        <div class="field">
+          <label for="min_angle_diff">{{ trans.min_angle_diff }}</label>
+          <input type="range" id="min_angle_diff" name="min_angle_diff" min="0" max="180" value="{{ f.get('min_angle_diff', DEFAULT_MIN_ANGLE_DIFF) }}"
+            oninput="document.getElementById('av').textContent=this.value" />
+          <span class="range-val" id="av">{{ f.get('min_angle_diff', DEFAULT_MIN_ANGLE_DIFF) }}</span>
         </div>
 
-        <!-- زر المطابقة -->
-        <div class="text-center mt-4">
-            <button id="matchButton" class="btn btn-success btn-lg" disabled>بدء المطابقة</button>
+        <h2>{{ trans.denoising }}</h2>
+        <div class="field">
+          <label for="denoise_method">{{ trans.denoise_method }}</label>
+          <select id="denoise_method" name="denoise_method">
+            <option value="None" {% if f.get('denoise_method','fastNlMeans')=='None' %}selected{% endif %}>None</option>
+            <option value="fastNlMeans" {% if f.get('denoise_method','fastNlMeans')=='fastNlMeans' %}selected{% endif %}>fastNlMeans</option>
+            <option value="GaussianBlur" {% if f.get('denoise_method','fastNlMeans')=='GaussianBlur' %}selected{% endif %}>GaussianBlur</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fast_denoise_h">{{ trans.denoise_h }}</label>
+          <input type="range" id="fast_denoise_h" name="fast_denoise_h" min="1" max="30" value="{{ f.get('fast_denoise_h', 10) }}"
+            oninput="document.getElementById('hv').textContent=this.value" />
+          <span class="range-val" id="hv">{{ f.get('fast_denoise_h', 10) }}</span>
+        </div>
+        <div class="field">
+          <label for="gauss_ksize">{{ trans.gauss_ksize }}</label>
+          <input type="range" id="gauss_ksize" name="gauss_ksize" min="1" max="21" step="2" value="{{ f.get('gauss_ksize', 3) }}"
+            oninput="document.getElementById('gv').textContent=this.value" />
+          <span class="range-val" id="gv">{{ f.get('gauss_ksize', 3) }}</span>
         </div>
 
-        <!-- نتائج المطابقة -->
-        <div id="matchResults" class="mt-4" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <h4>نتائج المطابقة</h4>
-                </div>
-                <div class="card-body">
-                    <div id="summaryResults" class="result-box">
-                        <div id="summaryContent"></div>
-                    </div>
-                </div>
+        <h2>{{ trans.documentation_context }}</h2>
+        <div class="field">
+          <label for="case_reference">{{ trans.case_ref }}</label>
+          <input type="text" id="case_reference" name="case_reference" maxlength="200" value="{{ case_reference|default('') }}" placeholder="..." autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="operator_name">{{ trans.operator_name }}</label>
+          <input type="text" id="operator_name" name="operator_name" maxlength="120" value="{{ operator_name|default('') }}" placeholder="..." autocomplete="name" />
+        </div>
+
+        <button type="submit" id="fp-submit-btn" class="btn">{{ trans.analyze_btn }}</button>
+      </aside>
+
+      <main>
+        <div class="grid-2">
+          <div class="card">
+            <h3>{{ trans.original_fp }}</h3>
+            <div class="field">
+              <label for="original">{{ trans.choose_file }}</label>
+              <input type="file" id="original" name="original" accept=".png,.jpg,.jpeg,.bmp,.tiff,.tif" required />
             </div>
+            <div class="preview-panel">
+              <div class="preview-head">
+                <span>معاينة مباشرة</span>
+                <span class="preview-zoom-val" id="original-zoom-val">100%</span>
+              </div>
+              <div class="preview-viewport">
+                <img id="original-preview-img" alt="Original preview" hidden />
+                <div class="preview-empty" id="original-preview-empty">لم يتم اختيار صورة بعد</div>
+              </div>
+              <div class="field preview-control">
+                <label for="original-zoom">تكبير/تصغير</label>
+                <input type="range" id="original-zoom" name="original_zoom" min="50" max="250" value="100" />
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>{{ trans.partial_fp }}</h3>
+            <div class="field">
+              <label for="partial">{{ trans.choose_file }}</label>
+              <input type="file" id="partial" name="partial" accept=".png,.jpg,.jpeg,.bmp,.tiff,.tif" required />
+            </div>
+            <div class="preview-panel">
+              <div class="preview-head">
+                <span>معاينة مباشرة</span>
+                <span class="preview-zoom-val" id="partial-zoom-val">100%</span>
+              </div>
+              <div class="preview-viewport">
+                <img id="partial-preview-img" alt="Partial preview" hidden />
+                <div class="preview-empty" id="partial-preview-empty">لم يتم اختيار صورة بعد</div>
+              </div>
+              <div class="field preview-control">
+                <label for="partial-zoom">تكبير/تصغير</label>
+                <input type="range" id="partial-zoom" name="partial_zoom" min="50" max="250" value="100" />
+              </div>
+              <div class="field preview-control">
+                <label for="partial-shift-x">إزاحة أفقية (X)</label>
+                <input type="range" id="partial-shift-x" name="partial_shift_x" min="-300" max="300" value="0" />
+                <span class="range-val" id="partial-shift-x-val">0 px</span>
+              </div>
+              <div class="field preview-control">
+                <label for="partial-shift-y">إزاحة رأسية (Y)</label>
+                <input type="range" id="partial-shift-y" name="partial_shift_y" min="-300" max="300" value="0" />
+                <span class="range-val" id="partial-shift-y-val">0 px</span>
+              </div>
+              <button type="button" id="partial-reset-transform" class="preview-reset-btn">Reset transform</button>
+              <button type="button" id="partial-auto-sweep" class="preview-reset-btn">Auto-sweep best transform</button>
+              <button type="button" id="partial-auto-sweep-wide" class="preview-reset-btn">Auto-sweep wide (slower)</button>
+              <p id="partial-sweep-status" class="preview-sweep-status"></p>
+            </div>
+          </div>
         </div>
-    </div>
+        <div class="card" style="margin-top:-0.5rem;">
+          <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+            <input type="checkbox" id="apply-preview-scale" name="apply_preview_scale" value="1" checked />
+            <span>تطبيق التعديلات اليدوية (Zoom + Shift) في المعالجة الفعلية</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;margin-top:0.65rem;">
+            <input type="checkbox" id="auto-scale-normalization" name="auto_scale_normalization" value="1" checked />
+            <span>تطبيع تلقائي لمقياس البصمة المقارنة مقابل المرجعية</span>
+          </label>
+          <p class="small" style="margin:0.5rem 0 0;color:var(--muted);font-size:0.82rem;">
+            عند إلغاء الخيار الأول: المعالجة تتجاهل Zoom اليدوي. عند إلغاء الثاني: لا يُطبق ضبط مقياس تلقائي.
+          </p>
+        </div>
 
-    <script>
-        let originalMinutiae = null;
-        let partialMinutiae = null;
+        <section id="live-panel" class="live-panel" hidden aria-live="polite">
+          <p class="small live-hint">{{ trans.live_output }}</p>
+          <div id="live-alerts"></div>
+          <pre id="live-log" class="live-log" aria-label="Log"></pre>
+          <div class="grid-2">
+            <div class="card pip" id="live-col-ref"><h3>{{ trans.original_fp }} (Live)</h3></div>
+            <div class="card pip" id="live-col-partial"><h3>{{ trans.partial_fp }} (Live)</h3></div>
+          </div>
+          <div class="card pip live-match-card"><div id="live-match-col"><h3>Match (Live)</h3></div></div>
+          <div id="live-match-wrap"></div>
+        </section>
 
-        // معالجة تحميل البصمة الأصلية
-        document.getElementById('originalForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const file = document.getElementById('originalFile').files[0];
-            if (!file) return;
+        <div id="server-results" {% if not results %}hidden{% endif %}>
+        {% if results %}
+        <div class="grid-2">
+          <div class="card pip">
+            <h3>{{ trans.original_fp }}</h3>
+            {% if results.original.processed %}
+            <figure><img src="{{ results.original.processed }}" alt="" /><figcaption>Processed - White: {{ results.original.white_pre }}</figcaption></figure>
+            {% endif %}
+            {% if results.original.ridges %}
+            <figure><img src="{{ results.original.ridges }}" alt="" /><figcaption>Gabor - White: {{ results.original.white_ridges }}</figcaption></figure>
+            {% endif %}
+            {% if results.original.skeleton %}
+            <figure><img src="{{ results.original.skeleton }}" alt="" /><figcaption>Skeleton - White: {{ results.original.white_skel }}</figcaption></figure>
+            {% endif %}
+            {% if results.original.vis %}
+            <figure><img src="{{ results.original.vis }}" alt="" /><figcaption>Minutiae: {{ results.original.n_min }}</figcaption></figure>
+            {% endif %}
+          </div>
+          <div class="card pip">
+            <h3>{{ trans.partial_fp }}</h3>
+            {% if results.partial.processed %}
+            <figure><img src="{{ results.partial.processed }}" alt="" /><figcaption>Processed - White: {{ results.partial.white_pre }}</figcaption></figure>
+            {% endif %}
+            {% if results.partial.ridges %}
+            <figure><img src="{{ results.partial.ridges }}" alt="" /><figcaption>Gabor - White: {{ results.partial.white_ridges }}</figcaption></figure>
+            {% endif %}
+            {% if results.partial.skeleton %}
+            <figure><img src="{{ results.partial.skeleton }}" alt="" /><figcaption>Skeleton - White: {{ results.partial.white_skel }}</figcaption></figure>
+            {% endif %}
+            {% if results.partial.vis %}
+            <figure><img src="{{ results.partial.vis }}" alt="" /><figcaption>Minutiae: {{ results.partial.n_min }}</figcaption></figure>
+            {% endif %}
+          </div>
+        </div>
 
-            const formData = new FormData();
-            formData.append('file', file);
+        {% if match %}
+        <div class="card">
+          {% if results.matches_vis %}
+          <figure style="margin:0 0 1rem"><figcaption>Minutiae Alignment</figcaption><img src="{{ results.matches_vis }}" alt="Match" style="width:100%;border-radius:8px;border:1px solid var(--border)" /></figure>
+          {% endif %}
+          
+          {% if match.orb_visualization %}
+          <figure style="margin:0 0 1rem"><figcaption>ORB Visual Verification</figcaption><img src="{{ match.orb_visualization }}" alt="ORB" style="width:100%;border-radius:8px;border:1px solid var(--border)" /></figure>
+          {% endif %}
 
-            document.getElementById('originalLoading').style.display = 'block';
-            document.getElementById('originalError').textContent = '';
+          <div class="results-summary">
+            {% if match.combined_verdict %}
+            <div class="decision {{ match.combined_color }}">
+                الحكم النهائي: {{ match.combined_verdict }}
+            </div>
+            {% if match.fused_score is defined %}
+            <div class="row"><span>Fused Score</span><strong>{{ "%.2f"|format(match.fused_score) }}%</strong></div>
+            {% endif %}
+            {% if match.fusion_components %}
+            <div class="row"><span>Fusion - Minutiae</span><strong>{{ "%.2f"|format(match.fusion_components.minutiae_score) }}%</strong></div>
+            <div class="row"><span>Fusion - MCC</span><strong>{{ "%.2f"|format(match.fusion_components.mcc_score) }}%</strong></div>
+            <div class="row"><span>Fusion - ORB</span><strong>{{ "%.2f"|format(match.fusion_components.orb_score) }}%</strong></div>
+            {% endif %}
+            <hr style="margin: 1rem 0; opacity: 0.1;">
+            {% endif %}
 
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+            <div class="row"><span>{{ trans.points_original }}</span><strong>{{ match.total_original }}</strong></div>
+            <div class="row"><span>{{ trans.points_partial }}</span><strong>{{ match.total_partial }}</strong></div>
+            <div class="row"><span>{{ trans.matched_points }}</span><strong>{{ match.matched_points }}</strong></div>
+            <div class="row"><span>{{ trans.similarity_ratio }}</span><strong>{{ "%.2f"|format(match.match_score) }}%</strong></div>
+            <div class="row"><span>{{ trans.dice_coefficient }}</span><strong>{{ "%.2f"|format(match.dice_score) }}%</strong></div>
+            
+            <div class="row"><span>ORB Matches</span><strong>{{ match.orb_matches }}</strong></div>
+            <div class="row"><span>ORB Confidence</span><strong>{{ match.orb_confidence }}</strong></div>
 
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('originalImage').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="البصمة الأصلية">`;
-                    document.getElementById('originalProcessed').innerHTML = `<img src="/processed/${data.processed_image}" alt="البصمة المعالجة">`;
-                    originalMinutiae = data.minutiae_count;
-                    checkMatchButton();
-                } else {
-                    document.getElementById('originalError').textContent = data.error;
-                }
-            } catch (error) {
-                document.getElementById('originalError').textContent = 'حدث خطأ أثناء معالجة الصورة';
-            } finally {
-                document.getElementById('originalLoading').style.display = 'none';
-            }
+            {% if match.mcc_score is defined %}
+            <div class="row"><span>MCC Similarity</span><strong>{{ "%.2f"|format(match.mcc_score) }}%</strong></div>
+            <div class="row"><span>MCC Pairs</span><strong>{{ match.mcc_matches }}</strong></div>
+            {% endif %}
+
+            {% if match.quality_score is defined %}
+            <div class="row"><span>Forensic Quality Score</span><strong>{{ "%.1f"|format(match.quality_score) }}/100</strong></div>
+            {% endif %}
+
+            {% if match.baseline_match_score is defined and match.baseline_match_score %}
+            <div class="row"><span>{{ trans.baseline_score }}</span><strong>{{ "%.2f"|format(match.baseline_match_score) }}%</strong></div>
+            {% endif %}
+            {% set st = match.status %}
+            <div class="decision {% if 'HIGH' in st %}high{% elif 'MEDIUM' in st %}medium{% elif 'LOW' in st %}low{% else %}no{% endif %}">
+              {{ trans.technical_classification }}: {% if lang == 'ar' %}{{ match.forensic_tier_ar }}{% else %}{{ st }}{% endif %}
+            </div>
+            {% if match.forensic_standard_note %}
+            <p style="font-size:0.82rem;color:var(--muted);margin-top:0.75rem;">{{ match.forensic_standard_note }}</p>
+            {% endif %}
+            {% if audit %}
+            <div class="audit-inline">
+              <div><strong>SHA-256 Ref:</strong> <code>{{ audit.sha256_original[:24] }}…</code></div>
+              <div><strong>SHA-256 Query:</strong> <code>{{ audit.sha256_partial[:24] }}…</code></div>
+            </div>
+            {% endif %}
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+            {% if report_download %}
+            <a class="dl" href="/download-report/{{ report_download }}" target="_blank" rel="noopener noreferrer" style="flex:1;">{{ trans.download_report }}</a>
+            <a class="dl" href="/download-report/{{ report_download }}?format=pdf&download=1" target="_blank" rel="noopener noreferrer" style="flex:1;background:var(--accent);color:white;">{{ trans.download_pdf }}</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
+        </div>
+      </main>
+    </form>
+
+    <footer class="note">
+      {{ trans.audit_log }}: <code>output/audit_log.jsonl</code>
+      {% if live_reload %}
+      <br /><span style="color:var(--accent)">Dev Mode:</span> Auto-reload enabled.
+      {% endif %}
+    </footer>
+  </div>
+  <script src="/static/live_analyze.js?v={{ build_stamp }}" defer></script>
+  {% if live_reload %}
+  <script>
+  (function () {
+    var initial = Number("{{ build_stamp }}");
+    function poll() {
+      fetch("/__dev/build-id", { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (Number(j.id) !== initial) location.reload();
+        })
+        .catch(function () {
+          setTimeout(function () { location.reload(); }, 600);
         });
-
-        // معالجة تحميل البصمة الجزئية
-        document.getElementById('partialForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const file = document.getElementById('partialFile').files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            document.getElementById('partialLoading').style.display = 'block';
-            document.getElementById('partialError').textContent = '';
-
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('partialImage').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="البصمة الجزئية">`;
-                    document.getElementById('partialProcessed').innerHTML = `<img src="/processed/${data.processed_image}" alt="البصمة المعالجة">`;
-                    partialMinutiae = data.minutiae_count;
-                    checkMatchButton();
-                } else {
-                    document.getElementById('partialError').textContent = data.error;
-                }
-            } catch (error) {
-                document.getElementById('partialError').textContent = 'حدث خطأ أثناء معالجة الصورة';
-            } finally {
-                document.getElementById('partialLoading').style.display = 'none';
-            }
-        });
-
-        // التحقق من إمكانية تفعيل زر المطابقة
-        function checkMatchButton() {
-            document.getElementById('matchButton').disabled = !(originalMinutiae && partialMinutiae);
-        }
-
-        // معالجة المطابقة
-        document.getElementById('matchButton').addEventListener('click', async () => {
-            try {
-                const response = await fetch('/match', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        original_minutiae: originalMinutiae,
-                        partial_minutiae: partialMinutiae
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('matchResults').style.display = 'block';
-                    document.getElementById('matchScore').textContent = `${data.match_score.toFixed(2)}%`;
-                    document.getElementById('matchedPoints').textContent = `${data.matched_points}/${data.total_partial}`;
-                    document.getElementById('matchStatus').textContent = data.status;
-
-                    // عرض ملخص النتائج
-                    const summaryContent = document.getElementById('summaryContent');
-                    summaryContent.innerHTML = `
-                        <div class="result-item">🔎 عدد النقاط المستخرجة من الأصلية: ${data.total_original}</div>
-                        <div class="result-item">🔎 عدد النقاط المستخرجة من الجزئية: ${data.total_partial}</div>
-                        <div class="result-item">✅ نقاط التطابق: ${data.matched_points}</div>
-                        <div class="result-item">✅ نسبة التشابه: ${data.match_score.toFixed(2)}%</div>
-                        <div class="result-item">✅ القرار: ${getDecisionText(data.match_score)}</div>
-                    `;
-
-                    // عرض تحليل الخطوط
-                    if (data.details.ridge_analysis) {
-                        document.getElementById('ridgeAnalysis').style.display = 'block';
-                        const ridgeContent = document.getElementById('ridgeContent');
-                        ridgeContent.innerHTML = data.details.ridge_analysis.map(analysis => `
-                            <div class="mb-3">
-                                <p>المسافة: ${analysis.distance.toFixed(2)}</p>
-                                <p>الفرق في الزاوية: ${analysis.angle_difference.toFixed(2)}</p>
-                                <p>تطابق النوع: ${analysis.type_match ? 'نعم' : 'لا'}</p>
-                            </div>
-                        `).join('');
-                    }
-                }
-            } catch (error) {
-                alert('حدث خطأ أثناء المطابقة');
-            }
-        });
-
-        function getDecisionClass(score) {
-            if (score > 75) return 'high-match';
-            if (score > 50) return 'medium-match';
-            return 'low-match';
-        }
-
-        function getDecisionText(score) {
-            if (score > 75) return 'HIGH MATCH - احتمالية التطابق كبيرة جدًا';
-            if (score > 50) return 'MEDIUM MATCH - احتمالية التطابق متوسطة';
-            return 'LOW MATCH - احتمالية التطابق منخفضة';
-        }
-    </script>
+    }
+    setInterval(poll, 800);
+  })();
+  </script>
+  {% endif %}
 </body>
-</html> 
+</html>

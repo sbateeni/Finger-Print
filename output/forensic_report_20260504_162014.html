@@ -1,0 +1,84 @@
+
+        <html dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>تقرير فني — مقارنة بصمات</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; margin: 20px; background: #eef1f5; }
+                .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 24px;
+                    border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+                .disclaimer { background: #fff8e6; border: 1px solid #e6c200; padding: 14px; border-radius: 8px;
+                    margin-bottom: 20px; font-size: 0.95rem; }
+                .audit { background: #f4f7fb; border: 1px solid #c5d4e8; padding: 14px; border-radius: 8px;
+                    margin: 16px 0; font-size: 0.9rem; word-break: break-all; }
+                .result-box { background: #f8f9fa; border-radius: 8px; padding: 16px; margin: 12px 0; }
+                .highlight { color: #0b5cab; font-weight: bold; }
+                .success { color: #0d7a3e; font-weight: bold; }
+                table.params { border-collapse: collapse; width: 100%; margin: 10px 0; }
+                table.params td, table.params th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+                table.params th { background: #e9ecef; }
+                .images { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; margin: 20px 0; }
+                .image-container { text-align: center; flex: 1; min-width: 200px; }
+                .image-container img { max-width: 100%; border-radius: 6px; border: 1px solid #ddd; }
+                .tier { font-size: 1.15rem; font-weight: 700; margin-top: 10px; color: #1a1a2e; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header" style="text-align:center;margin-bottom:20px;">
+                    <h1 style="margin:0;">تقرير فني — مقارنة بصمات (محلي)</h1>
+                    <p style="color:#555;">Fingerprint Analysis Workstation (local) — إصدار 2.1</p>
+                    <p>تاريخ ووقت التقرير: 2026-05-04 16:20:14</p>
+                </div>
+
+                <div class="disclaimer">
+                    <strong>إخلاء مسؤولية مخبري:</strong> هذا التقرير يوثّق مخرجات برمجيات تحليل محلية.
+                    المقاييس المعروضة إحصائية وفق إعدادات مضبوطة؛ <strong>لا تُفسر وحدها كتقرير هوية قطعي</strong>
+                    ويجب إدماجها في إجراءات المختبر المعتمدة ومراجعة خبير بصمات معتمد عند الاقتضاء.
+                </div>
+
+                <div class="audit">
+                    <h3 style="margin-top:0;">تتبع تدقيق (سلسلة توثيق أولية)</h3>
+                    <p><strong>مرجع قضية / ملف:</strong> —</p>
+                    <p><strong>المشغّل / المراجع:</strong> —</p>
+                    <p><strong>SHA-256 (الملف الأصلي للبصمة المرجعية):</strong><br/>da8c51f3710b1f3f2badcffc85e89eb649fbb6a6f0922f59235d3eceab3d08db</p>
+                    <p><strong>SHA-256 (الملف الأصلي للبصمة المقارنة):</strong><br/>cd22f87c92a9af937ae7f7eb8dee83ebbb48bd029c22ad06265c6a6a498a8645</p>
+                </div>
+
+                <div class="result-box">
+                    <h3>المنهجية التقنية (ملخص)</h3>
+                    <p>المنهجية التقنية (ملخص): تحويل رمادي، تموضع الحجم، CLAHE، إزالة ضوضاء اختيارية، تثنّي Otsu، تعزيز تموجات ببنك Gabor متعدد الاتجاهات، تهليل (thinning)، استخراج نقاط دقيقة (نهاية/تفرع) مع فلترة، ثم مطابقة واحد‑لواحد مع قيود مسافة وزاوية ونوع النقطة. لا يُطبَّق تسجيل هندسي كامل (محاذاة/دوران) بين الصورتين في هذا الإصدار.</p>
+                </div>
+
+                <h3>إعدادات التشغيل المسجّلة</h3>
+                <table class="params">
+                    <tr><th>المعامل</th><th>القيمة</th></tr>
+                    <tr><td>border_margin</td><td>10</td></tr><tr><td>min_distance</td><td>10</td></tr><tr><td>min_contrast</td><td>15</td></tr><tr><td>min_angle_diff</td><td>10</td></tr><tr><td>denoise_method</td><td>fastNlMeans</td></tr><tr><td>fast_denoise_h</td><td>10</td></tr><tr><td>gauss_ksize</td><td>3</td></tr><tr><td>MATCH_DISTANCE_THRESHOLD</td><td>10</td></tr><tr><td>MATCH_ANGLE_THRESHOLD_DEG</td><td>45</td></tr>
+                </table>
+
+                <div class="images">
+                    <div class="image-container">
+                        <h3>البصمة المرجعية (معالجة)</h3>
+                        <img src="original_20260504_162014.png" alt="مرجعية">
+                    </div>
+                    <div class="image-container">
+                        <h3>البصمة المقارنة (معالجة)</h3>
+                        <img src="partial_20260504_162014.png" alt="مقارنة">
+                    </div>
+                </div>
+
+                <div class="result-box">
+                    <h2>نتائج المقارنة الإحصائية</h2>
+                    <p>عدد النقاط المستخرجة — المرجعية: <span class="highlight">681</span></p>
+                    <p>عدد النقاط المستخرجة — المقارنة: <span class="highlight">632</span></p>
+                    <p>أزواج مطابقة (واحد‑لواحد): <span class="success">146</span></p>
+                    <p>نسبة التشابه (حسب البصمة المقارنة): <span class="success">23.10%</span></p>
+                    <p>معامل Dice: <span class="success">22.24%</span></p>
+                    <p class="tier">التصنيف الفني: الفئة د — دون بلوغ عتبة التشابه المسجّلة</p>
+                    <p style="margin-top:12px;font-size:0.95rem;color:#444;">النظام يُخرج مقاييسًا إحصائية لمقارنة تمثيلات رقمية للبصمات وفق إعدادات مسجّلة؛ لا يثبت الهوية وحده ولا يغني عن مراجعة خبير بصمات معتمد وسياسة المختبر والسلطة المختصة.</p>
+                    <p style="font-size:0.85rem;color:#666;">رمز الحالة الداخلي: NO MATCH</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        

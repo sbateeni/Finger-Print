@@ -1,0 +1,108 @@
+
+        <html dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>تقرير مطابقة البصمات</title>
+            <style>
+                body {
+                    font-family: 'Arial', sans-serif;
+                    margin: 20px;
+                    background-color: #f0f2f6;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                }
+                .result-box {
+                    background-color: #f8f9fa;
+                    border-radius: 5px;
+                    padding: 15px;
+                    margin: 10px 0;
+                }
+                .highlight {
+                    color: #0068c9;
+                    font-weight: bold;
+                }
+                .success {
+                    color: #09ab3b;
+                    font-weight: bold;
+                }
+                .high-match {
+                    color: #09ab3b;
+                    font-weight: bold;
+                    font-size: 24px;
+                    padding: 10px;
+                    background-color: rgba(9, 171, 59, 0.1);
+                    border-radius: 5px;
+                }
+                .medium-match {
+                    color: #f0a202;
+                    font-weight: bold;
+                    font-size: 24px;
+                    padding: 10px;
+                    background-color: rgba(240, 162, 2, 0.1);
+                    border-radius: 5px;
+                }
+                .low-match {
+                    color: #ff0000;
+                    font-weight: bold;
+                    font-size: 24px;
+                    padding: 10px;
+                    background-color: rgba(255, 0, 0, 0.1);
+                    border-radius: 5px;
+                }
+                .images {
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 20px 0;
+                }
+                .image-container {
+                    text-align: center;
+                }
+                .image-container img {
+                    max-width: 300px;
+                    border-radius: 5px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>تقرير مطابقة البصمات</h1>
+                    <p>تاريخ التقرير: 2026-05-04 15:41:05</p>
+                </div>
+                
+                <div class="images">
+                    <div class="image-container">
+                        <h3>البصمة الأصلية</h3>
+                        <img src="C:\Users\HP\Documents\GitHub\Finger-Print\output\original_20260504_154105.png" alt="البصمة الأصلية">
+                    </div>
+                    <div class="image-container">
+                        <h3>البصمة الجزئية</h3>
+                        <img src="C:\Users\HP\Documents\GitHub\Finger-Print\output\partial_20260504_154105.png" alt="البصمة الجزئية">
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <h2>نتائج المطابقة</h2>
+                    <p>🔎 عدد النقاط المستخرجة من الأصلية: <span class="highlight">681</span></p>
+                    <p>🔎 عدد النقاط المستخرجة من الجزئية: <span class="highlight">632</span></p>
+                    <p>✅ نقاط التطابق: <span class="success">146</span></p>
+                    <p>✅ نسبة التشابه: <span class="success">23.10%</span></p>
+                    
+                    <div class="no-match">
+                        <h3>القرار: NO MATCH</h3>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        
