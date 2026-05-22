@@ -93,7 +93,12 @@ AUDIT_LOG_PATH = os.path.join(OUTPUT_DIR, "audit_log.jsonl")
 # --- Global upgrade (dev/global-upgrade) ---
 USE_GABOR_ENHANCER = os.getenv("USE_GABOR_ENHANCER", "1").strip().lower() in ("1", "true", "yes")
 USE_SKIMAGE_SKELETON = os.getenv("USE_SKIMAGE_SKELETON", "1").strip().lower() in ("1", "true", "yes")
-USE_BOZORTH_MATCHER = os.getenv("USE_BOZORTH_MATCHER", "0").strip().lower() in ("1", "true", "yes")
+USE_BOZORTH_MATCHER = os.getenv("USE_BOZORTH_MATCHER", "1").strip().lower() in ("1", "true", "yes")
 BOZORTH_MATCH_THRESHOLD = float(os.getenv("BOZORTH_MATCH_THRESHOLD", "25"))
+BOZORTH_SCORE_NORMALIZE_MAX = float(os.getenv("BOZORTH_SCORE_NORMALIZE_MAX", "60"))
 MINUTIAE_CN_MIN_DISTANCE = int(os.getenv("MINUTIAE_CN_MIN_DISTANCE", "7"))
+
+# أوزان الدمج مع Bozorth (المجموع = 1.0)
+FUSION_W_BOZORTH = float(os.getenv("FUSION_W_BOZORTH", "0.15"))
+PARTIAL_FUSION_W_BOZORTH = float(os.getenv("PARTIAL_FUSION_W_BOZORTH", "0.20"))
  

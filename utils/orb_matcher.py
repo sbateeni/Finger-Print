@@ -13,10 +13,12 @@ from config import (
     ORB_THRESHOLD_MEDIUM_COUNT, ORB_THRESHOLD_MEDIUM_SCORE,
     MCC_THRESHOLD_HIGH, MCC_THRESHOLD_MEDIUM,
     MATCH_SCORE_THRESHOLDS,
-    FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB,
+    FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB, FUSION_W_BOZORTH,
     PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB,
+    PARTIAL_FUSION_W_BOZORTH,
     FUSED_THRESHOLD_HIGH, FUSED_THRESHOLD_MEDIUM, FUSED_THRESHOLD_LOW,
     PARTIAL_FUSED_MEDIUM, PARTIAL_MCC_MEDIUM, PARTIAL_MATCHED_MEDIUM, PARTIAL_GAIN_MEDIUM,
+    BOZORTH_MATCH_THRESHOLD,
 )
 
 
@@ -170,14 +172,26 @@ def _is_partial_case(
     return False
 
 
-def _fuse_scores(min_norm: float, mcc_norm: float, orb_norm: float, partial: bool) -> float:
+def _fuse_scores(
+    min_norm: float,
+    mcc_norm: float,
+    orb_norm: float,
+    partial: bool,
+    bozorth_norm: float = 0.0,
+    use_bozorth: bool = True,
+) -> float:
     if partial:
         w_m, w_c, w_o = PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB
+        w_b = PARTIAL_FUSION_W_BOZORTH if use_bozorth else 0.0
     else:
         w_m, w_c, w_o = FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB
-    w_sum = float(w_m + w_c + w_o) or 1.0
+        w_b = FUSION_W_BOZORTH if use_bozorth else 0.0
+    w_sum = float(w_m + w_c + w_o + w_b) or 1.0
     return (
-        min_norm * float(w_m) + mcc_norm * float(w_c) + orb_norm * float(w_o)
+        min_norm * float(w_m)
+        + mcc_norm * float(w_c)
+        + orb_norm * float(w_o)
+        + bozorth_norm * float(w_b)
     ) / w_sum
 
 
