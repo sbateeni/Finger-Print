@@ -18,6 +18,7 @@ from typing import Optional, Set
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.constants import ParseMode
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -28,10 +29,28 @@ from telegram.ext import (
 from telegram.request import HTTPXRequest
 
 from services.pair_analysis import analyze_fingerprint_pair, format_match_summary_ar
+from bot.fingerprint_store import (
+    extract_minutiae_from_bytes,
+    list_templates,
+    register_template,
+    search_best_match,
+)
+from utils.telegram_process import claim_telegram_bot_pid, release_telegram_bot_pid
 
 logger = logging.getLogger(__name__)
 
 SESSION_KEY = "fp_session"
+REGISTER_PENDING_KEY = "fp_register_pending"
+SWEEP_MODE_KEY = "fp_sweep_mode"
+
+
+def _telegram_auto_sweep_enabled() -> bool:
+    return (os.getenv("TELEGRAM_AUTO_SWEEP") or "1").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _get_sweep_mode(context: ContextTypes.DEFAULT_TYPE) -> str:
+    mode = (context.user_data.get(SWEEP_MODE_KEY) or os.getenv("TELEGRAM_SWEEP_MODE") or "quick").strip().lower()
+    return "wide" if mode == "wide" else "quick"
 
 
 def _allowed_chat_ids() -> Optional[Set[int]]:
@@ -98,8 +117,34 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "الأوامر:\n"
         "/start — البداية\n"
         "/reset — إلغاء الصور الحالية\n"
-        "/status — ما تم استلامه\n\n"
+        "/status — ما تم استلامه\n"
+        "/register — تسجيل بصمتك في قاعدة البوت\n"
+        "/match — مقارنة صورة مع المسجّلين\n"
+        "/templates — عرض المسجّلين\n"
+        "/sweep — وضع بحث واسع (wide) للتكبير التلقائي\n"
+        "/sweep_quick — وضع بحث سريع (افتراضي)\n\n"
+        "عند إرسال صورتين يُطبَّق *Auto-sweep* تلقائيًا لتحسين النتيجة.\n\n"
         "يمكنك أيضًا استخدام الواجهة على http://127.0.0.1:8000",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_sweep_wide(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[SWEEP_MODE_KEY] = "wide"
+    await update.message.reply_text(
+        "✅ وضع Auto-sweep: *wide* (بحث أوسع — أبطأ قليلًا).\nأرسل الصورتين للتحليل.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_sweep_quick(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[SWEEP_MODE_KEY] = "quick"
+    await update.message.reply_text(
+        "✅ وضع Auto-sweep: *quick* (افتراضي).\nأرسل الصورتين للتحليل.",
         parse_mode=ParseMode.MARKDOWN,
     )
 
@@ -132,7 +177,13 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user = update.effective_user
     operator = user.username or str(user.id) if user else "telegram"
 
-    await update.message.reply_text("⏳ جاري التحليل… قد يستغرق دقيقة.")
+    await update.message.reply_text("⏳ جاري التحليل… قد يستغرق 1–3 دقائق.")
+    if _telegram_auto_sweep_enabled():
+        mode = _get_sweep_mode(context)
+        await update.message.reply_text(
+            f"🔍 Auto-sweep ({mode}) — البحث عن أفضل تكبير/موضع للبصمة الجزئية…",
+            parse_mode=ParseMode.MARKDOWN,
+        )
 
     try:
         result = await asyncio.to_thread(
@@ -142,6 +193,8 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             operator_name=f"telegram:{operator}",
             case_reference=f"TG-{chat_id}",
             write_report_and_audit=True,
+            auto_sweep=_telegram_auto_sweep_enabled(),
+            sweep_mode=_get_sweep_mode(context),
         )
     except Exception as e:
         logger.exception("telegram analysis failed")
@@ -172,6 +225,103 @@ async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     context.user_data.pop(SESSION_KEY, None)
 
 
+async def cmd_templates(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    rows = list_templates(context.application.bot_data)
+    if not rows:
+        await update.message.reply_text("لا يوجد مسجّلون بعد. استخدم /register")
+        return
+    lines = ["📋 *قوالب مسجّلة:*", ""]
+    for uid, label, n in rows:
+        lines.append(f"• `{uid}` — {label} ({n} نقطة)")
+    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[REGISTER_PENDING_KEY] = True
+    await update.message.reply_text(
+        "📥 *تسجيل بصمة*\nأرسل صورة بصمة واحدة (photo أو ملف) لتُخزَّن للمقارنة لاحقًا.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_match_db(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data["fp_match_pending"] = True
+    await update.message.reply_text(
+        "🔍 *مقارنة مع القاعدة*\nأرسل صورة بصمة للبحث عن أقرب تطابق بين المسجّلين.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def _handle_register_image(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, raw: bytes
+) -> bool:
+    """Process register flow. Returns True if consumed."""
+    if not context.user_data.get(REGISTER_PENDING_KEY):
+        return False
+    context.user_data.pop(REGISTER_PENDING_KEY, None)
+    uid = update.effective_user.id if update.effective_user else 0
+    await update.message.reply_text("⏳ جاري استخراج النقاط الدقيقة…")
+
+    def _work():
+        return extract_minutiae_from_bytes(raw)
+
+    mins, err = await asyncio.to_thread(_work)
+    if err or not mins:
+        await update.message.reply_text(f"❌ {err or 'فشل التسجيل'}")
+        return True
+
+    register_template(context.application.bot_data, uid, mins)
+    await update.message.reply_text(
+        f"✅ تم تسجيل بصمتك ({len(mins)} نقطة دقيقة).\n"
+        f"المعرّف: `{uid}`\nاستخدم /match للمقارنة.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+    return True
+
+
+async def _handle_match_db_image(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, raw: bytes
+) -> bool:
+    if not context.user_data.pop("fp_match_pending", None):
+        return False
+    uid = update.effective_user.id if update.effective_user else 0
+    await update.message.reply_text("⏳ جاري البحث في القاعدة…")
+
+    bot_data = context.application.bot_data
+
+    def _work():
+        mins, err = extract_minutiae_from_bytes(raw)
+        if err or not mins:
+            return None, err, 0.0, False
+        best_uid, score, matched = search_best_match(bot_data, mins, exclude_user_id=None)
+        return best_uid, None, score, matched
+
+    best_uid, err, score, matched = await asyncio.to_thread(_work)
+    if err:
+        await update.message.reply_text(f"❌ {err}")
+        return True
+    if best_uid is None:
+        await update.message.reply_text("❌ لا يوجد مسجّلون. استخدم /register أولًا.")
+        return True
+    if matched:
+        await update.message.reply_text(
+            f"✅ *تطابق* مع المستخدم `{best_uid}`\nدرجة Bozorth: *{score:.1f}*",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    else:
+        await update.message.reply_text(
+            f"❌ *لا تطابق كافٍ*\nأعلى درجة: `{score:.1f}` (مع `{best_uid}`)",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    return True
+
+
 async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not _is_allowed(update):
         await update.message.reply_text("غير مصرح.")
@@ -182,6 +332,11 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         raw = await _download_document_bytes(update, context)
     if raw is None:
         await update.message.reply_text("أرسل صورة (photo) أو ملف png/jpg.")
+        return
+
+    if await _handle_register_image(update, context, raw):
+        return
+    if await _handle_match_db_image(update, context, raw):
         return
 
     s = _get_session(context)
@@ -218,9 +373,26 @@ def build_application(token: str) -> Application:
         .get_updates_request(_telegram_request())
         .build()
     )
+
+    async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        err = context.error
+        if isinstance(err, Conflict):
+            logger.error(
+                "409 Conflict: another bot instance is polling (Kali, old terminal, or run_telegram.py). "
+                "Stop other instances, then restart run_dev.ps1."
+            )
+            release_telegram_bot_pid()
+            raise SystemExit(3) from err
+
+    app.add_error_handler(on_error)
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("register", cmd_register))
+    app.add_handler(CommandHandler("match", cmd_match_db))
+    app.add_handler(CommandHandler("templates", cmd_templates))
+    app.add_handler(CommandHandler("sweep", cmd_sweep_wide))
+    app.add_handler(CommandHandler("sweep_quick", cmd_sweep_quick))
     app.add_handler(MessageHandler(filters.PHOTO, handle_image))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_image))
     return app
@@ -241,8 +413,15 @@ def main() -> None:
         logger.warning("TELEGRAM_ALLOWED_CHAT_IDS not set — bot accepts any user.")
 
     application = build_application(token)
+    claim_telegram_bot_pid()
     logger.info("Telegram bot polling…")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        application.run_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+        )
+    finally:
+        release_telegram_bot_pid()
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT))
 from dotenv import load_dotenv
 
 from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
+from utils.telegram_process import stop_stale_telegram_bot
 
 
 def _kill_process_tree(pid: int) -> None:
@@ -87,6 +88,7 @@ def main() -> None:
     )
 
     if _telegram_enabled(args.no_telegram):
+        stop_stale_telegram_bot()
         print("Telegram bot: starting…")
         children.append(_popen([sys.executable, "-m", "bot"]))
     elif not args.no_telegram:

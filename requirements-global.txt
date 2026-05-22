@@ -1,0 +1,12 @@
+# Optional packages for dev/global-upgrade (install after requirements.txt)
+# pip install -r requirements-global.txt
+
+# Phase 1 — enhancement (pick one if available)
+# fingerprint-enhancer
+# git+https://github.com/Utkarsh-Deshmukh/Fingerprint-Enhancement-Python
+
+# Phase 2 — Bozorth-style matching (if published on PyPI)
+# fingerprint-matching
+
+# Phase 3 — NFIQ 2 quality (system libs may be required on Linux)
+# nfiq2

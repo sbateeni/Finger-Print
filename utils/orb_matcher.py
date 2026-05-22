@@ -13,10 +13,12 @@ from config import (
     ORB_THRESHOLD_MEDIUM_COUNT, ORB_THRESHOLD_MEDIUM_SCORE,
     MCC_THRESHOLD_HIGH, MCC_THRESHOLD_MEDIUM,
     MATCH_SCORE_THRESHOLDS,
-    FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB,
+    FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB, FUSION_W_BOZORTH,
     PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB,
+    PARTIAL_FUSION_W_BOZORTH,
     FUSED_THRESHOLD_HIGH, FUSED_THRESHOLD_MEDIUM, FUSED_THRESHOLD_LOW,
     PARTIAL_FUSED_MEDIUM, PARTIAL_MCC_MEDIUM, PARTIAL_MATCHED_MEDIUM, PARTIAL_GAIN_MEDIUM,
+    BOZORTH_MATCH_THRESHOLD,
 )
 
 
@@ -170,14 +172,26 @@ def _is_partial_case(
     return False
 
 
-def _fuse_scores(min_norm: float, mcc_norm: float, orb_norm: float, partial: bool) -> float:
+def _fuse_scores(
+    min_norm: float,
+    mcc_norm: float,
+    orb_norm: float,
+    partial: bool,
+    bozorth_norm: float = 0.0,
+    use_bozorth: bool = True,
+) -> float:
     if partial:
         w_m, w_c, w_o = PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB
+        w_b = PARTIAL_FUSION_W_BOZORTH if use_bozorth else 0.0
     else:
         w_m, w_c, w_o = FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB
-    w_sum = float(w_m + w_c + w_o) or 1.0
+        w_b = FUSION_W_BOZORTH if use_bozorth else 0.0
+    w_sum = float(w_m + w_c + w_o + w_b) or 1.0
     return (
-        min_norm * float(w_m) + mcc_norm * float(w_c) + orb_norm * float(w_o)
+        min_norm * float(w_m)
+        + mcc_norm * float(w_c)
+        + orb_norm * float(w_o)
+        + bozorth_norm * float(w_b)
     ) / w_sum
 
 
@@ -192,6 +206,9 @@ def combined_verdict(
     alignment_gain_matches: int = 0,
     total_original: int = 0,
     total_partial: int = 0,
+    bozorth_score_pct: float = 0.0,
+    bozorth_match: bool = False,
+    bozorth_enabled: bool = False,
 ) -> dict:
     """
     يجمع نتيجتَي مطابقة النقاط الدقيقة، ORB، و MCC في حكم نهائي واحد.
@@ -226,6 +243,7 @@ def combined_verdict(
     min_norm = _clamp_pct(minutiae_score)
     mcc_norm = _clamp_pct(mcc_score)
     orb_norm = _clamp_pct(orb_score if orb_score > 0 else _orb_conf_to_score(orb_confidence))
+    boz_norm = _clamp_pct(bozorth_score_pct) if bozorth_enabled else 0.0
 
     is_partial = _is_partial_case(
         partial_verify,
@@ -236,7 +254,14 @@ def combined_verdict(
         mcc_score,
         matched_points,
     )
-    fused_score = _fuse_scores(min_norm, mcc_norm, orb_norm, is_partial)
+    fused_score = _fuse_scores(
+        min_norm, mcc_norm, orb_norm, is_partial, boz_norm, use_bozorth=bozorth_enabled
+    )
+
+    # Bozorth strong match can lift borderline fused decisions
+    if bozorth_enabled and bozorth_match and boz_norm >= 50.0:
+        if mcc_norm >= PARTIAL_MCC_MEDIUM or min_norm >= MATCH_SCORE_THRESHOLDS.get("LOW", 20):
+            fused_score = max(fused_score, PARTIAL_FUSED_MEDIUM)
 
     # عتبات القرار — للجزئية نستخدم حدوداً مخصصة
     th_high = FUSED_THRESHOLD_HIGH
@@ -284,12 +309,14 @@ def combined_verdict(
             "minutiae": PARTIAL_FUSION_W_MINUTIAE,
             "mcc": PARTIAL_FUSION_W_MCC,
             "orb": PARTIAL_FUSION_W_ORB,
+            "bozorth": PARTIAL_FUSION_W_BOZORTH if bozorth_enabled else 0.0,
         }
         if is_partial
         else {
             "minutiae": FUSION_W_MINUTIAE,
             "mcc": FUSION_W_MCC,
             "orb": FUSION_W_ORB,
+            "bozorth": FUSION_W_BOZORTH if bozorth_enabled else 0.0,
         }
     )
 
@@ -302,9 +329,12 @@ def combined_verdict(
         "fusion_weights_used": fusion_weights,
         "confidence_level": conf_points,
         "fused_score": round(float(fused_score), 2),
+        "bozorth_score_pct": round(boz_norm, 2) if bozorth_enabled else None,
+        "bozorth_match": bool(bozorth_match) if bozorth_enabled else None,
         "fusion_components": {
             "minutiae_score": round(min_norm, 2),
             "mcc_score": round(mcc_norm, 2),
             "orb_score": round(orb_norm, 2),
+            "bozorth_score": round(boz_norm, 2) if bozorth_enabled else None,
         },
     }

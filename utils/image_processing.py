@@ -114,6 +114,12 @@ def preprocess_image(image, denoise_method="fastNlMeans", fast_denoise_h=10, gau
         clahe = cv2.createCLAHE(clipLimit=CLAHE_CLIP_LIMIT,
                                   tileGridSize=CLAHE_TILE_GRID_SIZE)
         image = clahe.apply(image)
+
+        # 4b. Gabor / Hong-style enhancement (global upgrade)
+        from config.config import USE_GABOR_ENHANCER
+        if USE_GABOR_ENHANCER:
+            from preprocessing.enhancer import FingerprintEnhancer
+            image = FingerprintEnhancer.enhance(image)
         
         # 5. إزالة الضوضاء
         if denoise_method == "fastNlMeans":
