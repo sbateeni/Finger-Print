@@ -53,9 +53,20 @@ async def lifespan(app: FastAPI):
     embedded_bot = None
     if _telegram_enabled() and _telegram_embedded():
         try:
-            from bot.telegram_bot import start_embedded_bot
+            from pathlib import Path
 
+            from bot.telegram_bot import start_embedded_bot
+            from utils.telegram_polling import kill_stale_local_bot_processes
+
+            n = kill_stale_local_bot_processes(BASE_DIR)
+            if n:
+                logger.info("Cleared %s stale worker(s) before Telegram start", n)
             embedded_bot = await start_embedded_bot()
+            if embedded_bot is None:
+                logger.warning(
+                    "Telegram polling unavailable — use .\\scripts\\stop_telegram_bot.ps1 "
+                    "and ensure only one machine runs this bot token."
+                )
         except Exception as e:
             logger.error("Embedded Telegram bot failed to start: %s", e)
     else:

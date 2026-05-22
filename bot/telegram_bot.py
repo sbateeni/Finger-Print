@@ -232,14 +232,34 @@ async def _bot_send_markdown(chat_id: int, text: str) -> None:
     await _embedded_app.bot.send_message(chat_id, text, parse_mode=ParseMode.MARKDOWN)
 
 
-async def start_embedded_bot() -> Application:
+async def start_embedded_bot() -> Optional[Application]:
     """Start polling inside the web server process (shared analysis queue)."""
     global _embedded_app
     token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN missing")
 
+    from pathlib import Path
+
     from services.analysis_queue import start_analysis_queue
+    from utils.telegram_polling import (
+        acquire_polling_lock,
+        kill_stale_local_bot_processes,
+        prepare_bot_session,
+    )
+
+    killed = kill_stale_local_bot_processes(Path(__file__).resolve().parent.parent)
+    if killed:
+        logger.info("Stopped %s stale local bot/web worker(s) before polling", killed)
+        await asyncio.sleep(1.0)
+
+    if not acquire_polling_lock():
+        logger.error(
+            "Telegram bot NOT started — another poller is active. "
+            "Run: .\\scripts\\stop_telegram_bot.ps1 then restart."
+        )
+        await start_analysis_queue()
+        return None
 
     await start_analysis_queue()
     q = get_analysis_queue()
@@ -248,7 +268,23 @@ async def start_embedded_bot() -> Application:
     application = build_application(token)
     await application.initialize()
     await application.start()
-    await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    await prepare_bot_session(application.bot)
+    try:
+        await application.updater.start_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+        )
+    except Conflict as e:
+        from utils.telegram_polling import release_polling_lock
+
+        release_polling_lock()
+        logger.error(
+            "Telegram 409 Conflict — stop other bots (Kali/other PC): %s", e
+        )
+        await application.stop()
+        await application.shutdown()
+        return None
+
     _embedded_app = application
     logger.info("Telegram bot polling (embedded in web server)")
     return application
@@ -257,11 +293,11 @@ async def start_embedded_bot() -> Application:
 async def stop_embedded_bot() -> None:
     global _embedded_app
     from services.analysis_queue import stop_analysis_queue
+    from utils.telegram_polling import release_polling_lock
 
     if _embedded_app is not None:
         try:
-            if _embedded_app.updater.running:
-                await _embedded_app.updater.stop()
+            await _embedded_app.updater.stop()
         except Exception as e:
             logger.warning("updater stop: %s", e)
         try:
@@ -270,7 +306,19 @@ async def stop_embedded_bot() -> None:
         except Exception as e:
             logger.warning("application shutdown: %s", e)
         _embedded_app = None
+    release_polling_lock()
     await stop_analysis_queue()
+
+
+async def _on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    err = context.error
+    if isinstance(err, Conflict):
+        logger.error(
+            "Telegram Conflict (two pollers). Run scripts/stop_telegram_bot.ps1 — %s",
+            err,
+        )
+        return
+    logger.exception("Telegram handler error: %s", err)
 
 
 def build_application(
@@ -292,9 +340,13 @@ def build_application(
     if post_shutdown is not None:
         builder = builder.post_shutdown(post_shutdown)
     app = builder.build()
+    app.add_error_handler(_on_error)
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(
+        MessageHandler(filters.Regex(r"(?i)^(?:/start|start|بداية|البدء|ستارت)$"), cmd_start)
+    )
     app.add_handler(MessageHandler(filters.PHOTO, handle_image))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_image))
     return app
