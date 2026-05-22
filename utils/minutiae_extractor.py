@@ -130,45 +130,70 @@ def filter_minutiae(minutiae, image_shape, border_margin=10, min_distance=10, or
             
     return filtered
 
+def _crossing_number(skeleton_01: np.ndarray, y: int, x: int) -> int:
+    """Standard CN on 8-neighborhood (skeleton values 0/1)."""
+    n = [
+        skeleton_01[y - 1, x],
+        skeleton_01[y - 1, x + 1],
+        skeleton_01[y, x + 1],
+        skeleton_01[y + 1, x + 1],
+        skeleton_01[y + 1, x],
+        skeleton_01[y + 1, x - 1],
+        skeleton_01[y, x - 1],
+        skeleton_01[y - 1, x - 1],
+    ]
+    cn = 0
+    for k in range(8):
+        cn += abs(int(n[k]) - int(n[(k + 1) % 8]))
+    return cn // 2
+
+
+def _skeleton_to_binary01(skeleton: np.ndarray) -> np.ndarray:
+    """Normalize skeleton to 0/1; optional skimage skeletonize on thick ridges."""
+    from config.config import USE_SKIMAGE_SKELETON
+
+    thick = (skeleton > 127).astype(np.uint8)
+    if USE_SKIMAGE_SKELETON:
+        try:
+            from skimage.morphology import skeletonize as ski_skel
+
+            return ski_skel(thick).astype(np.uint8)
+        except Exception:
+            pass
+    return thick
+
+
 def extract_minutiae(skeleton, border_margin=10, min_distance=10, original_image=None, min_contrast=15, min_angle_diff=10):
-    """استخراج النقاط الدقيقة مع معالجة متقدمة للعيوب"""
+    """استخراج النقاط الدقيقة — Crossing Number + تنقية."""
     try:
+        from config.config import MINUTIAE_CN_MIN_DISTANCE
+
+        min_distance = max(min_distance, MINUTIAE_CN_MIN_DISTANCE)
         raw_minutiae = []
-        h, w = skeleton.shape
-        
-        # استخدام Crossing Number (CN) لتحديد النقاط
-        for y in range(1, h-1):
-            for x in range(1, w-1):
-                if skeleton[y, x] == 255:
-                    # مصفوفة الجيران (3x3)
-                    p = [
-                        skeleton[y-1, x-1], skeleton[y-1, x], skeleton[y-1, x+1],
-                        skeleton[y, x+1], skeleton[y+1, x+1], skeleton[y+1, x],
-                        skeleton[y+1, x-1], skeleton[y, x-1], skeleton[y-1, x-1]
-                    ]
-                    # حساب عدد الانتقالات من 0 لـ 255 (CN)
-                    cn = 0
-                    for i in range(8):
-                        if p[i] == 0 and p[i+1] == 255:
-                            cn += 1
-                    
-                    if cn == 1: # Endpoint
-                        raw_minutiae.append({
-                            'x': x, 'y': y, 'type': 'endpoint',
-                            'angle': calculate_angle(skeleton, x, y)
-                        })
-                    elif cn == 3: # Bifurcation
-                        raw_minutiae.append({
-                            'x': x, 'y': y, 'type': 'bifurcation',
-                            'angle': calculate_angle(skeleton, x, y)
-                        })
-        
-        # 1. إزالة النقاط الزائفة هندسياً (Spurs, Islands)
+        sk01 = _skeleton_to_binary01(skeleton)
+        h, w = sk01.shape
+
+        for y in range(1, h - 1):
+            for x in range(1, w - 1):
+                if sk01[y, x] != 1:
+                    continue
+                cn = _crossing_number(sk01, y, x)
+                if cn == 1:
+                    raw_minutiae.append({
+                        'x': x, 'y': y, 'type': 'endpoint',
+                        'angle': calculate_angle(skeleton, x, y)
+                    })
+                elif cn == 3:
+                    raw_minutiae.append({
+                        'x': x, 'y': y, 'type': 'bifurcation',
+                        'angle': calculate_angle(skeleton, x, y)
+                    })
+
         refined = remove_false_minutiae(skeleton, raw_minutiae)
-        
-        # 2. الفلترة المكانية والتباين
-        filtered = filter_minutiae(refined, skeleton.shape, border_margin, min_distance, original_image, min_contrast, min_angle_diff)
-        
+        filtered = filter_minutiae(
+            refined, skeleton.shape, border_margin, min_distance,
+            original_image, min_contrast, min_angle_diff,
+        )
         return filtered
     except Exception as e:
         print(f"Error in extract_minutiae: {str(e)}")
