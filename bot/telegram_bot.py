@@ -18,6 +18,7 @@ from typing import Optional, Set
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.constants import ParseMode
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -34,6 +35,7 @@ from bot.fingerprint_store import (
     register_template,
     search_best_match,
 )
+from utils.telegram_process import claim_telegram_bot_pid, release_telegram_bot_pid
 
 logger = logging.getLogger(__name__)
 
@@ -330,6 +332,18 @@ def build_application(token: str) -> Application:
         .get_updates_request(_telegram_request())
         .build()
     )
+
+    async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        err = context.error
+        if isinstance(err, Conflict):
+            logger.error(
+                "409 Conflict: another bot instance is polling (Kali, old terminal, or run_telegram.py). "
+                "Stop other instances, then restart run_dev.ps1."
+            )
+            release_telegram_bot_pid()
+            raise SystemExit(3) from err
+
+    app.add_error_handler(on_error)
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
@@ -356,8 +370,15 @@ def main() -> None:
         logger.warning("TELEGRAM_ALLOWED_CHAT_IDS not set — bot accepts any user.")
 
     application = build_application(token)
+    claim_telegram_bot_pid()
     logger.info("Telegram bot polling…")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        application.run_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+        )
+    finally:
+        release_telegram_bot_pid()
 
 
 if __name__ == "__main__":

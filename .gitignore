@@ -37,6 +37,7 @@ ENV/
 
 # Environment variables
 .env
+.telegram_bot.pid
 
 # Uploads
 uploads/
