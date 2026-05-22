@@ -56,15 +56,17 @@ ORB_THRESHOLD_HIGH_SCORE = 15
 ORB_THRESHOLD_MEDIUM_COUNT = 20
 ORB_THRESHOLD_MEDIUM_SCORE = 7
 
-# دمج الدرجات (Fusion): الوزن النسبي لكل قناة (بصمة كاملة)
-FUSION_W_MINUTIAE = 0.6
-FUSION_W_MCC = 0.3
-FUSION_W_ORB = 0.1
+# دمج الدرجات (Fusion): الوزن النسبي لكل قناة (بصمة كاملة) — المجموع = 1.0
+FUSION_W_MINUTIAE = 0.50
+FUSION_W_MCC = 0.25
+FUSION_W_ORB = 0.10
+FUSION_W_BOZORTH = 0.15
 
-# أوزان الدمج عند البصمة الجزئية — MCC يأخذ وزناً أعلى (match_score يظلم الجزء)
-PARTIAL_FUSION_W_MINUTIAE = 0.35
-PARTIAL_FUSION_W_MCC = 0.55
+# أوزان الدمج عند البصمة الجزئية
+PARTIAL_FUSION_W_MINUTIAE = 0.30
+PARTIAL_FUSION_W_MCC = 0.40
 PARTIAL_FUSION_W_ORB = 0.10
+PARTIAL_FUSION_W_BOZORTH = 0.20
 
 # عتبات القرار النهائي بعد الدمج (كامل)
 FUSED_THRESHOLD_HIGH = 65
@@ -98,7 +100,11 @@ BOZORTH_MATCH_THRESHOLD = float(os.getenv("BOZORTH_MATCH_THRESHOLD", "25"))
 BOZORTH_SCORE_NORMALIZE_MAX = float(os.getenv("BOZORTH_SCORE_NORMALIZE_MAX", "60"))
 MINUTIAE_CN_MIN_DISTANCE = int(os.getenv("MINUTIAE_CN_MIN_DISTANCE", "7"))
 
-# أوزان الدمج مع Bozorth (المجموع = 1.0)
-FUSION_W_BOZORTH = float(os.getenv("FUSION_W_BOZORTH", "0.15"))
-PARTIAL_FUSION_W_BOZORTH = float(os.getenv("PARTIAL_FUSION_W_BOZORTH", "0.20"))
+# Override fusion weights from env (optional)
+_fwb = os.getenv("FUSION_W_BOZORTH")
+if _fwb:
+    FUSION_W_BOZORTH = float(_fwb)
+_pfwb = os.getenv("PARTIAL_FUSION_W_BOZORTH")
+if _pfwb:
+    PARTIAL_FUSION_W_BOZORTH = float(_pfwb)
  
