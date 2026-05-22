@@ -30,5 +30,10 @@ export LIVE_RELOAD="${LIVE_RELOAD:-1}"
 export HOST="${HOST:-0.0.0.0}"
 export PORT="${PORT:-8000}"
 
-echo "Unified launcher: Web UI + Telegram (single process tree)"
+if [ -f scripts/stop_telegram_bot.sh ]; then
+  bash scripts/stop_telegram_bot.sh || true
+fi
+
+echo "Unified launcher: Web UI + Telegram"
+echo "Tip: stop Windows bot if you run on Kali (same token = 409). For embedded bot use: LIVE_RELOAD=0 ./run_dev.sh --no-reload"
 exec python run_app.py --host "$HOST" --port "$PORT" "$@"

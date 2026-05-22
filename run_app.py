@@ -50,8 +50,11 @@ def _kill_process_tree(pid: int) -> None:
                 pass
 
 
-def _popen(cmd: list[str]) -> subprocess.Popen:
-    popen_kw: dict = {"cwd": ROOT}
+def _popen(cmd: list[str], *, extra_env: dict[str, str] | None = None) -> subprocess.Popen:
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+    popen_kw: dict = {"cwd": ROOT, "env": env}
     if platform.system() != "Windows":
         popen_kw["start_new_session"] = True
     return subprocess.Popen(cmd, **popen_kw)
@@ -78,6 +81,16 @@ def main() -> None:
     run_startup_auto_update()
     start_periodic_auto_update()
 
+    try:
+        from utils.telegram_polling import kill_stale_local_bot_processes
+
+        n = kill_stale_local_bot_processes(ROOT)
+        if n:
+            print(f"Cleared {n} stale local worker(s) before start.")
+            time.sleep(1.0)
+    except Exception as e:
+        print(f"Warning: could not clear stale workers: {e}")
+
     children: list[subprocess.Popen] = []
     use_reload = not args.no_reload and os.getenv("LIVE_RELOAD", "1").strip().lower() not in (
         "0",
@@ -86,18 +99,31 @@ def main() -> None:
         "off",
     )
 
-    embedded = (os.getenv("TELEGRAM_EMBEDDED") or "1").strip().lower() not in (
+    want_embedded = (os.getenv("TELEGRAM_EMBEDDED") or "1").strip().lower() not in (
         "0",
         "false",
         "no",
         "off",
     )
+    # LIVE_RELOAD restarts uvicorn workers → two pollers → 409. Bot runs in its own process.
+    embed_in_web = want_embedded and not use_reload
+    spawn_bot_process = _telegram_enabled(args.no_telegram) and not embed_in_web
+
     if _telegram_enabled(args.no_telegram):
-        if embedded:
-            print("Telegram bot: embedded in web server (طابور انتظار موحّد).")
-        else:
-            print("Telegram bot: separate process (TELEGRAM_EMBEDDED=0)…")
-            children.append(_popen([sys.executable, "-m", "bot"]))
+        if embed_in_web:
+            os.environ["TELEGRAM_EMBEDDED"] = "1"
+            print("Telegram bot: embedded in web server (طابور موحّد — بدون reload).")
+        elif spawn_bot_process:
+            os.environ["TELEGRAM_EMBEDDED"] = "0"
+            print(
+                "Telegram bot: عملية منفصلة (LIVE_RELOAD=1 يمنع 409 — لا تشغّل نفس التوكن على Windows/Kali معًا)."
+            )
+            children.append(
+                _popen(
+                    [sys.executable, "-m", "bot"],
+                    extra_env={"FP_TELEGRAM_STANDALONE": "1", "TELEGRAM_EMBEDDED": "0"},
+                )
+            )
     elif not args.no_telegram:
         print("Telegram bot: skipped (set TELEGRAM_BOT_TOKEN in .env to enable).")
 

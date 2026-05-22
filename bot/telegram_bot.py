@@ -114,6 +114,13 @@ async def _reply_safe(update: Update, text: str, *, markdown: bool = False) -> N
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
+    if context.application.bot_data.get("polling_ready") is False:
+        await _reply_safe(
+            update,
+            "البوت لم يكتمل تشغيله (تعارض 409). على Kali: bash scripts/stop_telegram_bot.sh ثم ./run_dev.sh\n"
+            "أوقف التشغيل على Windows إن كان يعمل بنفس التوكن.",
+        )
+        return
     if not _is_allowed(update):
         await _reply_safe(update, "غير مصرح لك باستخدام هذا البوت.")
         return
@@ -353,8 +360,29 @@ def build_application(
 
 
 async def _post_init(application: Application) -> None:
-    from services.analysis_queue import start_analysis_queue
+    from pathlib import Path
 
+    from services.analysis_queue import start_analysis_queue
+    from utils.telegram_polling import (
+        acquire_polling_lock,
+        kill_stale_local_bot_processes,
+        prepare_bot_session,
+    )
+
+    root = Path(__file__).resolve().parent.parent
+    killed = kill_stale_local_bot_processes(root)
+    if killed:
+        logger.info("Stopped %s stale worker(s) before standalone polling", killed)
+        await asyncio.sleep(1.0)
+
+    if not acquire_polling_lock():
+        application.bot_data["polling_ready"] = False
+        raise RuntimeError(
+            "Telegram polling lock busy — stop other PC/process "
+            "(bash scripts/stop_telegram_bot.sh on Kali, stop_telegram_bot.ps1 on Windows)"
+        )
+
+    await prepare_bot_session(application.bot)
     await start_analysis_queue()
     q = get_analysis_queue()
 
@@ -362,21 +390,25 @@ async def _post_init(application: Application) -> None:
         await application.bot.send_message(chat_id, text, parse_mode=ParseMode.MARKDOWN)
 
     q.set_telegram_sender(send_md)
+    application.bot_data["polling_ready"] = True
 
 
 async def _post_shutdown(application: Application) -> None:
     from services.analysis_queue import stop_analysis_queue
+    from utils.telegram_polling import release_polling_lock
 
+    release_polling_lock()
     await stop_analysis_queue()
 
 
 def main() -> None:
     load_dotenv()
     logging.basicConfig(level=logging.INFO)
-    if _telegram_embedded():
+    standalone = (os.getenv("FP_TELEGRAM_STANDALONE") or "").strip() in ("1", "true", "yes")
+    if _telegram_embedded() and not standalone:
         raise SystemExit(
-            "TELEGRAM_EMBEDDED=1: run the web server (python run.py / run_dev.ps1) "
-            "instead of python -m bot alone."
+            "TELEGRAM_EMBEDDED=1: run ./run_dev.sh or run_dev.ps1 (not python -m bot alone). "
+            "Or: TELEGRAM_EMBEDDED=0 / FP_TELEGRAM_STANDALONE=1"
         )
     token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
