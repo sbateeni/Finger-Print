@@ -42,7 +42,9 @@ WELCOME_TEXT = (
     "1) أرسل صورة البصمة الأصلية (مرجعية)\n"
     "2) ثم أرسل صورة البصمة المقارنة (جزئية)\n\n"
     "أو أرسل صورتين متتاليتين.\n"
-    "الأوامر: /start  /reset  /status\n\n"
+    "الأوامر: /start  /reset  /status\n"
+    "تسجيل قالب واحد: /register ثم صورة\n"
+    "مطابقة 1:1 مع قوالب مسجلة: /match ثم صورة\n\n"
     "الواجهة: http://127.0.0.1:8000\n\n"
     "التحليل عميق على الكمبيوتر (محاذاة تلقائية + تقرير PDF).\n"
     "عند ازدحام الطلبات يُخبرك برقم دورك في الانتظار."
@@ -147,6 +149,62 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     await update.message.reply_text(f"المرجعية: {ref}\nالمقارنة: {qry}")
 
 
+TEMPLATE_MODE_KEY = "fp_template_mode"
+
+
+async def cmd_register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[TEMPLATE_MODE_KEY] = "register"
+    context.user_data.pop(SESSION_KEY, None)
+    await update.message.reply_text(
+        "📌 وضع التسجيل: أرسل *صورة بصمة واحدة* (واضحة) لتخزين قالبك.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_match(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[TEMPLATE_MODE_KEY] = "match"
+    context.user_data.pop(SESSION_KEY, None)
+    await update.message.reply_text(
+        "🔍 وضع المطابقة: أرسل *صورة بصمة* للمقارنة مع القوالب المسجلة.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def _handle_template_mode(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    raw: bytes,
+    mode: str,
+) -> bool:
+    """Returns True if handled (register/match)."""
+    from services.telegram_templates import match_against_templates, register_template
+
+    user = update.effective_user
+    if not user:
+        return False
+
+    context.user_data.pop(TEMPLATE_MODE_KEY, None)
+    loop = asyncio.get_event_loop()
+
+    if mode == "register":
+        await update.message.reply_text("⏳ جاري استخراج النقاط وتسجيل القالب…")
+        result = await loop.run_in_executor(
+            None, lambda: register_template(user.id, raw)
+        )
+    else:
+        await update.message.reply_text("⏳ جاري المطابقة مع القوالب المسجلة…")
+        result = await loop.run_in_executor(
+            None, lambda: match_against_templates(raw)
+        )
+
+    await update.message.reply_text(result.get("message", "تم."))
+    return True
+
+
 async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     s = _get_session(context)
     ref_b: bytes = s.get("reference")
@@ -196,11 +254,16 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text("غير مصرح.")
         return
 
+    template_mode = context.user_data.get(TEMPLATE_MODE_KEY)
     raw = await _download_photo_bytes(update, context)
     if raw is None:
         raw = await _download_document_bytes(update, context)
     if raw is None:
         await update.message.reply_text("أرسل صورة (photo) أو ملف png/jpg.")
+        return
+
+    if template_mode in ("register", "match"):
+        await _handle_template_mode(update, context, raw, template_mode)
         return
 
     s = _get_session(context)
@@ -381,6 +444,8 @@ def build_application(
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("register", cmd_register))
+    app.add_handler(CommandHandler("match", cmd_match))
     app.add_handler(
         MessageHandler(filters.Regex(r"(?i)^(?:/start|start|بداية|البدء|ستارت)$"), cmd_start)
     )

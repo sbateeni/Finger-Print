@@ -173,6 +173,76 @@ def use_core_alignment() -> bool:
     )
 
 
+def use_triplet_alignment() -> bool:
+    import os
+
+    return (os.getenv("USE_TRIPLET_ALIGNMENT") or "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def align_by_triplets(
+    minutiae_ref: list[dict[str, Any]],
+    minutiae_qry: list[dict[str, Any]],
+    image_shape: tuple[int, ...],
+    *,
+    max_iter: int = 50,
+    match_radius: float = 15.0,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """
+    Random triplet sampling: pick best translation on query minutiae (coarse).
+    Falls back to core alignment when too few points.
+    """
+    if len(minutiae_ref) < 3 or len(minutiae_qry) < 3:
+        _, aligned, meta = align_by_core_point(
+            minutiae_ref, minutiae_qry, image_shape=image_shape
+        )
+        meta["method"] = "triplet_fallback_core"
+        return minutiae_ref, aligned, meta
+
+    pts_ref = np.array([[m["x"], m["y"]] for m in minutiae_ref], dtype=np.float64)
+    pts_qry = np.array([[m["x"], m["y"]] for m in minutiae_qry], dtype=np.float64)
+    rng = np.random.default_rng(42)
+
+    best_dx, best_dy = 0.0, 0.0
+    best_inliers = -1
+
+    for _ in range(max_iter):
+        idx_r = rng.choice(len(pts_ref), 3, replace=False)
+        idx_q = rng.choice(len(pts_qry), 3, replace=False)
+        dx = float(np.mean(pts_ref[idx_r, 0] - pts_qry[idx_q, 0]))
+        dy = float(np.mean(pts_ref[idx_r, 1] - pts_qry[idx_q, 1]))
+        shifted = pts_qry + np.array([dx, dy])
+        inliers = 0
+        for p in shifted:
+            dists = np.hypot(pts_ref[:, 0] - p[0], pts_ref[:, 1] - p[1])
+            if float(dists.min()) < match_radius:
+                inliers += 1
+        if inliers > best_inliers:
+            best_inliers = inliers
+            best_dx, best_dy = dx, dy
+
+    aligned_qry = []
+    for m in minutiae_qry:
+        aligned_qry.append(
+            {**m, "x": float(m["x"]) + best_dx, "y": float(m["y"]) + best_dy}
+        )
+    return (
+        minutiae_ref,
+        aligned_qry,
+        {
+            "method": "triplet",
+            "dx": int(round(best_dx)),
+            "dy": int(round(best_dy)),
+            "triplet_inliers": int(best_inliers),
+            "triplet_trials": int(max_iter),
+        },
+    )
+
+
 def apply_core_prealignment(
     original_minutiae: list[dict[str, Any]],
     partial_minutiae: list[dict[str, Any]],
@@ -181,6 +251,14 @@ def apply_core_prealignment(
     cores_ref: list[dict[str, Any]] | None = None,
     cores_qry: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
+    if use_triplet_alignment():
+        _, aligned_qry, meta = align_by_triplets(
+            original_minutiae,
+            partial_minutiae,
+            image_shape,
+        )
+        return original_minutiae, aligned_qry, meta
+
     if not use_core_alignment():
         return original_minutiae, partial_minutiae, None
     _, aligned_qry, meta = align_by_core_point(
