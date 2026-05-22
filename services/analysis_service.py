@@ -702,37 +702,17 @@ def analysis_event_generator(
             }
         )
 
-        # 10. طبقة التحقق الثانية: ORB Matching
-        yield _sse_line({"type": "log", "message": "جاري التحقق البصري المستقل (ORB)…"})
+        # 10. طبقة التحقق الثانية: ORB + Bozorth + قرار مدمج
+        yield _sse_line({"type": "log", "message": "جاري التحقق البصري (ORB) وBozorth…"})
         try:
-            orb_res = match_with_orb(ro["processed"], rp["processed"])
-            if orb_res.get("visualization") is not None:
-                orb_res["orb_visualization"] = _img_data_uri(orb_res["visualization"])
+            match_result = _apply_orb_bozorth_verdict(ro, rp, match_result)
+            if match_result.get("orb_visualization"):
                 yield _sse_line({
                     "type": "image",
                     "branch": "orb",
                     "stage": "orb_vis",
-                    "src": orb_res["orb_visualization"],
+                    "src": match_result["orb_visualization"],
                 })
-                # إزالة مصفوفة البكسلات لجعل الكائن JSON serializable
-                del orb_res["visualization"]
-            
-            verdict = combined_verdict(
-                match_result["match_score"], 
-                orb_res["orb_confidence"],
-                mcc_score=match_result.get("mcc_score", 0.0),
-                orb_score=orb_res.get("orb_score", 0.0),
-                partial_verify=bool(match_result.get("partial_verify")),
-                matched_points=int(match_result.get("matched_points") or 0),
-                alignment_gain_matches=int(match_result.get("alignment_gain_matches") or 0),
-                total_original=int(match_result.get("total_original") or 0),
-                total_partial=int(match_result.get("total_partial") or 0),
-            )
-            match_result.update(orb_res)
-            match_result.update(verdict)
-            if verdict.get("decision_status"):
-                match_result["status"] = verdict["decision_status"]
-            match_result = enrich_match_for_forensics(match_result)
         except Exception as orb_err:
             logger.error(f"ORB matching failed: {orb_err}")
             yield _sse_line({"type": "log", "message": "فشل التحقق البصري (ORB) - سيتم الاعتماد على النقاط الدقيقة فقط."})
@@ -1002,30 +982,8 @@ def run_matching_pipeline(
     if matches_vis is None:
         matches_vis = visualize_matches(sk_o, sk_p, match_result)
 
-    # طبقة ORB + قرار دمج نهائي (مماثل لمسار البث المباشر)
-    try:
-        orb_res = match_with_orb(ro["processed"], rp["processed"])
-        if orb_res.get("visualization") is not None:
-            orb_res["orb_visualization"] = _img_data_uri(orb_res["visualization"])
-            del orb_res["visualization"]
-        verdict = combined_verdict(
-            match_result["match_score"],
-            orb_res["orb_confidence"],
-            mcc_score=match_result.get("mcc_score", 0.0),
-            orb_score=orb_res.get("orb_score", 0.0),
-            partial_verify=bool(match_result.get("partial_verify")),
-            matched_points=int(match_result.get("matched_points") or 0),
-            alignment_gain_matches=int(match_result.get("alignment_gain_matches") or 0),
-            total_original=int(match_result.get("total_original") or 0),
-            total_partial=int(match_result.get("total_partial") or 0),
-        )
-        match_result.update(orb_res)
-        match_result.update(verdict)
-        if verdict.get("decision_status"):
-            match_result["status"] = verdict["decision_status"]
-        match_result = enrich_match_for_forensics(match_result)
-    except Exception as orb_err:
-        logger.error("ORB matching failed (form path): %s", orb_err)
+    # طبقة ORB + Bozorth + قرار دمج نهائي
+    match_result = _apply_orb_bozorth_verdict(ro, rp, match_result)
 
     form_params = dict(form_ctx)
     form_params["MATCH_DISTANCE_THRESHOLD"] = MATCH_DISTANCE_THRESHOLD
