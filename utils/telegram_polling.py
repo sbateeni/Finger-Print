@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import platform
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -139,23 +140,60 @@ def kill_stale_local_bot_processes(project_root: Path | None = None) -> int:
             logger.warning("kill_stale_local_bot_processes: %s", e)
         return killed
 
+    # Linux/Kali: pgrep -f is more reliable than truncated ps args
     try:
-        out = subprocess.run(["ps", "-eo", "pid,args"], capture_output=True, text=True, timeout=15)
-        for line in (out.stdout or "").splitlines()[1:]:
-            parts = line.strip().split(None, 1)
+        proc = subprocess.run(
+            ["pgrep", "-af", "python"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        for line in (proc.stdout or "").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(None, 1)
             if len(parts) < 2:
                 continue
-            pid = int(parts[0])
+            try:
+                pid = int(parts[0])
+            except ValueError:
+                continue
             cmd = parts[1].lower()
             if pid == my_pid or root_s not in cmd:
                 continue
             if not any(x in cmd for x in ("-m bot", "uvicorn", "run_app", "dev_server")):
                 continue
             try:
-                os.kill(pid, 15)
+                os.kill(pid, signal.SIGTERM)
                 killed += 1
             except OSError:
                 pass
+    except FileNotFoundError:
+        try:
+            out = subprocess.run(
+                ["ps", "-eo", "pid,args"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            for line in (out.stdout or "").splitlines()[1:]:
+                parts = line.strip().split(None, 1)
+                if len(parts) < 2:
+                    continue
+                pid = int(parts[0])
+                cmd = parts[1].lower()
+                if pid == my_pid or root_s not in cmd:
+                    continue
+                if not any(x in cmd for x in ("-m bot", "uvicorn", "run_app", "dev_server")):
+                    continue
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                    killed += 1
+                except OSError:
+                    pass
+        except Exception as e:
+            logger.warning("kill_stale_local_bot_processes (ps): %s", e)
     except Exception as e:
-        logger.warning("kill_stale_local_bot_processes: %s", e)
+        logger.warning("kill_stale_local_bot_processes (pgrep): %s", e)
     return killed

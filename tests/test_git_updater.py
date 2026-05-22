@@ -19,7 +19,7 @@ def test_up_to_date_after_fetch(monkeypatch):
     def fake_run(args, cwd=git_updater.ROOT):
         if args == ["rev-parse", "--is-inside-work-tree"]:
             return 0, "true", ""
-        if args == ["status", "--porcelain"]:
+        if args == ["status", "--porcelain", "-uno"]:
             return 0, "", ""
         if args[:2] == ["fetch", "origin"]:
             return 0, "", ""
@@ -46,7 +46,7 @@ def test_pull_when_behind(monkeypatch):
         calls.append(args)
         if args == ["rev-parse", "--is-inside-work-tree"]:
             return 0, "true", ""
-        if args == ["status", "--porcelain"]:
+        if args == ["status", "--porcelain", "-uno"]:
             return 0, "", ""
         if args[:2] == ["fetch", "origin"]:
             return 0, "", ""
@@ -73,7 +73,7 @@ def test_skip_on_dirty_tree(monkeypatch):
     def fake_run(args, cwd=git_updater.ROOT):
         if args == ["rev-parse", "--is-inside-work-tree"]:
             return 0, "true", ""
-        if args == ["status", "--porcelain"]:
+        if args == ["status", "--porcelain", "-uno"]:
             return 0, " M requirements.txt", ""
         return 1, "", ""
 

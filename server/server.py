@@ -21,6 +21,7 @@ from config import APP_VERSION
 from routers import pages, report, analysis
 from services.analysis_queue import start_analysis_queue, stop_analysis_queue
 from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
+from utils.runtime_platform import is_linux, telegram_stop_script_hint
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,7 +47,9 @@ def _telegram_embedded() -> bool:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_dotenv()
-    run_startup_auto_update()
+    if is_linux():
+        logger.info("Server starting on Linux — %s", __import__("platform").platform())
+    run_startup_auto_update(echo=False)
     stop_event = threading.Event()
     start_periodic_auto_update(stop_event)
 
@@ -64,8 +67,8 @@ async def lifespan(app: FastAPI):
             embedded_bot = await start_embedded_bot()
             if embedded_bot is None:
                 logger.warning(
-                    "Telegram polling unavailable — use .\\scripts\\stop_telegram_bot.ps1 "
-                    "and ensure only one machine runs this bot token."
+                    "Telegram polling unavailable — run %s (one token = one machine)",
+                    telegram_stop_script_hint(),
                 )
         except Exception as e:
             logger.error("Embedded Telegram bot failed to start: %s", e)

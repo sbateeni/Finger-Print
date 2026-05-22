@@ -70,7 +70,8 @@ def _is_git_repo() -> bool:
 
 
 def _has_local_changes() -> bool:
-    code, out, _ = _run_git(["status", "--porcelain"])
+    # -uno: tracked files only — local .env (gitignored) does not block pull on Kali
+    code, out, _ = _run_git(["status", "--porcelain", "-uno"])
     return code == 0 and bool(out.strip())
 
 
@@ -161,12 +162,31 @@ def check_and_pull_updates(force: bool = False) -> dict[str, Any]:
     return result
 
 
-def run_startup_auto_update() -> dict[str, Any]:
-    """Run once at process start (non-blocking log only)."""
+def format_update_message(result: dict[str, Any]) -> str:
+    if result.get("skipped") and result.get("reason") == "AUTO_GIT_UPDATE disabled":
+        return "Git: auto-update disabled (AUTO_GIT_UPDATE=0)"
+    if not result.get("ok"):
+        return f"Git: failed — {result.get('reason', 'unknown')}"
+    if result.get("updated"):
+        return f"Git: pulled {result.get('commits_pulled', 0)} commit(s) — {result.get('reason', '')}"
+    return f"Git: {result.get('reason', 'ok')}"
+
+
+def run_startup_auto_update(*, echo: bool = False) -> dict[str, Any]:
+    """Run once at process start. Set echo=True to print status (Kali launcher)."""
     if not is_auto_update_enabled():
-        return {"skipped": True, "reason": "disabled"}
+        result = {"skipped": True, "reason": "AUTO_GIT_UPDATE disabled"}
+        if echo:
+            print(format_update_message(result))
+        return result
     logger.info("Checking GitHub for updates…")
-    return check_and_pull_updates()
+    result = check_and_pull_updates()
+    msg = format_update_message(result)
+    if echo:
+        print(msg)
+    elif result.get("updated"):
+        print(msg)
+    return result
 
 
 def start_periodic_auto_update(stop_event: Optional[threading.Event] = None) -> Optional[threading.Thread]:

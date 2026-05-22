@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT))
 from dotenv import load_dotenv
 
 from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
+from utils.runtime_platform import default_bind_host, is_linux, telegram_stop_script_hint
 
 
 def _kill_process_tree(pid: int) -> None:
@@ -72,13 +73,15 @@ def main() -> None:
     load_dotenv()
 
     parser = argparse.ArgumentParser(description="تشغيل نظام البصمات (web + Telegram).")
-    parser.add_argument("--host", default=os.getenv("HOST", "127.0.0.1"))
+    parser.add_argument("--host", default=default_bind_host())
     parser.add_argument("--port", default=os.getenv("PORT", "8000"))
     parser.add_argument("--no-reload", action="store_true", help="بدون إعادة تحميل تلقائية للويب")
     parser.add_argument("--no-telegram", action="store_true", help="تشغيل الواجهة فقط")
     args = parser.parse_args()
 
-    run_startup_auto_update()
+    if is_linux():
+        print(f"Platform: Linux ({platform.platform()})")
+    run_startup_auto_update(echo=is_linux())
     start_periodic_auto_update()
 
     try:
@@ -115,8 +118,10 @@ def main() -> None:
             print("Telegram bot: embedded in web server (طابور موحّد — بدون reload).")
         elif spawn_bot_process:
             os.environ["TELEGRAM_EMBEDDED"] = "0"
+            hint = telegram_stop_script_hint()
             print(
-                "Telegram bot: عملية منفصلة (LIVE_RELOAD=1 يمنع 409 — لا تشغّل نفس التوكن على Windows/Kali معًا)."
+                f"Telegram bot: Linux process منفصلة (LIVE_RELOAD=1). "
+                f"قبل إعادة التشغيل: {hint}"
             )
             children.append(
                 _popen(

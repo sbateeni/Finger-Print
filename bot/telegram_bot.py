@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import platform
 import ssl
 from typing import Optional, Set
 
@@ -29,6 +30,7 @@ from telegram.request import HTTPXRequest
 
 from services.analysis_queue import get_analysis_queue
 from services.pair_analysis import format_match_summary_ar
+from utils.runtime_platform import is_linux, telegram_stop_script_hint
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +119,9 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.application.bot_data.get("polling_ready") is False:
         await _reply_safe(
             update,
-            "البوت لم يكتمل تشغيله (تعارض 409). على Kali: bash scripts/stop_telegram_bot.sh ثم ./run_dev.sh\n"
-            "أوقف التشغيل على Windows إن كان يعمل بنفس التوكن.",
+            f"البوت لم يكتمل تشغيله (تعارض 409).\n"
+            f"على Linux: {telegram_stop_script_hint()} ثم ./run_dev.sh\n"
+            "أوقف أي تشغيل آخر بنفس TELEGRAM_BOT_TOKEN.",
         )
         return
     if not _is_allowed(update):
@@ -213,12 +216,14 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 def _telegram_request() -> HTTPXRequest:
-    """SSL for httpx on Windows — default context uses OS store (works with urllib)."""
+    """SSL: Linux uses system CAs; Windows may need TELEGRAM_SSL_VERIFY=0."""
     raw = (os.getenv("TELEGRAM_SSL_VERIFY") or "").strip()
     if raw.lower() in ("0", "false", "no", "off"):
         verify: bool | ssl.SSLContext = False
     elif raw:
         verify = raw
+    elif is_linux():
+        verify = ssl.create_default_context()
     else:
         verify = ssl.create_default_context()
     return HTTPXRequest(httpx_kwargs={"verify": verify})
@@ -378,8 +383,7 @@ async def _post_init(application: Application) -> None:
     if not acquire_polling_lock():
         application.bot_data["polling_ready"] = False
         raise RuntimeError(
-            "Telegram polling lock busy — stop other PC/process "
-            "(bash scripts/stop_telegram_bot.sh on Kali, stop_telegram_bot.ps1 on Windows)"
+            f"Telegram polling lock busy — run: {telegram_stop_script_hint()}"
         )
 
     await prepare_bot_session(application.bot)
@@ -426,8 +430,12 @@ def main() -> None:
         post_init=_post_init,
         post_shutdown=_post_shutdown,
     )
-    logger.info("Telegram bot polling (standalone process)…")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    plat = "Linux" if is_linux() else platform.system()
+    logger.info("Telegram bot polling (standalone, %s)…", plat)
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+    )
 
 
 if __name__ == "__main__":
