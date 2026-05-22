@@ -215,6 +215,24 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
 
+def _telegram_timeouts() -> tuple[float, float, float, float]:
+    """connect, read, write, pool — Kali/slow networks need longer timeouts."""
+    def _f(name: str, default: float) -> float:
+        raw = (os.getenv(name) or "").strip()
+        try:
+            return float(raw) if raw else default
+        except ValueError:
+            return default
+
+    base = 60.0 if is_linux() else 30.0
+    return (
+        _f("TELEGRAM_CONNECT_TIMEOUT", base),
+        _f("TELEGRAM_READ_TIMEOUT", base),
+        _f("TELEGRAM_WRITE_TIMEOUT", base),
+        _f("TELEGRAM_POOL_TIMEOUT", base),
+    )
+
+
 def _telegram_request() -> HTTPXRequest:
     """SSL: Linux uses system CAs; Windows may need TELEGRAM_SSL_VERIFY=0."""
     raw = (os.getenv("TELEGRAM_SSL_VERIFY") or "").strip()
@@ -222,11 +240,16 @@ def _telegram_request() -> HTTPXRequest:
         verify: bool | ssl.SSLContext = False
     elif raw:
         verify = raw
-    elif is_linux():
-        verify = ssl.create_default_context()
     else:
         verify = ssl.create_default_context()
-    return HTTPXRequest(httpx_kwargs={"verify": verify})
+    connect_t, read_t, write_t, pool_t = _telegram_timeouts()
+    return HTTPXRequest(
+        connect_timeout=connect_t,
+        read_timeout=read_t,
+        write_timeout=write_t,
+        pool_timeout=pool_t,
+        httpx_kwargs={"verify": verify},
+    )
 
 
 def _telegram_embedded() -> bool:
@@ -260,9 +283,11 @@ async def start_embedded_bot() -> Optional[Application]:
         prepare_bot_session,
     )
 
-    killed = kill_stale_local_bot_processes(Path(__file__).resolve().parent.parent)
+    killed = kill_stale_local_bot_processes(
+        Path(__file__).resolve().parent.parent, bots_only=True
+    )
     if killed:
-        logger.info("Stopped %s stale local bot/web worker(s) before polling", killed)
+        logger.info("Stopped %s stale bot process(es) before polling", killed)
         await asyncio.sleep(1.0)
 
     if not acquire_polling_lock():
@@ -375,9 +400,9 @@ async def _post_init(application: Application) -> None:
     )
 
     root = Path(__file__).resolve().parent.parent
-    killed = kill_stale_local_bot_processes(root)
+    killed = kill_stale_local_bot_processes(root, bots_only=True)
     if killed:
-        logger.info("Stopped %s stale worker(s) before standalone polling", killed)
+        logger.info("Stopped %s stale bot process(es) before standalone polling", killed)
         await asyncio.sleep(1.0)
 
     if not acquire_polling_lock():

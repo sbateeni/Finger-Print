@@ -85,15 +85,39 @@ async def prepare_bot_session(bot) -> None:
         logger.warning("delete_webhook: %s", e)
 
 
-def kill_stale_local_bot_processes(project_root: Path | None = None) -> int:
+def kill_stale_local_bot_processes(
+    project_root: Path | None = None,
+    *,
+    bots_only: bool = False,
+) -> int:
     """
-    Best-effort: stop other python processes in this repo running bot/uvicorn.
-    Returns number of processes signaled.
+    Stop duplicate python processes for this repo.
+    bots_only=True: only ``python -m bot`` (safe during uvicorn lifespan).
+    bots_only=False: also old uvicorn/dev_server (use before fresh launch only).
     """
     root = (project_root or Path(__file__).resolve().parent.parent).resolve()
     root_s = str(root).lower()
     killed = 0
     my_pid = os.getpid()
+    try:
+        my_pgid = os.getpgid(my_pid)
+    except OSError:
+        my_pgid = None
+
+    def _should_kill(cmd: str, pid: int) -> bool:
+        if pid == my_pid or pid <= 0:
+            return False
+        if my_pgid is not None:
+            try:
+                if os.getpgid(pid) == my_pgid:
+                    return False
+            except OSError:
+                pass
+        if root_s not in cmd:
+            return False
+        if bots_only:
+            return "-m bot" in cmd or "telegram_bot" in cmd
+        return any(x in cmd for x in ("-m bot", "uvicorn", "run_app", "dev_server"))
 
     if platform.system() == "Windows":
         try:
@@ -121,14 +145,7 @@ def kill_stale_local_bot_processes(project_root: Path | None = None) -> int:
             for row in data:
                 pid = int(row.get("ProcessId") or 0)
                 cmd = (row.get("CommandLine") or "").lower()
-                if pid == my_pid or pid <= 0:
-                    continue
-                if root_s not in cmd:
-                    continue
-                if not any(
-                    x in cmd
-                    for x in ("-m bot", "uvicorn", "run_app", "dev_server", "telegram")
-                ):
+                if not _should_kill(cmd, pid):
                     continue
                 subprocess.run(
                     ["taskkill", "/PID", str(pid), "/T", "/F"],
@@ -160,9 +177,7 @@ def kill_stale_local_bot_processes(project_root: Path | None = None) -> int:
             except ValueError:
                 continue
             cmd = parts[1].lower()
-            if pid == my_pid or root_s not in cmd:
-                continue
-            if not any(x in cmd for x in ("-m bot", "uvicorn", "run_app", "dev_server")):
+            if not _should_kill(cmd, pid):
                 continue
             try:
                 os.kill(pid, signal.SIGTERM)
@@ -183,9 +198,7 @@ def kill_stale_local_bot_processes(project_root: Path | None = None) -> int:
                     continue
                 pid = int(parts[0])
                 cmd = parts[1].lower()
-                if pid == my_pid or root_s not in cmd:
-                    continue
-                if not any(x in cmd for x in ("-m bot", "uvicorn", "run_app", "dev_server")):
+                if not _should_kill(cmd, pid):
                     continue
                 try:
                     os.kill(pid, signal.SIGTERM)

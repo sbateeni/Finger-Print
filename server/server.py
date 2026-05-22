@@ -61,9 +61,9 @@ async def lifespan(app: FastAPI):
             from bot.telegram_bot import start_embedded_bot
             from utils.telegram_polling import kill_stale_local_bot_processes
 
-            n = kill_stale_local_bot_processes(BASE_DIR)
+            n = kill_stale_local_bot_processes(BASE_DIR, bots_only=True)
             if n:
-                logger.info("Cleared %s stale worker(s) before Telegram start", n)
+                logger.info("Cleared %s stale bot process(es) before Telegram start", n)
             embedded_bot = await start_embedded_bot()
             if embedded_bot is None:
                 logger.warning(

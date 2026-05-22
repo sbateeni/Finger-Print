@@ -87,7 +87,7 @@ def main() -> None:
     try:
         from utils.telegram_polling import kill_stale_local_bot_processes
 
-        n = kill_stale_local_bot_processes(ROOT)
+        n = kill_stale_local_bot_processes(ROOT, bots_only=False)
         if n:
             print(f"Cleared {n} stale local worker(s) before start.")
             time.sleep(1.0)

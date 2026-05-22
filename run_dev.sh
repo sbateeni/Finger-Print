@@ -6,7 +6,8 @@ cd "$(dirname "$0")"
 export FP_PLATFORM=linux
 export HOST="${HOST:-0.0.0.0}"
 export PORT="${PORT:-8000}"
-export LIVE_RELOAD="${LIVE_RELOAD:-1}"
+# 0 = stable on Kali (Telegram + web without uvicorn killing the bot on file changes)
+export LIVE_RELOAD="${LIVE_RELOAD:-0}"
 export AUTO_GIT_UPDATE="${AUTO_GIT_UPDATE:-1}"
 
 echo "=== Fingerprint workstation (Linux/Kali) ==="
@@ -54,5 +55,5 @@ fi
 echo "--- Start ---"
 echo "Web:  http://${HOST}:${PORT}"
 echo "Telegram: deep analysis on this Linux host (do not run same token on Windows)"
-echo "Stable mode (no reload): LIVE_RELOAD=0 ./run_dev.sh --no-reload"
+echo "Dev reload: LIVE_RELOAD=1 ./run_dev.sh"
 exec python run_app.py --host "$HOST" --port "$PORT" "$@"

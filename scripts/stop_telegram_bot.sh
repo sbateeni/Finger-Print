@@ -20,9 +20,22 @@ _stop_pid() {
 if command -v pgrep >/dev/null 2>&1; then
   while read -r line; do
     case "$line" in
-      *run_app*|*dev_server*|*uvicorn*|*"-m bot"*|*telegram_bot*)
+      *"-m bot"*|*telegram_bot*)
         pid="${line%% *}"
         _stop_pid "$pid"
+        ;;
+    esac
+  done < <(pgrep -af python 2>/dev/null || true)
+  # Orphaned web servers from a previous run (not current shell)
+  while read -r line; do
+    case "$line" in
+      *Finger-Print*|*finger-print*)
+        case "$line" in
+          *run_app*|*dev_server*|*uvicorn*)
+            pid="${line%% *}"
+            [ "$pid" != "$$" ] && _stop_pid "$pid"
+            ;;
+        esac
         ;;
     esac
   done < <(pgrep -af python 2>/dev/null || true)

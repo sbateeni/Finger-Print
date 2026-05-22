@@ -58,6 +58,17 @@ def main() -> None:
     if not args.no_reload:
         cmd.append("--reload")
         cmd.extend(["--reload-dir", str(ROOT)])
+        # Avoid restart loop when output/lock files change during analysis
+        for pattern in (
+            "config/output",
+            "output",
+            "venv",
+            ".git",
+            "__pycache__",
+            "*.pyc",
+            ".telegram_polling.lock",
+        ):
+            cmd.extend(["--reload-exclude", pattern])
 
     popen_kw: dict = {"cwd": ROOT}
     if platform.system() != "Windows":
