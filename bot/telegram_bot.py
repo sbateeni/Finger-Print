@@ -17,6 +17,7 @@ from typing import Optional, Set
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.constants import ParseMode
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -33,6 +34,17 @@ logger = logging.getLogger(__name__)
 
 SESSION_KEY = "fp_session"
 _embedded_app: Optional[Application] = None
+
+WELCOME_TEXT = (
+    "مرحبًا — بوت مطابقة البصمات\n\n"
+    "1) أرسل صورة البصمة الأصلية (مرجعية)\n"
+    "2) ثم أرسل صورة البصمة المقارنة (جزئية)\n\n"
+    "أو أرسل صورتين متتاليتين.\n"
+    "الأوامر: /start  /reset  /status\n\n"
+    "الواجهة: http://127.0.0.1:8000\n\n"
+    "التحليل عميق على الكمبيوتر (محاذاة تلقائية + تقرير PDF).\n"
+    "عند ازدحام الطلبات يُخبرك برقم دورك في الانتظار."
+)
 
 
 def _allowed_chat_ids() -> Optional[Set[int]]:
@@ -86,26 +98,27 @@ async def _download_document_bytes(update: Update, context: ContextTypes.DEFAULT
     return bytes(data)
 
 
+async def _reply_safe(update: Update, text: str, *, markdown: bool = False) -> None:
+    if not update.message:
+        return
+    try:
+        if markdown:
+            await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+        else:
+            await update.message.reply_text(text)
+    except Exception as e:
+        logger.warning("reply failed (%s), retry plain: %s", type(e).__name__, e)
+        await update.message.reply_text(text)
+
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
     if not _is_allowed(update):
-        await update.message.reply_text("غير مصرح لك باستخدام هذا البوت.")
+        await _reply_safe(update, "غير مصرح لك باستخدام هذا البوت.")
         return
     context.user_data.pop(SESSION_KEY, None)
-    await update.message.reply_text(
-        "مرحبًا — بوت مطابقة البصمات 🔬\n\n"
-        "1️⃣ أرسل صورة *البصمة الأصلية* (مرجعية)\n"
-        "2️⃣ ثم أرسل صورة *البصمة المقارنة* (جزئية)\n\n"
-        "أو أرسل صورتين متتاليتين كـ photo أو ملف image.\n"
-        "الأوامر:\n"
-        "/start — البداية\n"
-        "/reset — إلغاء الصور الحالية\n"
-        "/status — ما تم استلامه\n\n"
-        "يمكنك أيضًا استخدام الواجهة على http://127.0.0.1:8000\n\n"
-        "عند وجود طلبات متعددة يُوضَع طلبك في *طابور انتظار* ويُرسل موقعك في الدور.\n\n"
-        "التحليل *عميق* على الكمبيوتر (محاذاة تلقائية + نفس المحرك كالواجهة) — "
-        "تيليجرام يرسل الصور ويستقبل النتائج فقط.",
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    await _reply_safe(update, WELCOME_TEXT)
 
 
 async def cmd_reset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
