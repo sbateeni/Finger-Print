@@ -8,6 +8,8 @@ import numpy as np
 from config import AUTO_SCALE_MAX_FACTOR, AUTO_SCALE_MIN_FACTOR
 from utils.quality_gate import check_fingerprint_quality, quality_gate_enabled
 
+from .ref_grid import is_full_region, parse_norm_region
+
 
 def _reject_low_upload_quality(o_gray, p_gray) -> dict | None:
     """Return error dict for ro/rp if pre-processing quality gate fails."""
@@ -59,6 +61,30 @@ def _apply_shift(gray: np.ndarray, shift_x: int, shift_y: int, enabled: bool) ->
     h, w = gray.shape[:2]
     M = np.float32([[1, 0, tx], [0, 1, ty]])
     return cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=255)
+
+
+def effective_preview_transform(
+    zoom_percent: int,
+    shift_x: int,
+    shift_y: int,
+    region_norm: str | None,
+    apply_preview_scale: bool,
+) -> tuple[int, int, int, bool]:
+    """
+  When a crop region is set, preview zoom/pan sliders are display-only;
+  matching uses the rectangle on the original upload, not the zoom level.
+    """
+    if not apply_preview_scale:
+        return 100, 0, 0, False
+    x, y, w, h = parse_norm_region(region_norm)
+    if not is_full_region(x, y, w, h):
+        return 100, 0, 0, True
+    return (
+        _clamp_zoom_percent(zoom_percent),
+        _clamp_shift_px(shift_x),
+        _clamp_shift_px(shift_y),
+        False,
+    )
 
 
 def _apply_manual_transform(

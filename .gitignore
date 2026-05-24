@@ -44,4 +44,7 @@ static/uploads/
 
 # Logs
 *.log
-logs/ 
+logs/
+
+# Copied from system fonts on first Arabic PDF export (Windows/Linux)
+static/fonts/report-arabic.ttf 

@@ -68,7 +68,7 @@ def _pipeline_gallery_html(branch: dict, title: str, lang: str) -> str:
 def _report_css(lang: str) -> str:
     lg = report_lang(lang)
     font = (
-        "'Noto Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif"
+        "Tahoma, 'Segoe UI', 'Noto Sans Arabic', Arial, sans-serif"
         if lg == "ar"
         else "'Segoe UI', Tahoma, Arial, sans-serif"
     )
@@ -250,12 +250,6 @@ def generate_report(
             f"<code>{html.escape(original_fn)}</code>, <code>{html.escape(partial_fn)}</code></p>"
         )
 
-        font_link = ""
-        if lg == "ar":
-            font_link = (
-                '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"/>'
-            )
-
         report_content = f"""<!doctype html>
 <html lang="{s(lg, 'html_lang')}" dir="{s(lg, 'dir')}">
 <head>
@@ -263,7 +257,6 @@ def generate_report(
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{html.escape(s(lg, 'title'))}</title>
-  {font_link}
   <style>{_report_css(lg)}</style>
 </head>
 <body>

@@ -23,7 +23,7 @@ from utils.matcher import (
 )
 from utils.report_generator import generate_report
 
-from .reports import _ensure_pdf_from_html
+from .reports import should_generate_pdf, _ensure_pdf_from_html
 from .results import (
     _apply_partial_verify_step_audit,
     _make_inconclusive_result,
@@ -92,9 +92,9 @@ def run_matching_pipeline(
                 pipeline=pipeline,
                 lang=report_lang,
             )
-            if report_path:
+            if report_path and should_generate_pdf(Path(report_path), lang=report_lang):
                 try:
-                    _ensure_pdf_from_html(Path(report_path))
+                    _ensure_pdf_from_html(Path(report_path), lang=report_lang)
                 except Exception as pdf_err:
                     logger.warning("Auto PDF generation failed (form inconclusive path): %s", pdf_err)
             report_rel = (
@@ -157,9 +157,9 @@ def run_matching_pipeline(
         report_path = generate_report(
             sk_o, sk_p, match_result, audit=audit, pipeline=pipeline, lang=report_lang
         )
-        if report_path:
+        if report_path and should_generate_pdf(Path(report_path), lang=report_lang):
             try:
-                _ensure_pdf_from_html(Path(report_path))
+                _ensure_pdf_from_html(Path(report_path), lang=report_lang)
             except Exception as pdf_err:
                 logger.warning("Auto PDF generation failed (form path): %s", pdf_err)
         report_rel = (

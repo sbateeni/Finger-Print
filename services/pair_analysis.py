@@ -16,6 +16,7 @@ from config import (
 )
 from services.analysis_service import (
     _ensure_pdf_from_html,
+    should_generate_pdf,
     process_form_analysis,
     run_auto_sweep,
     run_matching_pipeline,
@@ -174,10 +175,12 @@ def analyze_fingerprint_pair(
 
         report_html = (Path(OUTPUT_DIR) / report_rel.replace("\\", "/")).resolve()
         if report_html.exists() and write_report_and_audit:
-            try:
-                report_pdf = _ensure_pdf_from_html(report_html)
-            except Exception:
-                report_pdf = None
+            rlang = (audit or {}).get("report_lang") or "ar"
+            if should_generate_pdf(report_html, lang=rlang):
+                try:
+                    report_pdf = _ensure_pdf_from_html(report_html, lang=rlang)
+                except Exception:
+                    report_pdf = None
 
     out: dict[str, Any] = {
         "ok": True,

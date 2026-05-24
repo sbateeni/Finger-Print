@@ -10,9 +10,10 @@ from .mode import (
     _apply_deep_sweep_to_transforms,
     is_deep_analysis,
     resolve_analysis_mode,
+    resolve_auto_align_sweep,
 )
 from .pipeline import run_matching_pipeline
-from .reports import _ensure_pdf_from_html
+from .reports import _ensure_pdf_from_html, resolve_report_download, should_generate_pdf
 from .results import (
     _apply_partial_verify_step_audit,
     _build_visual_ctx,
@@ -39,6 +40,7 @@ __all__ = [
     "run_matching_pipeline",
     "run_auto_sweep",
     "resolve_analysis_mode",
+    "resolve_auto_align_sweep",
     "is_deep_analysis",
     "build_report_pipeline",
     "_process_branch",

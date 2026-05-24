@@ -29,17 +29,31 @@ from utils.report_generator import generate_report
 from utils.sse_utils import _sse_line
 
 from .branch import _iter_branch_live
-from .mode import _apply_deep_sweep_to_transforms, is_deep_analysis, resolve_analysis_mode
-from .reports import _ensure_pdf_from_html
+from .mode import (
+    _apply_deep_sweep_to_transforms,
+    is_deep_analysis,
+    resolve_analysis_mode,
+    resolve_auto_align_sweep,
+)
+from .reports import should_generate_pdf, _ensure_pdf_from_html
 from .results import (
     _apply_partial_verify_step_audit,
     _make_inconclusive_result,
     _sanitize_match_for_json,
     build_report_pipeline,
 )
+from .ref_grid import (
+    apply_fingerprint_region,
+    is_full_region,
+    normalize_ref_grid,
+    parse_norm_region,
+    region_audit_fields,
+    region_label,
+)
 from .transforms import (
     _apply_manual_transform,
     _clamp_shift_px,
+    effective_preview_transform,
     _clamp_zoom_percent,
     _normalize_query_scale,
     _reject_low_upload_quality,
@@ -68,6 +82,14 @@ def analysis_event_generator(
     case_reference: str,
     analysis_mode: str = "deep",
     report_lang: str = "ar",
+    auto_align_sweep: bool = False,
+    ref_grid_divisions: int = 1,
+    ref_grid_cell: int = 0,
+    ref_grid_cells: str = "",
+    ref_region: str = "0,0,1,1",
+    partial_grid_divisions: int = 1,
+    partial_grid_cells: str = "",
+    partial_region: str = "0,0,1,1",
 ) -> Iterator[bytes]:
     try:
         yield _sse_line({"type": "log", "message": "جاري فك ترميز الصورتين…"})
@@ -100,57 +122,127 @@ def analysis_event_generator(
             return
 
         dm_pre = denoise_method if denoise_method in ("None", "fastNlMeans", "GaussianBlur") else "fastNlMeans"
+        ref_grid_divisions, ref_grid_cell = normalize_ref_grid(ref_grid_divisions, ref_grid_cell)
+        cells_ref = ref_grid_cells or (str(ref_grid_cell) if ref_grid_divisions > 1 else "")
+        do_sweep = bool(auto_align_sweep) and is_deep_analysis(analysis_mode)
         if is_deep_analysis(analysis_mode):
-            yield _sse_line(
-                {
-                    "type": "log",
-                    "message": "فحص عميق: جاري البحث التلقائي الواسع عن أفضل محاذاة (Zoom/Shift)…",
-                }
-            )
-            partial_zoom, partial_shift_x, partial_shift_y, sweep_meta = _apply_deep_sweep_to_transforms(
-                o_raw,
-                p_raw,
-                border_margin,
-                min_distance,
-                min_contrast,
-                min_angle_diff,
-                dm_pre,
-                fast_denoise_h,
-                gauss_ksize,
-                original_zoom,
-                partial_zoom,
-                partial_shift_x,
-                partial_shift_y,
-                apply_preview_scale,
-                auto_scale_normalization,
-                analysis_mode,
-            )
-            if sweep_meta and sweep_meta.get("ok") and sweep_meta.get("best"):
-                b = sweep_meta["best"]
+            if do_sweep:
                 yield _sse_line(
                     {
                         "type": "log",
                         "message": (
-                            f"تم ضبط المحاذاة تلقائيًا: Zoom {b['partial_zoom']}%, "
-                            f"X {b['partial_shift_x']}, Y {b['partial_shift_y']} "
-                            f"(score {b.get('objective_score', 0)})."
+                            "فحص عميق: بحث Zoom/Shift واسع (~441 تركيبة) — "
+                            "قد يستغرق دقائات؛ عطّله من مربع الاختيار لتسريع الفحص."
                         ),
                     }
                 )
-            elif sweep_meta and not sweep_meta.get("ok"):
+                partial_zoom, partial_shift_x, partial_shift_y, sweep_meta = _apply_deep_sweep_to_transforms(
+                    o_raw,
+                    p_raw,
+                    border_margin,
+                    min_distance,
+                    min_contrast,
+                    min_angle_diff,
+                    dm_pre,
+                    fast_denoise_h,
+                    gauss_ksize,
+                    original_zoom,
+                    partial_zoom,
+                    partial_shift_x,
+                    partial_shift_y,
+                    apply_preview_scale,
+                    auto_scale_normalization,
+                    analysis_mode,
+                    auto_align_sweep=True,
+                    ref_grid_divisions=ref_grid_divisions,
+                    ref_grid_cell=ref_grid_cell,
+                    ref_grid_cells=ref_grid_cells,
+                    ref_region=ref_region,
+                    partial_grid_divisions=partial_grid_divisions,
+                    partial_grid_cells=partial_grid_cells,
+                    partial_region=partial_region,
+                )
+                if sweep_meta and sweep_meta.get("ok") and sweep_meta.get("best"):
+                    b = sweep_meta["best"]
+                    tested = sweep_meta.get("tested", "?")
+                    yield _sse_line(
+                        {
+                            "type": "log",
+                            "message": (
+                                f"تم ضبط المحاذاة: Zoom {b['partial_zoom']}%, "
+                                f"X {b['partial_shift_x']}, Y {b['partial_shift_y']} "
+                                f"(اختُبرت {tested} تركيبة، score {b.get('objective_score', 0)})."
+                            ),
+                        }
+                    )
+                elif sweep_meta and not sweep_meta.get("ok"):
+                    yield _sse_line(
+                        {
+                            "type": "log",
+                            "message": "تعذر إكمال البحث الواسع — يُتابع بالإعدادات اليدوية الحالية.",
+                        }
+                    )
+            else:
                 yield _sse_line(
                     {
                         "type": "log",
-                        "message": "تعذر إكمال البحث الواسع — يُتابع بالإعدادات اليدوية الحالية.",
+                        "message": (
+                            "فحص عميق بدون بحث Zoom/Shift تلقائي — "
+                            "يُستخدم الضبط اليدوي من المعاينة ثم المسار الكامل."
+                        ),
                     }
                 )
         else:
             yield _sse_line({"type": "log", "message": "فحص سريع — بدون بحث محاذاة واسع مسبق."})
 
-        o_gray = _apply_manual_transform(o_gray, original_zoom, 0, 0, apply_preview_scale)
-        p_gray = _apply_manual_transform(
-            p_gray, partial_zoom, partial_shift_x, partial_shift_y, apply_preview_scale
+        # Crop in original image space first. Preview zoom/pan are ignored when a region box is set.
+        o_gray = apply_fingerprint_region(
+            o_gray, ref_region, grid_divisions=ref_grid_divisions, grid_cells=cells_ref
         )
+        ref_z, ref_sx, ref_sy, ref_zoom_ignored = effective_preview_transform(
+            original_zoom, 0, 0, ref_region, apply_preview_scale
+        )
+        o_gray = _apply_manual_transform(o_gray, ref_z, ref_sx, ref_sy, apply_preview_scale)
+        p_gray = apply_fingerprint_region(
+            p_gray,
+            partial_region,
+            grid_divisions=partial_grid_divisions,
+            grid_cells=partial_grid_cells,
+        )
+        par_z, par_sx, par_sy, par_zoom_ignored = effective_preview_transform(
+            partial_zoom, partial_shift_x, partial_shift_y, partial_region, apply_preview_scale
+        )
+        p_gray = _apply_manual_transform(p_gray, par_z, par_sx, par_sy, apply_preview_scale)
+        rx, ry, rw, rh = parse_norm_region(ref_region)
+        px, py, pw, ph = parse_norm_region(partial_region)
+        if ref_zoom_ignored or par_zoom_ignored:
+            yield _sse_line(
+                {
+                    "type": "log",
+                    "message": (
+                        "منطقة محددة بالمربع: يُستخدم محتوى المستطيل فقط — "
+                        "زوم/إزاحة المعاينة لا يغيّران منطقة المطابقة."
+                    ),
+                }
+            )
+        if not is_full_region(rx, ry, rw, rh) or not is_full_region(px, py, pw, ph):
+            yield _sse_line(
+                {
+                    "type": "log",
+                    "message": (
+                        "مناطق المطابقة: "
+                        + region_label(ref_region, grid_divisions=ref_grid_divisions, grid_cells=cells_ref, lang=report_lang, which="ref")
+                        + " ↔ "
+                        + region_label(
+                            partial_region,
+                            grid_divisions=partial_grid_divisions,
+                            grid_cells=partial_grid_cells,
+                            lang=report_lang,
+                            which="partial",
+                        )
+                    ),
+                }
+            )
         p_gray, auto_scale_factor = _normalize_query_scale(o_gray, p_gray, auto_scale_normalization)
         if auto_scale_normalization and abs(auto_scale_factor - 1.0) >= 0.03:
             yield _sse_line(
@@ -180,6 +272,17 @@ def analysis_event_generator(
                 yield _sse_line({"type": "fatal", "message": "المرجعية: " + ev.get("message", "")})
                 return
         ro = holder_r[0]
+        ro.update(
+            region_audit_fields(
+                ref_region=ref_region,
+                partial_region=partial_region,
+                ref_grid_divisions=ref_grid_divisions,
+                ref_grid_cells=cells_ref,
+                partial_grid_divisions=partial_grid_divisions,
+                partial_grid_cells=partial_grid_cells,
+                lang=report_lang,
+            )
+        )
 
         yield _sse_line({"type": "log", "message": "جاري معالجة البصمة المقارنة…"})
         holder_p: list[Any] = [None]
@@ -242,6 +345,14 @@ def analysis_event_generator(
                 auto_scale_factor,
                 analysis_mode=analysis_mode,
                 report_lang=report_lang,
+                auto_align_sweep=do_sweep,
+                ref_grid_divisions=ref_grid_divisions,
+                ref_grid_cell=ref_grid_cell,
+                ref_grid_cells=cells_ref,
+                partial_grid_divisions=partial_grid_divisions,
+                partial_grid_cells=partial_grid_cells,
+                ref_region=ref_region,
+                partial_region=partial_region,
             )
             _apply_partial_verify_step_audit(form_params, match_result)
             audit = _stream_audit(
@@ -267,6 +378,7 @@ def analysis_event_generator(
                     "type": "done",
                     "match": _sanitize_match_for_json(match_result),
                     "report_download": report_rel,
+                    "report_lang": report_lang,
                     "audit": {"sha256_original": sha_o, "sha256_partial": sha_p},
                     "forensic_quality_warning": True,
                 }
@@ -296,18 +408,46 @@ def analysis_event_generator(
             )
         )
         yield _sse_line({"type": "log", "message": "اكتمل بحث المحاذاة — جاري تجهيز تصور المطابقة…"})
+        n_match = int(match_result.get("matched_points") or 0)
+        side_vis = visualize_matches(sk_o, sk_p, match_result)
+        if side_vis is not None:
+            yield _sse_line(
+                {
+                    "type": "image",
+                    "branch": "match",
+                    "stage": "side_by_side",
+                    "src": _img_data_uri(side_vis),
+                    "n_match": n_match,
+                    "featured": True,
+                }
+            )
+        ro_vis = ro.get("vis_minutiae")
+        rp_vis = rp.get("vis_minutiae")
+        if ro_vis is not None and rp_vis is not None:
+            minutiae_side = visualize_matches(ro_vis, rp_vis, match_result)
+            if minutiae_side is not None:
+                yield _sse_line(
+                    {
+                        "type": "image",
+                        "branch": "match",
+                        "stage": "minutiae_pairs",
+                        "src": _img_data_uri(minutiae_side),
+                        "n_match": n_match,
+                    }
+                )
         matches_vis = visualize_alignment_on_reference(sk_o, match_result)
-        if matches_vis is None:
-            matches_vis = visualize_matches(sk_o, sk_p, match_result)
-
-        yield _sse_line(
-            {
-                "type": "image",
-                "branch": "match",
-                "stage": "alignment",
-                "src": _img_data_uri(matches_vis),
-            }
-        )
+        if matches_vis is not None:
+            yield _sse_line(
+                {
+                    "type": "image",
+                    "branch": "match",
+                    "stage": "alignment_ref",
+                    "src": _img_data_uri(matches_vis),
+                    "n_match": n_match,
+                }
+            )
+        elif side_vis is not None:
+            matches_vis = side_vis
 
         yield _sse_line({"type": "log", "message": "جاري دمج النتائج (Minutiae + MCC)…"})
         try:
@@ -349,6 +489,9 @@ def analysis_event_generator(
             include_quality_gate=False,
             analysis_mode=analysis_mode,
             report_lang=report_lang,
+            auto_align_sweep=do_sweep,
+            ref_grid_divisions=ref_grid_divisions,
+            ref_grid_cell=ref_grid_cell,
         )
         _apply_partial_verify_step_audit(form_params, match_result)
         audit = _stream_audit(
@@ -379,7 +522,17 @@ def analysis_event_generator(
                 "type": "done",
                 "match": _sanitize_match_for_json(match_result),
                 "report_download": report_rel,
+                "report_lang": report_lang,
                 "audit": {"sha256_original": sha_o, "sha256_partial": sha_p},
+                "ref_grid": region_audit_fields(
+                    ref_region=ref_region,
+                    partial_region=partial_region,
+                    ref_grid_divisions=ref_grid_divisions,
+                    ref_grid_cells=cells_ref,
+                    partial_grid_divisions=partial_grid_divisions,
+                    partial_grid_cells=partial_grid_cells,
+                    lang=report_lang,
+                ),
                 "forensic_quality_warning": low_n < MIN_MINUTIAE_RECOMMENDED,
             }
         )
@@ -407,6 +560,14 @@ def _stream_form_params(
     include_quality_gate: bool = True,
     analysis_mode: str = "deep",
     report_lang: str = "ar",
+    auto_align_sweep: bool = False,
+    ref_grid_divisions: int = 1,
+    ref_grid_cell: int = 0,
+    ref_grid_cells: str = "",
+    partial_grid_divisions: int = 1,
+    partial_grid_cells: str = "",
+    ref_region: str = "0,0,1,1",
+    partial_region: str = "0,0,1,1",
 ) -> dict[str, Any]:
     params = {
         "border_margin": border_margin,
@@ -431,7 +592,19 @@ def _stream_form_params(
         params["QUALITY_GATE_MIN_SCORE"] = QUALITY_GATE_MIN_SCORE
         params["QUALITY_GATE_MIN_MINUTIAE"] = QUALITY_GATE_MIN_MINUTIAE
     params["analysis_mode"] = resolve_analysis_mode(analysis_mode)
+    params["auto_align_sweep"] = bool(auto_align_sweep)
     params["report_lang"] = report_lang
+    params.update(
+        region_audit_fields(
+            ref_region=ref_region,
+            partial_region=partial_region,
+            ref_grid_divisions=ref_grid_divisions,
+            ref_grid_cells=ref_grid_cells,
+            partial_grid_divisions=partial_grid_divisions,
+            partial_grid_cells=partial_grid_cells,
+            lang=report_lang,
+        )
+    )
     return params
 
 
@@ -454,9 +627,9 @@ def _write_stream_report(
     report_path = generate_report(
         sk_o, sk_p, match_result, audit=audit, pipeline=pipeline, lang=report_lang
     )
-    if report_path:
+    if report_path and should_generate_pdf(Path(report_path), lang=report_lang):
         try:
-            _ensure_pdf_from_html(Path(report_path))
+            _ensure_pdf_from_html(Path(report_path), lang=report_lang)
         except Exception as pdf_err:
             logger.warning("Auto PDF generation failed (stream path): %s", pdf_err)
     return str(Path(report_path).relative_to(OUTPUT_DIR)).replace("\\", "/") if report_path else None

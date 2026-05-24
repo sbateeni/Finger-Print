@@ -241,21 +241,24 @@ def build_web_result_payload(
     *,
     same_file_warning: bool = False,
     forensic_quality_warning: bool = False,
+    report_lang: str = "ar",
 ) -> dict[str, Any]:
     from pathlib import Path
 
     from config import OUTPUT_DIR
-    from services.analysis_service import _ensure_pdf_from_html
+    from services.analysis_service import _ensure_pdf_from_html, should_generate_pdf
 
     report_html: Optional[Path] = None
     report_pdf: Optional[Path] = None
     if report_rel:
         report_html = (Path(OUTPUT_DIR) / report_rel.replace("\\", "/")).resolve()
         if report_html.exists():
-            try:
-                report_pdf = _ensure_pdf_from_html(report_html)
-            except Exception:
-                report_pdf = None
+            rlang = (report_lang or "ar").strip().lower() or "ar"
+            if should_generate_pdf(report_html, lang=rlang):
+                try:
+                    report_pdf = _ensure_pdf_from_html(report_html, lang=rlang)
+                except Exception:
+                    report_pdf = None
     return {
         "ok": True,
         "error": None,
@@ -276,6 +279,7 @@ def schedule_web_telegram_notify(
     forensic_quality_warning: bool = False,
     operator_name: str = "",
     case_reference: str = "",
+    report_lang: str = "ar",
 ) -> None:
     """Fire-and-forget Telegram notification after web analysis (same event loop)."""
     if not notify_on_web_enabled():
@@ -285,6 +289,7 @@ def schedule_web_telegram_notify(
         report_rel,
         same_file_warning=same_file_warning,
         forensic_quality_warning=forensic_quality_warning,
+        report_lang=report_lang,
     )
     label = "الواجهة"
     if operator_name or case_reference:

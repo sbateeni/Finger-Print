@@ -8,8 +8,10 @@ from utils.image_utils import _decode_upload_type
 from utils.matcher import match_fingerprints_with_partial_alignment
 
 from .branch import _process_branch
+from .ref_grid import apply_fingerprint_region, normalize_ref_grid
 from .transforms import (
     _apply_manual_transform,
+    effective_preview_transform,
     _clamp_shift_px,
     _clamp_zoom_percent,
     _normalize_query_scale,
@@ -33,13 +35,28 @@ def run_auto_sweep(
     apply_preview_scale: bool,
     auto_scale_normalization: bool,
     sweep_mode: str = "quick",
+    ref_grid_divisions: int = 1,
+    ref_grid_cell: int = 0,
+    ref_grid_cells: str = "",
+    ref_region: str = "0,0,1,1",
+    partial_grid_divisions: int = 1,
+    partial_grid_cells: str = "",
+    partial_region: str = "0,0,1,1",
 ) -> dict[str, Any]:
     """Auto-search best manual transform around current partial parameters."""
     o_gray = _decode_upload_type(o_raw)
     p_gray = _decode_upload_type(p_raw)
     dm = denoise_method if denoise_method in ("None", "fastNlMeans", "GaussianBlur") else "fastNlMeans"
 
-    base_ref = _apply_manual_transform(o_gray, original_zoom, 0, 0, apply_preview_scale)
+    ref_grid_divisions, ref_grid_cell = normalize_ref_grid(ref_grid_divisions, ref_grid_cell)
+    cells_ref = ref_grid_cells or (str(ref_grid_cell) if ref_grid_divisions > 1 else "")
+    base_ref = apply_fingerprint_region(
+        o_gray, ref_region, grid_divisions=ref_grid_divisions, grid_cells=cells_ref
+    )
+    ref_z, ref_sx, ref_sy, _ = effective_preview_transform(
+        original_zoom, 0, 0, ref_region, apply_preview_scale
+    )
+    base_ref = _apply_manual_transform(base_ref, ref_z, ref_sx, ref_sy, apply_preview_scale)
     ro = _process_branch(
         base_ref,
         dm,
@@ -73,7 +90,20 @@ def run_auto_sweep(
         for sx in sx_candidates:
             for sy in sy_candidates:
                 tested += 1
-                qry = _apply_manual_transform(p_gray, z, sx, sy, apply_preview_scale)
+                qry = apply_fingerprint_region(
+                    p_gray,
+                    partial_region,
+                    grid_divisions=partial_grid_divisions,
+                    grid_cells=partial_grid_cells,
+                )
+                # Sweep varies alignment zoom/shift only when partial is full-frame.
+                _, _, _, region_set = effective_preview_transform(
+                    z, sx, sy, partial_region, apply_preview_scale
+                )
+                if region_set:
+                    qry = _apply_manual_transform(qry, 100, 0, 0, apply_preview_scale)
+                else:
+                    qry = _apply_manual_transform(qry, z, sx, sy, apply_preview_scale)
                 qry, auto_scale_factor = _normalize_query_scale(base_ref, qry, auto_scale_normalization)
                 rp = _process_branch(
                     qry,

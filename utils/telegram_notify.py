@@ -123,7 +123,7 @@ def deliver_result_sync(
     if pdf and Path(pdf).is_file():
         send_document_sync(chat_id, Path(pdf), caption="تقرير PDF")
     elif html and Path(html).is_file():
-        send_document_sync(chat_id, Path(html), caption="تقرير HTML")
+        send_document_sync(chat_id, Path(html), caption="تقرير (HTML)")
 
 
 def notify_result_to_all_chats(

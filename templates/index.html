@@ -83,6 +83,17 @@
             {{ trans.analysis_fast }}
           </label>
           <p class="small" style="margin:0.5rem 0 0;color:var(--muted);">{{ trans.analysis_mode_hint }}</p>
+          <label class="mode-opt auto-align-opt" id="auto-align-wrap" style="margin-top:0.85rem;">
+            <input
+              type="checkbox"
+              id="auto_align_sweep"
+              name="auto_align_sweep"
+              value="1"
+              {% if f.get('auto_align_sweep', False) %}checked{% endif %}
+            />
+            {{ trans.auto_align_sweep }}
+          </label>
+          <p class="small" style="margin:0.35rem 0 0;color:var(--muted);">{{ trans.auto_align_sweep_hint }}</p>
         </div>
 
         <h2>{{ trans.minutiae_filtering }}</h2>
@@ -143,7 +154,7 @@
           <input type="text" id="operator_name" name="operator_name" maxlength="120" value="{{ operator_name|default('') }}" placeholder="..." autocomplete="name" />
         </div>
 
-        <button type="submit" id="fp-submit-btn" class="btn">{{ trans.analyze_btn }}</button>
+        <button type="submit" id="fp-submit-btn" class="btn" data-label="{{ trans.analyze_btn }}">{{ trans.analyze_btn }}</button>
       </aside>
 
       <main>
@@ -159,9 +170,33 @@
                 <span>{{ trans.live_preview }}</span>
                 <span class="preview-zoom-val" id="original-zoom-val">100%</span>
               </div>
-              <div class="preview-viewport">
-                <img id="original-preview-img" alt="Original preview" hidden />
+              <div class="preview-viewport region-host" id="original-preview-host">
+                <img id="original-preview-img" class="preview-fp-img" alt="Original preview" hidden />
+                <div id="ref-rect-layer" class="region-rect-layer"></div>
+                <div id="ref-grid-overlay" class="ref-grid-overlay" hidden aria-hidden="true"></div>
+                <div id="ref-selection-box" class="region-selection-box" hidden></div>
                 <div class="preview-empty" id="original-preview-empty">{{ trans.preview_empty }}</div>
+              </div>
+              <div class="field ref-grid-controls">
+                <label for="ref_region_mode">{{ trans.region_mode }}</label>
+                <select id="ref_region_mode" name="ref_region_mode">
+                  <option value="full" selected>{{ trans.region_mode_full }}</option>
+                  <option value="rect">{{ trans.region_mode_rect }}</option>
+                  <option value="grid">{{ trans.region_mode_grid }}</option>
+                </select>
+                <div id="ref-grid-divisions-wrap" class="region-divisions-wrap" hidden>
+                  <label for="ref_grid_divisions">{{ trans.ref_grid_divisions }}</label>
+                  <select id="ref_grid_divisions" name="ref_grid_divisions">
+                    <option value="4" selected>{{ trans.ref_grid_4 }}</option>
+                    <option value="6">{{ trans.ref_grid_6 }}</option>
+                  </select>
+                </div>
+                <input type="hidden" id="ref_region" name="ref_region" value="0,0,1,1" />
+                <input type="hidden" id="ref_grid_cells" name="ref_grid_cells" value="0" />
+                <input type="hidden" id="ref_grid_cell" name="ref_grid_cell" value="0" />
+                <p class="small ref-grid-hint">{{ trans.ref_grid_hint_multi }}</p>
+                <p class="small preview-zoom-region-hint">{{ trans.preview_zoom_region_hint }}</p>
+                <p class="small ref-grid-selected" id="ref-grid-selected-label">{{ trans.ref_grid_selected }}: —</p>
               </div>
               <div class="field preview-control">
                 <label for="original-zoom">{{ trans.zoom_label }}</label>
@@ -181,9 +216,32 @@
                 <span>{{ trans.live_preview }}</span>
                 <span class="preview-zoom-val" id="partial-zoom-val">100%</span>
               </div>
-              <div class="preview-viewport">
-                <img id="partial-preview-img" alt="Partial preview" hidden />
+              <div class="preview-viewport region-host" id="partial-preview-host">
+                <img id="partial-preview-img" class="preview-fp-img" alt="Partial preview" hidden />
+                <div id="partial-rect-layer" class="region-rect-layer"></div>
+                <div id="partial-grid-overlay" class="ref-grid-overlay" hidden aria-hidden="true"></div>
+                <div id="partial-selection-box" class="region-selection-box" hidden></div>
                 <div class="preview-empty" id="partial-preview-empty">{{ trans.preview_empty }}</div>
+              </div>
+              <div class="field ref-grid-controls">
+                <label for="partial_region_mode">{{ trans.region_mode }}</label>
+                <select id="partial_region_mode" name="partial_region_mode">
+                  <option value="full" selected>{{ trans.region_mode_full }}</option>
+                  <option value="rect">{{ trans.region_mode_rect }}</option>
+                  <option value="grid">{{ trans.region_mode_grid }}</option>
+                </select>
+                <div id="partial-grid-divisions-wrap" class="region-divisions-wrap" hidden>
+                  <label for="partial_grid_divisions">{{ trans.ref_grid_divisions }}</label>
+                  <select id="partial_grid_divisions" name="partial_grid_divisions">
+                    <option value="4" selected>{{ trans.ref_grid_4 }}</option>
+                    <option value="6">{{ trans.ref_grid_6 }}</option>
+                  </select>
+                </div>
+                <input type="hidden" id="partial_region" name="partial_region" value="0,0,1,1" />
+                <input type="hidden" id="partial_grid_cells" name="partial_grid_cells" value="" />
+                <p class="small ref-grid-hint">{{ trans.ref_grid_hint_multi }}</p>
+                <p class="small preview-zoom-region-hint">{{ trans.preview_zoom_region_hint }}</p>
+                <p class="small ref-grid-selected" id="partial-grid-selected-label">{{ trans.ref_grid_selected }}: —</p>
               </div>
               <div class="field preview-control">
                 <label for="partial-zoom">{{ trans.zoom_label }}</label>
@@ -224,11 +282,22 @@
           <p class="small live-hint">{{ trans.live_output }}</p>
           <div id="live-alerts"></div>
           <pre id="live-log" class="live-log" aria-label="Log"></pre>
-          <div class="grid-2">
-            <div class="card pip" id="live-col-ref"><h3>{{ trans.original_fp }} {{ trans.live_suffix }}</h3></div>
-            <div class="card pip" id="live-col-partial"><h3>{{ trans.partial_fp }} {{ trans.live_suffix }}</h3></div>
+          <div class="grid-2 live-pipeline-grid">
+            <div class="card pip" id="live-col-ref">
+              <h3>{{ trans.original_fp }} {{ trans.live_suffix }}</h3>
+              <p class="live-col-status small" id="live-status-ref">{{ trans.live_processing }}</p>
+            </div>
+            <div class="card pip" id="live-col-partial">
+              <h3>{{ trans.partial_fp }} {{ trans.live_suffix }}</h3>
+              <p class="live-col-status small" id="live-status-partial">{{ trans.live_processing }}</p>
+            </div>
           </div>
-          <div class="card pip live-match-card"><div id="live-match-col"><h3>{{ trans.live_match }}</h3></div></div>
+          <div class="card pip live-match-card">
+            <h3>{{ trans.live_match }}</h3>
+            <p class="small live-match-hint">{{ trans.live_match_hint }}</p>
+            <p class="live-col-status small" id="live-status-match">{{ trans.live_processing }}</p>
+            <div id="live-match-gallery" class="live-match-gallery" aria-live="polite"></div>
+          </div>
           <div id="live-match-wrap"></div>
         </section>
 
@@ -328,10 +397,16 @@
             </div>
             {% endif %}
           </div>
-          <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
             {% if report_download %}
-            <a class="dl" href="/download-report/{{ report_download }}" target="_blank" rel="noopener noreferrer" style="flex:1;">{{ trans.download_report }}</a>
-            <a class="dl" href="/download-report/{{ report_download }}?format=pdf&download=1" target="_blank" rel="noopener noreferrer" style="flex:1;background:var(--accent);color:white;">{{ trans.download_pdf }}</a>
+            {% if lang == 'ar' %}
+            <a class="dl" href="/download-report/{{ report_download }}?download=1&amp;lang=ar" target="_blank" rel="noopener noreferrer" style="flex:1;background:var(--accent);color:white;">{{ trans.download_report_file }}</a>
+            <a class="dl" href="/download-report/{{ report_download }}?lang=ar" target="_blank" rel="noopener noreferrer" style="flex:1;">{{ trans.download_report }}</a>
+            <p class="small" style="width:100%;margin:0.35rem 0 0;color:var(--muted);">{{ trans.download_pdf_unavailable_ar }}</p>
+            {% else %}
+            <a class="dl" href="/download-report/{{ report_download }}?lang=en" target="_blank" rel="noopener noreferrer" style="flex:1;">{{ trans.download_report }}</a>
+            <a class="dl" href="/download-report/{{ report_download }}?format=pdf&amp;download=1&amp;lang=en" target="_blank" rel="noopener noreferrer" style="flex:1;background:var(--accent);color:white;">{{ trans.download_pdf }}</a>
+            {% endif %}
             {% endif %}
           </div>
         </div>
@@ -349,6 +424,25 @@
     </footer>
   </div>
   <script type="application/json" id="fp-trans-json">{{ trans | tojson }}</script>
+  <script src="/static/region_select.js?v={{ build_stamp }}"></script>
+  <script>
+  (function () {
+    function syncAutoAlignUi() {
+      var fast = document.querySelector('input[name="analysis_mode"][value="fast"]');
+      var wrap = document.getElementById("auto-align-wrap");
+      var chk = document.getElementById("auto_align_sweep");
+      if (!fast || !wrap || !chk) return;
+      var disabled = fast.checked;
+      wrap.style.opacity = disabled ? "0.45" : "1";
+      chk.disabled = disabled;
+      if (disabled) chk.checked = false;
+    }
+    document.querySelectorAll('input[name="analysis_mode"]').forEach(function (r) {
+      r.addEventListener("change", syncAutoAlignUi);
+    });
+    syncAutoAlignUi();
+  })();
+  </script>
   <script>
   (function () {
     var img = document.querySelector(".police-logo-header");

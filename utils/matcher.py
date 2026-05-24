@@ -309,36 +309,41 @@ def _empty_result(original_minutiae, partial_minutiae, status="NO MATCH"):
     }
 
 def visualize_matches(original_img, partial_img, match_result):
-    """تصور جانبي للمطابقات"""
+    """Side-by-side match lines (reference left, query right)."""
     try:
         h1, w1 = original_img.shape[:2]
         h2, w2 = partial_img.shape[:2]
         vis = np.zeros((max(h1, h2), w1 + w2, 3), dtype=np.uint8)
-        
-        o_bgr = cv2.cvtColor(original_img, cv2.COLOR_GRAY2BGR) if len(original_img.shape)==2 else original_img
-        p_bgr = cv2.cvtColor(partial_img, cv2.COLOR_GRAY2BGR) if len(partial_img.shape)==2 else partial_img
-        
+
+        o_bgr = cv2.cvtColor(original_img, cv2.COLOR_GRAY2BGR) if len(original_img.shape) == 2 else original_img.copy()
+        p_bgr = cv2.cvtColor(partial_img, cv2.COLOR_GRAY2BGR) if len(partial_img.shape) == 2 else partial_img.copy()
+
         vis[:h1, :w1] = o_bgr
-        vis[:h2, w1:w1+w2] = p_bgr
-        
+        vis[:h2, w1 : w1 + w2] = p_bgr
+        cv2.line(vis, (w1, 0), (w1, vis.shape[0]), (80, 80, 80), 1, cv2.LINE_AA)
+
         for m in match_result.get("matched_details", []):
             pt1 = (int(m["original"]["x"]), int(m["original"]["y"]))
             pt2 = (int(m["partial"]["x"]) + w1, int(m["partial"]["y"]))
-            cv2.line(vis, pt1, pt2, (0, 255, 0), 1, cv2.LINE_AA)
-            cv2.circle(vis, pt1, 3, (0, 255, 0), -1)
-            cv2.circle(vis, pt2, 3, (0, 255, 0), -1)
+            cv2.line(vis, pt1, pt2, (0, 255, 120), 2, cv2.LINE_AA)
+            cv2.circle(vis, pt1, 5, (0, 255, 0), -1, lineType=cv2.LINE_AA)
+            cv2.circle(vis, pt2, 5, (0, 200, 255), -1, lineType=cv2.LINE_AA)
         return vis
-    except: return None
+    except Exception:
+        return None
 
 def visualize_alignment_on_reference(ref_img, match_result):
-    """رسم النقاط المحاذية فوق المرجع مباشرة"""
+    """Matched pairs overlaid on reference skeleton (green=ref, cyan=aligned query)."""
     try:
-        vis = cv2.cvtColor(ref_img, cv2.COLOR_GRAY2BGR) if len(ref_img.shape)==2 else ref_img.copy()
+        vis = cv2.cvtColor(ref_img, cv2.COLOR_GRAY2BGR) if len(ref_img.shape) == 2 else ref_img.copy()
         for m in match_result.get("matched_details", []):
             o = m["original"]
             p = m["partial"]
-            cv2.circle(vis, (int(o["x"]), int(o["y"])), 4, (0, 255, 0), 1)
-            cv2.circle(vis, (int(p["x"]), int(p["y"])), 2, (0, 0, 255), -1)
-            cv2.line(vis, (int(o["x"]), int(o["y"])), (int(p["x"]), int(p["y"])), (255, 0, 255), 1)
+            p1 = (int(o["x"]), int(o["y"]))
+            p2 = (int(p["x"]), int(p["y"]))
+            cv2.line(vis, p1, p2, (255, 0, 255), 2, cv2.LINE_AA)
+            cv2.circle(vis, p1, 5, (0, 255, 0), -1, lineType=cv2.LINE_AA)
+            cv2.circle(vis, p2, 4, (255, 200, 0), -1, lineType=cv2.LINE_AA)
         return vis
-    except: return None
+    except Exception:
+        return None

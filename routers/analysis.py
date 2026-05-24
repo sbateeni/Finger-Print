@@ -27,6 +27,7 @@ from services.analysis_service import (
     _sanitize_match_for_json,
     _apply_deep_sweep_to_transforms,
     resolve_analysis_mode,
+    is_deep_analysis,
 )
 from utils.web_utils import resolve_ui_lang
 from utils.sse_utils import _sse_line
@@ -82,9 +83,21 @@ async def analyze_stream(request: Request):
     operator_name = str(form.get("operator_name") or "")
     case_reference = str(form.get("case_reference") or "")
     analysis_mode = resolve_analysis_mode(str(form.get("analysis_mode") or ""))
+    auto_align_sweep = (
+        is_deep_analysis(analysis_mode)
+        and "auto_align_sweep" in form
+        and _form_bool(form, "auto_align_sweep", False)
+    )
     report_lang = resolve_ui_lang(
         str(form.get("report_lang") or request.query_params.get("lang") or "ar")
     )
+    ref_grid_divisions = _form_int(form, "ref_grid_divisions", 1)
+    ref_grid_cell = _form_int(form, "ref_grid_cell", 0)
+    ref_grid_cells = str(form.get("ref_grid_cells") or "")
+    ref_region = str(form.get("ref_region") or "0,0,1,1")
+    partial_grid_divisions = _form_int(form, "partial_grid_divisions", 1)
+    partial_grid_cells = str(form.get("partial_grid_cells") or "")
+    partial_region = str(form.get("partial_region") or "0,0,1,1")
 
     async def queued_stream() -> AsyncIterator[bytes]:
         q = get_analysis_queue()
@@ -117,6 +130,14 @@ async def analyze_stream(request: Request):
                 case_reference,
                 analysis_mode,
                 report_lang,
+                auto_align_sweep,
+                ref_grid_divisions,
+                ref_grid_cell,
+                ref_grid_cells,
+                ref_region,
+                partial_grid_divisions,
+                partial_grid_cells,
+                partial_region,
             )
             same_file_warning = False
             for chunk in gen:
@@ -137,6 +158,7 @@ async def analyze_stream(request: Request):
                                     ),
                                     operator_name=operator_name,
                                     case_reference=case_reference,
+                                    report_lang=payload.get("report_lang") or report_lang,
                                 )
                     except (json.JSONDecodeError, UnicodeDecodeError):
                         pass
@@ -231,9 +253,20 @@ async def analyze(
     case_reference: str = Form(""),
     analysis_mode: str = Form("deep"),
     report_lang: str = Form(""),
+    auto_align_sweep: str = Form("0"),
+    ref_grid_divisions: int = Form(1),
+    ref_grid_cell: int = Form(0),
+    ref_grid_cells: str = Form(""),
+    ref_region: str = Form("0,0,1,1"),
+    partial_grid_divisions: int = Form(1),
+    partial_grid_cells: str = Form(""),
+    partial_region: str = Form("0,0,1,1"),
 ):
     ui_lang = resolve_ui_lang(report_lang or request.query_params.get("lang"))
     analysis_mode = resolve_analysis_mode(analysis_mode)
+    do_auto_align = is_deep_analysis(analysis_mode) and _form_bool(
+        {"auto_align_sweep": auto_align_sweep}, "auto_align_sweep", False
+    )
 
     try:
         o_raw = await original.read()
@@ -260,7 +293,7 @@ async def analyze(
         )
 
     eff_zoom, eff_shift_x, eff_shift_y = partial_zoom, partial_shift_x, partial_shift_y
-    if analysis_mode == "deep":
+    if do_auto_align:
         eff_zoom, eff_shift_x, eff_shift_y, _sweep = _apply_deep_sweep_to_transforms(
             o_raw,
             p_raw,
@@ -278,6 +311,14 @@ async def analyze(
             apply_preview_scale,
             auto_scale_normalization,
             analysis_mode,
+            auto_align_sweep=True,
+            ref_grid_divisions=ref_grid_divisions,
+            ref_grid_cell=ref_grid_cell,
+            ref_grid_cells=ref_grid_cells,
+            ref_region=ref_region,
+            partial_grid_divisions=partial_grid_divisions,
+            partial_grid_cells=partial_grid_cells,
+            partial_region=partial_region,
         )
         partial_zoom, partial_shift_x, partial_shift_y = eff_zoom, eff_shift_x, eff_shift_y
 
@@ -300,6 +341,14 @@ async def analyze(
             auto_scale_normalization,
             operator_name,
             case_reference,
+            ref_grid_divisions=ref_grid_divisions,
+            ref_grid_cell=ref_grid_cell,
+            ref_grid_cells=ref_grid_cells,
+            ref_region=ref_region,
+            partial_grid_divisions=partial_grid_divisions,
+            partial_grid_cells=partial_grid_cells,
+            partial_region=partial_region,
+            report_lang=ui_lang,
         )
     except Exception as e:
         logger.exception(e)
@@ -343,6 +392,12 @@ async def analyze(
             "auto_scale_normalization": auto_scale_normalization,
             "auto_scale_factor_applied": round(float(ro.get("auto_scale_factor_applied", 1.0)), 4),
             "analysis_mode": analysis_mode,
+            "auto_align_sweep": do_auto_align,
+            "ref_grid_divisions": ref_grid_divisions,
+            "ref_grid_cell": ref_grid_cell,
+            "ref_region": ref_region,
+            "partial_grid_divisions": partial_grid_divisions,
+            "partial_region": partial_region,
             "report_lang": ui_lang,
         },
         "software_name": SOFTWARE_NAME,
@@ -386,5 +441,6 @@ async def analyze(
         forensic_quality_warning=forensic_quality_warning,
         operator_name=operator_name,
         case_reference=case_reference,
+        report_lang=(audit or {}).get("report_lang") or ui_lang,
     )
     return _render(request, ctx)
