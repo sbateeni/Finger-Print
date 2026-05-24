@@ -2,6 +2,17 @@ import cv2
 import numpy as np
 from config import *
 from features.minutiae_filter import filter_minutiae_by_confidence
+from features.extended_minutiae import augment_minutiae
+
+MINUTIAE_TYPE_COLORS = {
+    "endpoint": (0, 255, 0),
+    "bifurcation": (0, 0, 255),
+    "island": (0, 255, 255),
+    "lake": (255, 128, 0),
+    "dot": (255, 0, 255),
+    "bridge": (255, 255, 0),
+    "divergence": (128, 0, 255),
+}
 
 def calculate_angle(skeleton, x, y, window_size=5):
     """
@@ -32,9 +43,10 @@ def calculate_angle(skeleton, x, y, window_size=5):
     except Exception as e:
         return 0
 
-def remove_false_minutiae(skeleton, minutiae, min_ridge_length=10):
+def remove_false_minutiae(skeleton, minutiae, min_ridge_length=10, island_min_len=3):
     """
-    إزالة النقاط الزائفة الناتجة عن عيوب الصورة (Spurs, Islands, Broken Ridges, Hooks).
+    إزالة النقاط الزائفة (spurs/noise) مع الإبقاء على الجزر القصيرة كـ type=island
+    (مطابق لملصق التعرف الجنائي — نقطة 5 Island).
     """
     if not minutiae: return []
     
@@ -81,8 +93,10 @@ def remove_false_minutiae(skeleton, minutiae, min_ridge_length=10):
                 if not found_next or found_other_minutia:
                     break
             
-            # إذا لم نصل إلى نقطة دقيقة أخرى والطول قصير: إزالة
+            # خط قصير معزول: جزيرة (Island) أو ضوضاء
             if not found_other_minutia and length < min_ridge_length:
+                if length >= island_min_len:
+                    filtered.append({**m, "type": "island"})
                 is_false = True
         
         # 2. إزالة Hooks: نهايات قريبة جداً من نقاط دقيقة أخرى
@@ -131,7 +145,15 @@ def filter_minutiae(minutiae, image_shape, border_margin=10, min_distance=10, or
             
     return filtered
 
-def extract_minutiae(skeleton, border_margin=10, min_distance=10, original_image=None, min_contrast=15, min_angle_diff=10):
+def extract_minutiae(
+    skeleton,
+    border_margin=10,
+    min_distance=10,
+    original_image=None,
+    min_contrast=15,
+    min_angle_diff=10,
+    ridge_image=None,
+):
     """استخراج النقاط الدقيقة مع معالجة متقدمة للعيوب"""
     try:
         raw_minutiae = []
@@ -175,8 +197,25 @@ def extract_minutiae(skeleton, border_margin=10, min_distance=10, original_image
         )
 
         # 3. الفلترة المكانية والتباين
-        filtered = filter_minutiae(refined, skeleton.shape, border_margin, min_distance, original_image, min_contrast, min_angle_diff)
-        
+        filtered = filter_minutiae(
+            refined,
+            skeleton.shape,
+            border_margin,
+            min_distance,
+            original_image,
+            min_contrast,
+            min_angle_diff,
+        )
+
+        # 4. PDF/poster types: lake, dot, bridge, divergence
+        filtered = augment_minutiae(
+            filtered,
+            skeleton,
+            calculate_angle,
+            ridge_image=ridge_image if ridge_image is not None else original_image,
+            min_distance=float(min_distance),
+        )
+
         return filtered
     except Exception as e:
         print(f"Error in extract_minutiae: {str(e)}")
@@ -188,8 +227,7 @@ def visualize_minutiae(image, minutiae):
         vis_img = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         for point in minutiae:
             x, y = point['x'], point['y']
-            # اللون: أخضر للنهايات، أحمر للتفرعات
-            color = (0, 255, 0) if point['type'] == 'endpoint' else (0, 0, 255)
+            color = MINUTIAE_TYPE_COLORS.get(point.get("type", "endpoint"), (0, 255, 0))
             
             # رسم دائرة صغيرة
             cv2.circle(vis_img, (x, y), 4, color, 1)

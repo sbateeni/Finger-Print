@@ -1,16 +1,37 @@
 (function () {
   "use strict";
 
-  var STAGE_CAPTION = {
-    processed: "ثنائية بعد المعالجة",
-    quality_map: "خريطة الجودة (Heatmap)",
-    singular_vis: "النقاط المفردة (مراكز ودلتات)",
-    ridges: "Gabor — التموجات",
-    skeleton: "Skeleton — الهيكلة",
-    minutiae_vis: "النقاط الدقيقة (تصور)",
-    alignment: "المطابقة على هيكل المرجعية",
-    orb_vis: "التحقق البصري (ORB)",
+  var FP_TRANS = {};
+  var STAGE_KEYS = {
+    processed: "stage_processed",
+    quality_map: "stage_quality",
+    singular_vis: "stage_singular",
+    ridges: "stage_ridges",
+    skeleton: "stage_skeleton",
+    minutiae_vis: "stage_minutiae",
+    alignment: "stage_alignment",
+    orb_vis: "stage_orb",
   };
+
+  function loadTrans() {
+    var el = document.getElementById("fp-trans-json");
+    if (!el || !el.textContent) return;
+    try {
+      FP_TRANS = JSON.parse(el.textContent);
+    } catch (e) {
+      console.warn("fp i18n", e);
+    }
+  }
+
+  function t(key, fallback) {
+    if (FP_TRANS && FP_TRANS[key] != null) return FP_TRANS[key];
+    return fallback != null ? fallback : key;
+  }
+
+  function stageCaption(stage) {
+    var k = STAGE_KEYS[stage];
+    return k ? t(k, stage) : stage;
+  }
 
   function $(id) {
     return document.getElementById(id);
@@ -53,7 +74,7 @@
   function appendImage(branch, stage, src, extraCaption) {
     var col = colForBranch(branch);
     if (!col || !src) return;
-    var cap = STAGE_CAPTION[stage] || stage;
+    var cap = stageCaption(stage);
     if (extraCaption) cap += " — " + extraCaption;
     var fig = document.createElement("figure");
     var img = document.createElement("img");
@@ -101,32 +122,32 @@
     html += '<div class="results-summary">';
     
     if (m.combined_verdict) {
-      html += '<div class="decision ' + (m.combined_color || "no") + '">الحكم النهائي: ' + esc(m.combined_verdict) + '</div>';
+      html += '<div class="decision ' + (m.combined_color || "no") + '">' + esc(t("combined_verdict")) + ": " + esc(m.combined_verdict) + '</div>';
       if (m.fused_score != null) {
-        html += '<div class="row"><span>Fused Score</span><strong>' + Number(m.fused_score).toFixed(2) + '%</strong></div>';
+        html += '<div class="row"><span>' + esc(t("fused_score")) + '</span><strong>' + Number(m.fused_score).toFixed(2) + '%</strong></div>';
       }
       if (m.fusion_components) {
-        html += '<div class="row"><span>Fusion - Minutiae</span><strong>' + Number(m.fusion_components.minutiae_score || 0).toFixed(2) + '%</strong></div>';
-        html += '<div class="row"><span>Fusion - MCC</span><strong>' + Number(m.fusion_components.mcc_score || 0).toFixed(2) + '%</strong></div>';
-        html += '<div class="row"><span>Fusion - ORB</span><strong>' + Number(m.fusion_components.orb_score || 0).toFixed(2) + '%</strong></div>';
+        html += '<div class="row"><span>' + esc(t("fusion_min")) + '</span><strong>' + Number(m.fusion_components.minutiae_score || 0).toFixed(2) + '%</strong></div>';
+        html += '<div class="row"><span>' + esc(t("fusion_mcc")) + '</span><strong>' + Number(m.fusion_components.mcc_score || 0).toFixed(2) + '%</strong></div>';
+        html += '<div class="row"><span>' + esc(t("fusion_orb")) + '</span><strong>' + Number(m.fusion_components.orb_score || 0).toFixed(2) + '%</strong></div>';
       }
       html += '<hr style="margin: 1rem 0; opacity: 0.1;">';
     }
 
     html +=
-      '<div class="row"><span>نقاط الأصلية</span><strong>' +
+      '<div class="row"><span>' + esc(t("points_original")) + '</span><strong>' +
       esc(m.total_original) +
       "</strong></div>";
     html +=
-      '<div class="row"><span>نقاط الجزئية</span><strong>' +
+      '<div class="row"><span>' + esc(t("points_partial")) + '</span><strong>' +
       esc(m.total_partial) +
       "</strong></div>";
     html +=
-      '<div class="row"><span>تطابقات (واحد‑لواحد)</span><strong>' +
+      '<div class="row"><span>' + esc(t("matched_points")) + '</span><strong>' +
       esc(m.matched_points) +
       "</strong></div>";
     html +=
-      '<div class="row"><span>نسبة التشابه (حسب الجزئية)</span><strong>' +
+      '<div class="row"><span>' + esc(t("similarity_ratio")) + '</span><strong>' +
       (typeof m.match_score === "number" ? m.match_score.toFixed(2) : esc(m.match_score)) +
       "%</strong></div>";
     
@@ -151,7 +172,7 @@
         "</p>";
     }
     html +=
-      '<div class="row"><span>معامل Dice</span><strong>' +
+      '<div class="row"><span>' + esc(t("dice_coefficient")) + '</span><strong>' +
       (typeof m.dice_score === "number" ? m.dice_score.toFixed(2) : esc(m.dice_score)) +
       "%</strong></div>";
     if (m.baseline_matched != null) {
@@ -175,7 +196,7 @@
     html +=
       '<div class="decision ' +
       decisionClass(st) +
-      '">التصنيف الفني: ' +
+      '">' + esc(t("technical_classification")) + ": " +
       esc(tier) +
       "</div>";
     if (note) {
@@ -203,11 +224,11 @@
       html +=
         '<a class="dl" style="flex:1" href="/download-report/' +
         encodeURIComponent(data.report_download) +
-        '" target="_blank" rel="noopener noreferrer">معاينة التقرير (تبويب جديد)</a>';
+        '" target="_blank" rel="noopener noreferrer">' + esc(t("download_report")) + '</a>';
       html +=
         '<a class="dl" style="flex:1;background:var(--accent);color:white;" href="/download-report/' +
         encodeURIComponent(data.report_download) +
-        '?format=pdf&download=1" target="_blank" rel="noopener noreferrer">تحميل التقرير PDF</a>';
+        '?format=pdf&download=1" target="_blank" rel="noopener noreferrer">' + esc(t("download_pdf")) + '</a>';
       html += "</div>";
     }
     html += "</div>";
@@ -216,9 +237,9 @@
 
   function resetLiveColumns() {
     var cols = [
-      { id: "live-col-ref", title: "مسار الأصلية (مباشر)" },
-      { id: "live-col-partial", title: "مسار الجزئية (مباشر)" },
-      { id: "live-match-col", title: "المطابقة (مباشر)" },
+      { id: "live-col-ref", title: t("original_fp") + " " + t("live_suffix") },
+      { id: "live-col-partial", title: t("partial_fp") + " " + t("live_suffix") },
+      { id: "live-match-col", title: t("live_match") },
     ];
     cols.forEach(function (c) {
       var el = $(c.id);
@@ -266,34 +287,35 @@
     if (btn) {
       btn.disabled = true;
       btn.dataset.label = btn.dataset.label || btn.textContent;
-      btn.textContent = "جاري المعالجة (مباشر)…";
+      btn.textContent = t("processing_live", "Processing…");
     }
     clearAlerts();
     resetLiveColumns();
 
     var fd = new FormData(form);
+    var uiLang = form.getAttribute("data-lang") || "ar";
     var res;
     try {
-      res = await fetch("/analyze-stream", {
+      res = await fetch("/analyze-stream?lang=" + encodeURIComponent(uiLang), {
         method: "POST",
         body: fd,
         headers: { Accept: "text/event-stream" },
       });
     } catch (e) {
-      alertBox("err", "تعذر الاتصال بالخادم: " + esc(e.message));
+      alertBox("err", t("server_error") + ": " + esc(e.message));
       if (btn) {
         btn.disabled = false;
-        btn.textContent = btn.dataset.label || "تحليل ومقارنة";
+        btn.textContent = btn.dataset.label || t("analyze_btn");
       }
       if (panel) panel.setAttribute("aria-busy", "false");
       return;
     }
 
     if (!res.ok || !res.body) {
-      alertBox("err", "رد غير متوقع من الخادم (" + res.status + ").");
+      alertBox("err", t("unexpected_response") + " (" + res.status + ").");
       if (btn) {
         btn.disabled = false;
-        btn.textContent = btn.dataset.label || "تحليل ومقارنة";
+        btn.textContent = btn.dataset.label || t("analyze_btn");
       }
       if (panel) panel.setAttribute("aria-busy", "false");
       return;
@@ -306,10 +328,7 @@
         return;
       }
       if (ev.type === "hashes" && ev.same_file_warning) {
-        alertBox(
-          "warn",
-          "تنبيه: الملفان متطابقان بايتًا — النتيجة ستكون تطابقًا شبه كامل ولا تصلح كاختبار حقيقي."
-        );
+        alertBox("warn", t("same_file_sse"));
         return;
       }
       if (ev.type === "image") {
@@ -322,22 +341,16 @@
       if (ev.type === "fatal") {
         alertBox("err", esc(ev.message || "خطأ"));
         if (ev.forensic_quality_warning) {
-          alertBox(
-            "warn",
-            "تنبيه جودة: راجع جودة التصوير — عدد النقاط الدقيقة قد يكون منخفضًا."
-          );
+          alertBox("warn", t("quality_sse"));
         }
         return;
       }
       if (ev.type === "done") {
         if (ev.forensic_quality_warning) {
-          alertBox(
-            "warn",
-            "تنبيه جودة: عدد النقاط الدقيقة في إحدى الصورتين أقل من الحد التنبيهي — راجع جودة التصوير والإضاءة."
-          );
+          alertBox("warn", t("quality_warning"));
         }
         renderDone(ev);
-        appendLog("اكتمل — يمكن معاينة التقرير من الرابط أعلاه.");
+        appendLog(t("done_log"));
         return;
       }
     }
@@ -360,12 +373,13 @@
 
     if (btn) {
       btn.disabled = false;
-      btn.textContent = btn.dataset.label || "تحليل ومقارنة";
+      btn.textContent = btn.dataset.label || t("analyze_btn");
     }
     if (panel) panel.setAttribute("aria-busy", "false");
   }
 
   function init() {
+    loadTrans();
     var form = $("fp-analyze-form");
     if (!form) return;
 
@@ -462,15 +476,15 @@
         var orig = $("original");
         var part = $("partial");
         if (!orig || !part || !orig.files || !part.files || !orig.files[0] || !part.files[0]) {
-          if (sweepStatus) sweepStatus.textContent = "يرجى رفع الصورتين أولاً.";
+          if (sweepStatus) sweepStatus.textContent = t("sweep_need_files");
           return;
         }
         if (autoSweepBtn) autoSweepBtn.disabled = true;
         if (autoSweepWideBtn) autoSweepWideBtn.disabled = true;
         if (sweepStatus) {
           sweepStatus.textContent = mode === "wide"
-            ? "جاري البحث الواسع (قد يستغرق وقتًا أطول)..."
-            : "جاري البحث عن أفضل Zoom/Shift...";
+            ? t("sweep_running_wide")
+            : t("sweep_running_quick");
         }
         try {
           var fd = new FormData(form);
@@ -478,7 +492,7 @@
           var res = await fetch("/analyze-sweep", { method: "POST", body: fd });
           var data = await res.json();
           if (!res.ok || !data.ok || !data.best) {
-            if (sweepStatus) sweepStatus.textContent = (data && data.message) ? data.message : "فشل Auto-sweep.";
+            if (sweepStatus) sweepStatus.textContent = (data && data.message) ? data.message : t("sweep_failed");
             return;
           }
 
@@ -500,7 +514,7 @@
 
           if (sweepStatus) {
             sweepStatus.textContent =
-              "تم اختيار أفضل إعداد: Zoom " +
+              t("sweep_done") + ": Zoom " +
               data.best.partial_zoom +
               "%, X " +
               data.best.partial_shift_x +
@@ -511,7 +525,7 @@
               ").";
           }
         } catch (err) {
-          if (sweepStatus) sweepStatus.textContent = "خطأ أثناء Auto-sweep: " + (err && err.message ? err.message : String(err));
+          if (sweepStatus) sweepStatus.textContent = t("sweep_error") + ": " + (err && err.message ? err.message : String(err));
         } finally {
           if (autoSweepBtn) autoSweepBtn.disabled = false;
           if (autoSweepWideBtn) autoSweepWideBtn.disabled = false;

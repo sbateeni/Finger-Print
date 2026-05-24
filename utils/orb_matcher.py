@@ -16,7 +16,14 @@ from config import (
     FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB,
     PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB,
     FUSED_THRESHOLD_HIGH, FUSED_THRESHOLD_MEDIUM, FUSED_THRESHOLD_LOW,
-    PARTIAL_FUSED_MEDIUM, PARTIAL_MCC_MEDIUM, PARTIAL_MATCHED_MEDIUM, PARTIAL_GAIN_MEDIUM,
+    PARTIAL_FUSED_MEDIUM,
+    PARTIAL_MCC_MEDIUM,
+    PARTIAL_MCC_STRONG,
+    PARTIAL_MCC_CONFIRM,
+    PARTIAL_MATCHED_MEDIUM,
+    PARTIAL_MATCHED_MIN,
+    PARTIAL_GAIN_MEDIUM,
+    MINUTIAE_MATCH_IGNORE_TYPES,
 )
 
 
@@ -272,19 +279,42 @@ def combined_verdict(
         color = "low"
         decision_status = "NO MATCH"
 
-    # Partial-first upgrade: MCC + alignment evidence when fused alone is borderline
-    partial_evidence = (
-        is_partial
-        and mcc_norm >= PARTIAL_MCC_MEDIUM
+    # تأكيد نفس الإصبع: MCC قوي + تطابقات كافية (صور حبر / جزئية / فرق موضع)
+    same_finger_strong = (
+        mcc_norm >= PARTIAL_MCC_STRONG
         and int(matched_points) >= PARTIAL_MATCHED_MEDIUM
-        and int(alignment_gain_matches) >= PARTIAL_GAIN_MEDIUM
+        and (
+            int(alignment_gain_matches) >= PARTIAL_GAIN_MEDIUM
+            or float(minutiae_score) >= 10.0
+        )
+    )
+    same_finger_confirm = (
+        mcc_norm >= PARTIAL_MCC_CONFIRM
+        and int(matched_points) >= PARTIAL_MATCHED_MIN
+        and int(alignment_gain_matches) >= 2
+    )
+
+    if same_finger_confirm and decision_status in ("NO MATCH", "LOW MATCH", "MEDIUM MATCH"):
+        verdict = "تطابق مؤكد مع البصمة المرجعية (MCC عالي جداً)"
+        color = "high"
+        decision_status = "HIGH MATCH"
+    elif same_finger_strong and decision_status in ("NO MATCH", "LOW MATCH"):
+        verdict = "تطابق مرجّح مع البصمة المرجعية (نفس الإصبع — مراجعة خبير موصى بها)"
+        color = "high" if mcc_norm >= PARTIAL_MCC_CONFIRM else "medium"
+        decision_status = "MEDIUM MATCH"
+
+    # Partial-first upgrade: MCC + alignment (عتبات أوسع)
+    partial_evidence = is_partial and mcc_norm >= PARTIAL_MCC_MEDIUM and (
+        (
+            int(matched_points) >= PARTIAL_MATCHED_MEDIUM
+            and int(alignment_gain_matches) >= PARTIAL_GAIN_MEDIUM
+        )
+        or same_finger_confirm
     )
     if partial_evidence and decision_status in ("NO MATCH", "LOW MATCH"):
-        if fused_score >= PARTIAL_FUSED_MEDIUM or (
-            mcc_norm >= 60.0 and int(matched_points) >= 22
-        ):
+        if fused_score >= PARTIAL_FUSED_MEDIUM or same_finger_strong:
             verdict = "تطابق جزئي مرجّح (يدعم مراجعة خبير)"
-            color = "high" if mcc_norm >= 65.0 else "medium"
+            color = "high" if mcc_norm >= PARTIAL_MCC_STRONG else "medium"
             decision_status = "MEDIUM MATCH"
         elif decision_status == "NO MATCH":
             verdict = "تطابق جزئي ضعيف (مراجعة خبير موصى بها)"

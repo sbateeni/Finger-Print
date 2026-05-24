@@ -78,8 +78,14 @@ FUSED_THRESHOLD_LOW = 20
 # عتبات القرار للبصمة الجزئية (أكثر تساهلاً — تعتمد MCC + المحاذاة)
 PARTIAL_FUSED_MEDIUM = 38.0
 PARTIAL_MCC_MEDIUM = 55.0
-PARTIAL_MATCHED_MEDIUM = 18
-PARTIAL_GAIN_MEDIUM = 4
+PARTIAL_MCC_STRONG = 60.0   # نفس الإصبع / حبر — تأكيد مرجّح
+PARTIAL_MCC_CONFIRM = 72.0  # تأكيد أقوى (مثل صور finger/)
+PARTIAL_MATCHED_MEDIUM = 10
+PARTIAL_MATCHED_MIN = 8
+PARTIAL_GAIN_MEDIUM = 3
+
+# أنواع تُستبعد من المطابقة (ضوضاء حبر) — endpoint,bifurcation,island,divergence,bridge,lake,dot
+MINUTIAE_MATCH_IGNORE_TYPES = "dot,lake"
 
 # إعدادات التقرير
 REPORT_TEMPLATE = os.path.join(ASSETS_DIR, 'report_template.html')

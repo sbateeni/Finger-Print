@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forensic Report — Fingerprint Comparison</title>
+  
+  <style>
+    @page { margin: 14mm; }
+    body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; margin: 0; background: #e8ecf2; color: #1a2332; line-height: 1.55; }
+    .container { max-width: 980px; margin: 24px auto; background: #fff; padding: 28px 32px; border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(15,23,42,0.08); border: 1px solid #d8e0ea; }
+    .hero { text-align: center; padding-bottom: 18px; border-bottom: 2px solid #0b5cab; margin-bottom: 22px; }
+    .hero h1 { margin: 0 0 8px; font-size: 1.65rem; color: #0b3d6e; }
+    .hero .sub { color: #5a6b7d; margin: 0; }
+    .disclaimer { background: linear-gradient(135deg,#fff9e6,#fff3cc); border: 1px solid #e6c200;
+      padding: 16px 18px; border-radius: 10px; margin-bottom: 20px; font-size: 0.95rem; }
+    .audit { background: #f4f8fc; border: 1px solid #c5d4e8; padding: 16px 18px; border-radius: 10px;
+      margin: 18px 0; font-size: 0.9rem; word-break: break-all; }
+    .result-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; margin: 14px 0; }
+    .section-h { margin-top: 1.6rem; border-bottom: 2px solid #0b5cab; padding-bottom: 8px; color: #0b3d6e; font-size: 1.1rem; }
+    .highlight { color: #0b5cab; font-weight: 700; }
+    .success { color: #0d7a3e; font-weight: 700; }
+    table.params { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.9rem; }
+    table.params td, table.params th { border: 1px solid #cbd5e1; padding: 9px 11px; }
+    table.params th { background: #e9eef5; font-weight: 600; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin: 12px 0; }
+    .gallery-item img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #cbd5e1; }
+    .gallery-item.full { grid-column: 1 / -1; }
+    .cap { font-size: 0.82rem; color: #475569; margin: 0 0 6px; font-weight: 600; }
+    .tier { font-size: 1.2rem; font-weight: 800; margin-top: 12px; color: #0b3d6e; padding: 10px 14px;
+      background: #eef6ff; border-radius: 8px; border-left: 4px solid #0b5cab; }
+    [dir="rtl"] .tier { border-left: none; border-right: 4px solid #0b5cab; }
+    .small { font-size: 0.85rem; color: #64748b; }
+    .verdict-box { font-size: 1.05rem; font-weight: 700; color: #0d7a3e; margin: 8px 0; }
+    .stats-line { font-size: 0.88rem; color: #475569; }
+    code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>Forensic Report — Fingerprint Comparison</h1>
+      <p class="sub">Statistical outputs for expert review</p>
+      <p class="small">Generated at: 2026-05-24 15:35:58</p>
+      <p class="small">Fingerprint Analysis Workstation · v2.3</p>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Laboratory disclaimer:</strong> This report provides statistical software outputs and must not be used as sole identity evidence. Qualified expert review and lab SOP are required.
+    </div>
+
+    <div class="audit">
+      <h3 style="margin-top:0;">Audit trail</h3>
+      <p><strong>Case reference:</strong> -</p>
+      <p><strong>Operator / reviewer:</strong> -</p>
+      <p><strong>Analysis mode:</strong> Deep (wide auto-alignment + full pipeline)</p>
+      <p><strong>SHA-256 (reference):</strong><br/>-</p>
+      <p><strong>SHA-256 (query):</strong><br/>-</p>
+    </div>
+
+    <div class="result-box">
+      <h3>Methodology summary</h3>
+      <p>Grayscale conversion, normalization, CLAHE, denoising, binarization, multi-orientation Gabor enhancement, thinning, extended minutiae extraction, partial alignment (translation, rotation, scale), MCC verification, and fused decision.</p>
+    </div>
+
+    <h3 class="section-h">Run parameters</h3>
+    <table class="params">
+      <tr><th>Parameter</th><th>Value</th></tr>
+      <tr><td colspan='2'>—</td></tr>
+    </table>
+
+    <h3 class="section-h">Processing pipeline</h3>
+    
+    
+
+    <h3 class="section-h">Final matching skeletons</h3>
+    <div class="gallery">
+      <div class="gallery-item">
+        <p class="cap">Reference skeleton</p>
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAAAAACreq1xAAAAgklEQVRYCa3BAQEAAABAIP6fdkLJTGYyk5nMZCYzmclMZjKTmcxkJjOZyUxmMpOZzGQmM5nJTGYyk5nMZCYzmclMZjKTmcxkJjOZyUxmMpOZzGQmM5nJTGYyk5nMZCYzmclMZjKTmcxkJjOZyUxmMpOZzGQmM5nJTGYyk5nMZCYzmQUatABRNQTOzQAAAABJRU5ErkJggg==" alt="" role="presentation" loading="lazy"/>
+      </div>
+      <div class="gallery-item">
+        <p class="cap">Query skeleton</p>
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAAAAACreq1xAAAAgklEQVRYCa3BAQEAAABAIP6fdkLJTGYyk5nMZCYzmclMZjKTmcxkJjOZyUxmMpOZzGQmM5nJTGYyk5nMZCYzmclMZjKTmcxkJjOZyUxmMpOZzGQmM5nJTGYyk5nMZCYzmclMZjKTmcxkJjOZyUxmMpOZzGQmM5nJTGYyk5nMZCYzmQUatABRNQTOzQAAAABJRU5ErkJggg==" alt="" role="presentation" loading="lazy"/>
+      </div>
+    </div>
+    <p class='small'>Archive files: <code>original_skeleton.png</code>, <code>partial_skeleton.png</code></p>
+    
+
+    <div class="result-box">
+      <h2>Statistical comparison results</h2>
+      <p>Reference minutiae count: <span class="highlight">10</span></p>
+      <p>Query minutiae count: <span class="highlight">8</span></p>
+      <p>One-to-one matched pairs: <span class="success">5</span></p>
+      <p>Match score (query-based): <span class="success">62.50%</span></p>
+      <p class="verdict-box">Combined verdict: Forensic match confirmed (very high confidence)</p>
+      
+      <p class="small">Score: 5 / 8 = matched pairs ÷ total query minutiae (not area coverage).</p>
+      <p>Dice coefficient: <span class="success">40.00%</span></p>
+      <p class="tier">Forensic tier: Tier A — High statistical similarity</p>
+      <p class="small">Internal status: HIGH MATCH</p>
+    </div>
+  </div>
+</body>
+</html>

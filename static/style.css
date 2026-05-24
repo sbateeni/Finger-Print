@@ -26,17 +26,73 @@ body {
   line-height: 1.6;
   direction: rtl;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* شعار الشرطة — علامة مائية خلف المحتوى */
+.police-watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--police-wm, url("/static/branding/palestinian-police-logo-wm.png"));
+  background-repeat: no-repeat;
+  background-position: center 42%;
+  background-size: min(560px, 78vw);
+  opacity: 0.11;
+  filter: blur(3px) saturate(0.85);
+  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 45%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 45%, #000 0%, transparent 72%);
+}
+
+.police-watermark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, transparent 0%, var(--bg) 88%);
+  opacity: 0.55;
 }
 
 .wrap {
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lang-switcher {
+  z-index: 100;
 }
 
 header.hero {
   margin-bottom: 2.5rem;
   text-align: center;
+  position: relative;
+}
+
+.hero-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.police-logo-header {
+  width: clamp(92px, 14vw, 132px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.55));
+  transition: transform 0.25s ease;
+}
+
+.police-logo-header:hover {
+  transform: scale(1.03);
+}
+
+/* إخفاء الخلفية البيضاء عند استخدام النسخة الأصلية قبل المعالجة */
+.police-logo-header.blend-screen {
+  mix-blend-mode: screen;
 }
 
 header.hero h1 {
@@ -117,6 +173,28 @@ aside.panel h2:not(:first-child) {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
+}
+
+.analysis-mode .mode-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.analysis-mode .mode-opt input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.preview-section-title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .field {

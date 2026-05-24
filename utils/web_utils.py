@@ -11,10 +11,13 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 BUILD_STAMP = time.time()
 LIVE_RELOAD_ENABLED = os.environ.get("LIVE_RELOAD", "").lower() in ("1", "true", "yes")
 
+def resolve_ui_lang(code: str | None) -> str:
+    c = (code or "ar").strip().lower()
+    return c if c in TRANSLATIONS else "ar"
+
+
 def _render(request: Request, context: dict):
-    lang = request.query_params.get("lang", "ar")
-    if lang not in TRANSLATIONS:
-        lang = "ar"
+    lang = resolve_ui_lang(request.query_params.get("lang"))
     
     context = {
         **context,

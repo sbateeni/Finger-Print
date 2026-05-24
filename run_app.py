@@ -28,7 +28,12 @@ sys.path.insert(0, str(ROOT))
 from dotenv import load_dotenv
 
 from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
-from utils.runtime_platform import default_bind_host, is_linux, telegram_stop_script_hint
+from utils.runtime_platform import (
+    default_bind_host,
+    is_linux,
+    live_reload_enabled,
+    telegram_stop_script_hint,
+)
 
 
 def _kill_process_tree(pid: int) -> None:
@@ -95,12 +100,7 @@ def main() -> None:
         print(f"Warning: could not clear stale workers: {e}")
 
     children: list[subprocess.Popen] = []
-    use_reload = not args.no_reload and os.getenv("LIVE_RELOAD", "1").strip().lower() not in (
-        "0",
-        "false",
-        "no",
-        "off",
-    )
+    use_reload = not args.no_reload and live_reload_enabled()
 
     want_embedded = (os.getenv("TELEGRAM_EMBEDDED") or "1").strip().lower() not in (
         "0",
@@ -120,8 +120,8 @@ def main() -> None:
             os.environ["TELEGRAM_EMBEDDED"] = "0"
             hint = telegram_stop_script_hint()
             print(
-                f"Telegram bot: Linux process منفصلة (LIVE_RELOAD=1). "
-                f"قبل إعادة التشغيل: {hint}"
+                f"Telegram bot: separate process (LIVE_RELOAD=1). "
+                f"Stop duplicates first: {hint}"
             )
             children.append(
                 _popen(

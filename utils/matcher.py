@@ -1,9 +1,44 @@
 from collections import defaultdict
+import os
+
 import cv2
 import numpy as np
 from config import *
 from utils.mcc import compute_mcc_descriptors, match_mcc
 from matching.alignment import apply_core_prealignment, refine_alignment_ransac
+from features.minutiae_taxonomy import normalize_minutiae_type
+
+# Compatible pairs for PDF / poster extended taxonomy
+_TYPE_COMPAT: set[tuple[str, str]] = {
+    ("endpoint", "endpoint"),
+    ("bifurcation", "bifurcation"),
+    ("island", "island"),
+    ("lake", "lake"),
+    ("dot", "dot"),
+    ("bridge", "bridge"),
+    ("divergence", "divergence"),
+    ("bifurcation", "divergence"),
+    ("divergence", "bifurcation"),
+    ("island", "lake"),
+    ("lake", "island"),
+    ("endpoint", "island"),
+    ("island", "endpoint"),
+}
+
+
+def _types_compatible(t1: str, t2: str) -> bool:
+    a = normalize_minutiae_type(t1)
+    b = normalize_minutiae_type(t2)
+    return (a, b) in _TYPE_COMPAT
+
+def _filter_minutiae_for_matching(minutiae: list) -> list:
+    """Drop noisy types (dot/lake) so endpoint/bifurcation matching dominates."""
+    raw = (os.getenv("MINUTIAE_MATCH_IGNORE_TYPES") or MINUTIAE_MATCH_IGNORE_TYPES or "").strip()
+    if not raw:
+        return minutiae
+    ignore = {t.strip().lower() for t in raw.split(",") if t.strip()}
+    return [m for m in minutiae if (m.get("type") or "").lower() not in ignore]
+
 
 def _angle_diff_deg(a, b):
     d = abs(float(a) - float(b)) % 360.0
@@ -34,7 +69,7 @@ def _match_minutiae_pair(original_minutiae, partial_minutiae, distance_threshold
             for dy in range(-neighbor, neighbor + 1):
                 for i, mo in grid.get((icx + dx, icy + dy), ()):
                     # التحقق من النوع (اختياري لكنه يزيد الدقة)
-                    if mo.get("type") != mp.get("type"):
+                    if not _types_compatible(mo.get("type", ""), mp.get("type", "")):
                         continue
                     
                     dist = np.hypot(mo["x"] - px, mo["y"] - py)
@@ -100,6 +135,9 @@ def match_fingerprints_with_partial_alignment(original_minutiae, partial_minutia
     """
     h, w = image_shape[:2]
     cx, cy = w / 2.0, h / 2.0
+
+    original_minutiae = _filter_minutiae_for_matching(original_minutiae)
+    partial_minutiae = _filter_minutiae_for_matching(partial_minutiae)
 
     cores_ref = kwargs.get("cores_ref")
     cores_qry = kwargs.get("cores_qry")

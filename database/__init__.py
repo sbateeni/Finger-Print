@@ -1,10 +1,14 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from config import BASE_DIR
-import os
 
-DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'fingerprint.db')}"
+from config import BASE_DIR
+
+_db_file = (Path(BASE_DIR) / "fingerprint.db").resolve()
+# Forward slashes — required for SQLAlchemy sqlite URLs on Windows
+DATABASE_URL = f"sqlite:///{_db_file.as_posix()}"
 
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}

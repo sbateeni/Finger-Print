@@ -60,9 +60,9 @@
   2. إضافة خيار تعيين الأوزان يدوياً في الإعدادات
 
 #### 3.2 Batch Matching
-- **الملفات المطلوبة**: `services/analysis_service.py`، `routers/analysis.py`
+- **الملفات المطلوبة**: `services/analysis_service/` (مثلاً `pipeline.py`)، `routers/analysis.py`
 - **الخطوات**:
-  1. إنشاء دالة `batch_match_fingerprints()` في `analysis_service.py`
+  1. إنشاء دالة `batch_match_fingerprints()` في `services/analysis_service/pipeline.py`
   2. إضافة مسار `/batch-analyze` في `routers/analysis.py`
   3. دعم رفع ملف ZIP يحتوي على بصمات متعددة
 

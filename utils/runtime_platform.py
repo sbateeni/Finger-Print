@@ -31,3 +31,17 @@ def telegram_stop_script_hint() -> str:
     if is_windows():
         return ".\\scripts\\stop_telegram_bot.ps1"
     return "bash scripts/stop_telegram_bot.sh"
+
+
+def live_reload_enabled() -> bool:
+    """Stable default off (Kali + Windows). Set LIVE_RELOAD=1 for dev auto-reload."""
+    raw = (os.getenv("LIVE_RELOAD") or "").strip().lower()
+    if not raw:
+        return False
+    return raw not in ("0", "false", "no", "off")
+
+
+def dev_run_hint() -> str:
+    if is_windows():
+        return ".\\run_dev.ps1"
+    return "./run_dev.sh"

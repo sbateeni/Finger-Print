@@ -25,7 +25,10 @@ from services.analysis_service import (
     run_auto_sweep,
     _build_visual_ctx,
     _sanitize_match_for_json,
+    _apply_deep_sweep_to_transforms,
+    resolve_analysis_mode,
 )
+from utils.web_utils import resolve_ui_lang
 from utils.sse_utils import _sse_line
 from services.analysis_queue import get_analysis_queue, schedule_web_telegram_notify
 
@@ -78,6 +81,10 @@ async def analyze_stream(request: Request):
     auto_scale_normalization = _form_bool(form, "auto_scale_normalization", True)
     operator_name = str(form.get("operator_name") or "")
     case_reference = str(form.get("case_reference") or "")
+    analysis_mode = resolve_analysis_mode(str(form.get("analysis_mode") or ""))
+    report_lang = resolve_ui_lang(
+        str(form.get("report_lang") or request.query_params.get("lang") or "ar")
+    )
 
     async def queued_stream() -> AsyncIterator[bytes]:
         q = get_analysis_queue()
@@ -108,6 +115,8 @@ async def analyze_stream(request: Request):
                 auto_scale_normalization,
                 operator_name,
                 case_reference,
+                analysis_mode,
+                report_lang,
             )
             same_file_warning = False
             for chunk in gen:
@@ -220,7 +229,12 @@ async def analyze(
     auto_scale_normalization: bool = Form(True),
     operator_name: str = Form(""),
     case_reference: str = Form(""),
+    analysis_mode: str = Form("deep"),
+    report_lang: str = Form(""),
 ):
+    ui_lang = resolve_ui_lang(report_lang or request.query_params.get("lang"))
+    analysis_mode = resolve_analysis_mode(analysis_mode)
+
     try:
         o_raw = await original.read()
         p_raw = await partial.read()
@@ -244,6 +258,28 @@ async def analyze(
                 "case_reference": "",
             },
         )
+
+    eff_zoom, eff_shift_x, eff_shift_y = partial_zoom, partial_shift_x, partial_shift_y
+    if analysis_mode == "deep":
+        eff_zoom, eff_shift_x, eff_shift_y, _sweep = _apply_deep_sweep_to_transforms(
+            o_raw,
+            p_raw,
+            border_margin,
+            min_distance,
+            min_contrast,
+            min_angle_diff,
+            denoise_method,
+            fast_denoise_h,
+            gauss_ksize,
+            original_zoom,
+            partial_zoom,
+            partial_shift_x,
+            partial_shift_y,
+            apply_preview_scale,
+            auto_scale_normalization,
+            analysis_mode,
+        )
+        partial_zoom, partial_shift_x, partial_shift_y = eff_zoom, eff_shift_x, eff_shift_y
 
     try:
         same_file, sha_o, sha_p, ro, rp, dm = process_form_analysis(
@@ -306,6 +342,8 @@ async def analyze(
             "apply_preview_scale": apply_preview_scale,
             "auto_scale_normalization": auto_scale_normalization,
             "auto_scale_factor_applied": round(float(ro.get("auto_scale_factor_applied", 1.0)), 4),
+            "analysis_mode": analysis_mode,
+            "report_lang": ui_lang,
         },
         "software_name": SOFTWARE_NAME,
         "app_version": APP_VERSION,

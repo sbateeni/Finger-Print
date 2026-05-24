@@ -31,12 +31,24 @@
   </style>
 </head>
 <body>
+  <div class="police-watermark" aria-hidden="true"></div>
   <div class="lang-switcher">
     <a href="?lang={{ trans.lang_code }}" class="lang-btn">{{ trans.lang_name }}</a>
   </div>
   <div class="wrap">
     <span class="badge">🔬 {{ trans.software_name }} · v{{ app_version }}</span>
     <header class="hero">
+      <div class="hero-brand">
+        <img
+          class="police-logo-header"
+          src="/static/branding/palestinian-police-logo.png"
+          data-fallback="/static/branding/palestinian-police-logo-source.png"
+          alt=""
+          width="120"
+          height="150"
+          decoding="async"
+        />
+      </div>
       <h1>{{ trans.title }}</h1>
       <p>{{ trans.forensic_note }}</p>
       <p class="small" style="margin-top:0.5rem;color:var(--muted);font-size:0.88rem;">{{ trans.search_hint }}</p>
@@ -56,10 +68,24 @@
     <div class="alert warn">{{ trans.quality_warning }}</div>
     {% endif %}
 
-    <form id="fp-analyze-form" class="layout" method="post" action="/analyze?lang={{ lang }}" enctype="multipart/form-data">
+    <form id="fp-analyze-form" class="layout" method="post" action="/analyze?lang={{ lang }}" enctype="multipart/form-data" data-lang="{{ lang }}">
+      <input type="hidden" name="report_lang" value="{{ lang }}" />
+      {% set f = form if form is defined else {} %}
       <aside class="panel">
+        <h2>{{ trans.analysis_mode_section }}</h2>
+        <div class="field analysis-mode">
+          <label class="mode-opt">
+            <input type="radio" name="analysis_mode" value="deep" {% if not f.get('analysis_mode') or f.get('analysis_mode') == 'deep' %}checked{% endif %} />
+            {{ trans.analysis_deep }}
+          </label>
+          <label class="mode-opt" style="margin-top:0.5rem;">
+            <input type="radio" name="analysis_mode" value="fast" {% if f.get('analysis_mode') == 'fast' %}checked{% endif %} />
+            {{ trans.analysis_fast }}
+          </label>
+          <p class="small" style="margin:0.5rem 0 0;color:var(--muted);">{{ trans.analysis_mode_hint }}</p>
+        </div>
+
         <h2>{{ trans.minutiae_filtering }}</h2>
-        {% set f = form if form is defined else {} %}
         <div class="field">
           <label for="border_margin">{{ trans.border_margin }}</label>
           <input type="range" id="border_margin" name="border_margin" min="0" max="50" value="{{ f.get('border_margin', DEFAULT_BORDER_MARGIN) }}"
@@ -130,15 +156,15 @@
             </div>
             <div class="preview-panel">
               <div class="preview-head">
-                <span>معاينة مباشرة</span>
+                <span>{{ trans.live_preview }}</span>
                 <span class="preview-zoom-val" id="original-zoom-val">100%</span>
               </div>
               <div class="preview-viewport">
                 <img id="original-preview-img" alt="Original preview" hidden />
-                <div class="preview-empty" id="original-preview-empty">لم يتم اختيار صورة بعد</div>
+                <div class="preview-empty" id="original-preview-empty">{{ trans.preview_empty }}</div>
               </div>
               <div class="field preview-control">
-                <label for="original-zoom">تكبير/تصغير</label>
+                <label for="original-zoom">{{ trans.zoom_label }}</label>
                 <input type="range" id="original-zoom" name="original_zoom" min="50" max="250" value="100" />
               </div>
             </div>
@@ -149,32 +175,33 @@
               <label for="partial">{{ trans.choose_file }}</label>
               <input type="file" id="partial" name="partial" accept=".png,.jpg,.jpeg,.bmp,.tiff,.tif" required />
             </div>
+            <h4 class="preview-section-title">{{ trans.alignment_section }}</h4>
             <div class="preview-panel">
               <div class="preview-head">
-                <span>معاينة مباشرة</span>
+                <span>{{ trans.live_preview }}</span>
                 <span class="preview-zoom-val" id="partial-zoom-val">100%</span>
               </div>
               <div class="preview-viewport">
                 <img id="partial-preview-img" alt="Partial preview" hidden />
-                <div class="preview-empty" id="partial-preview-empty">لم يتم اختيار صورة بعد</div>
+                <div class="preview-empty" id="partial-preview-empty">{{ trans.preview_empty }}</div>
               </div>
               <div class="field preview-control">
-                <label for="partial-zoom">تكبير/تصغير</label>
+                <label for="partial-zoom">{{ trans.zoom_label }}</label>
                 <input type="range" id="partial-zoom" name="partial_zoom" min="50" max="250" value="100" />
               </div>
               <div class="field preview-control">
-                <label for="partial-shift-x">إزاحة أفقية (X)</label>
+                <label for="partial-shift-x">{{ trans.shift_x }}</label>
                 <input type="range" id="partial-shift-x" name="partial_shift_x" min="-300" max="300" value="0" />
                 <span class="range-val" id="partial-shift-x-val">0 px</span>
               </div>
               <div class="field preview-control">
-                <label for="partial-shift-y">إزاحة رأسية (Y)</label>
+                <label for="partial-shift-y">{{ trans.shift_y }}</label>
                 <input type="range" id="partial-shift-y" name="partial_shift_y" min="-300" max="300" value="0" />
                 <span class="range-val" id="partial-shift-y-val">0 px</span>
               </div>
-              <button type="button" id="partial-reset-transform" class="preview-reset-btn">Reset transform</button>
-              <button type="button" id="partial-auto-sweep" class="preview-reset-btn">Auto-sweep best transform</button>
-              <button type="button" id="partial-auto-sweep-wide" class="preview-reset-btn">Auto-sweep wide (slower)</button>
+              <button type="button" id="partial-reset-transform" class="preview-reset-btn">{{ trans.reset_transform }}</button>
+              <button type="button" id="partial-auto-sweep" class="preview-reset-btn">{{ trans.sweep_quick }}</button>
+              <button type="button" id="partial-auto-sweep-wide" class="preview-reset-btn">{{ trans.sweep_wide }}</button>
               <p id="partial-sweep-status" class="preview-sweep-status"></p>
             </div>
           </div>
@@ -182,14 +209,14 @@
         <div class="card" style="margin-top:-0.5rem;">
           <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
             <input type="checkbox" id="apply-preview-scale" name="apply_preview_scale" value="1" checked />
-            <span>تطبيق التعديلات اليدوية (Zoom + Shift) في المعالجة الفعلية</span>
+            <span>{{ trans.apply_manual_transform }}</span>
           </label>
           <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;margin-top:0.65rem;">
             <input type="checkbox" id="auto-scale-normalization" name="auto_scale_normalization" value="1" checked />
-            <span>تطبيع تلقائي لمقياس البصمة المقارنة مقابل المرجعية</span>
+            <span>{{ trans.auto_scale_hint }}</span>
           </label>
           <p class="small" style="margin:0.5rem 0 0;color:var(--muted);font-size:0.82rem;">
-            عند إلغاء الخيار الأول: المعالجة تتجاهل Zoom اليدوي. عند إلغاء الثاني: لا يُطبق ضبط مقياس تلقائي.
+            {{ trans.transform_hint }}
           </p>
         </div>
 
@@ -198,10 +225,10 @@
           <div id="live-alerts"></div>
           <pre id="live-log" class="live-log" aria-label="Log"></pre>
           <div class="grid-2">
-            <div class="card pip" id="live-col-ref"><h3>{{ trans.original_fp }} (Live)</h3></div>
-            <div class="card pip" id="live-col-partial"><h3>{{ trans.partial_fp }} (Live)</h3></div>
+            <div class="card pip" id="live-col-ref"><h3>{{ trans.original_fp }} {{ trans.live_suffix }}</h3></div>
+            <div class="card pip" id="live-col-partial"><h3>{{ trans.partial_fp }} {{ trans.live_suffix }}</h3></div>
           </div>
-          <div class="card pip live-match-card"><div id="live-match-col"><h3>Match (Live)</h3></div></div>
+          <div class="card pip live-match-card"><div id="live-match-col"><h3>{{ trans.live_match }}</h3></div></div>
           <div id="live-match-wrap"></div>
         </section>
 
@@ -253,7 +280,7 @@
           <div class="results-summary">
             {% if match.combined_verdict %}
             <div class="decision {{ match.combined_color }}">
-                الحكم النهائي: {{ match.combined_verdict }}
+                {{ trans.combined_verdict }}: {{ match.combined_verdict }}
             </div>
             {% if match.fused_score is defined %}
             <div class="row"><span>Fused Score</span><strong>{{ "%.2f"|format(match.fused_score) }}%</strong></div>
@@ -321,6 +348,42 @@
       {% endif %}
     </footer>
   </div>
+  <script type="application/json" id="fp-trans-json">{{ trans | tojson }}</script>
+  <script>
+  (function () {
+    var img = document.querySelector(".police-logo-header");
+    if (img) {
+      img.addEventListener("error", function onErr() {
+        var fb = img.getAttribute("data-fallback");
+        if (!fb || img.dataset.triedFallback === "1") return;
+        img.dataset.triedFallback = "1";
+        img.src = fb;
+        img.classList.add("blend-screen");
+      }, { once: true });
+    }
+    function probe(url, ok) {
+      var t = new Image();
+      t.onload = function () { ok(url); };
+      t.onerror = function () { ok(null); };
+      t.src = url;
+    }
+    probe("/static/branding/palestinian-police-logo-wm.png", function (wm) {
+      if (wm) {
+        document.documentElement.style.setProperty("--police-wm", "url(" + wm + ")");
+        return;
+      }
+      probe("/static/branding/palestinian-police-logo.png", function (logo) {
+        if (logo) {
+          document.documentElement.style.setProperty("--police-wm", "url(" + logo + ")");
+          return;
+        }
+        probe("/static/branding/palestinian-police-logo-source.png", function (src) {
+          if (src) document.documentElement.style.setProperty("--police-wm", "url(" + src + ")");
+        });
+      });
+    });
+  })();
+  </script>
   <script src="/static/live_analyze.js?v={{ build_stamp }}" defer></script>
   {% if live_reload %}
   <script>
