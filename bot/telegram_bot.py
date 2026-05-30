@@ -1,9 +1,10 @@
 """
-Telegram bot: receive two fingerprint photos, run analysis, send PDF + summary.
+Telegram bot: upload fingerprint photos to disk + optional deep analysis.
 
 Env:
   TELEGRAM_BOT_TOKEN          — required
   TELEGRAM_ALLOWED_CHAT_IDS   — optional comma-separated user/chat IDs (recommended)
+  TELEGRAM_AUTO_ANALYZE       — 1 = run analysis after 2nd photo (default 0 = upload only)
 """
 
 from __future__ import annotations
@@ -29,26 +30,46 @@ from telegram.ext import (
 from telegram.request import HTTPXRequest
 
 from services.analysis_queue import get_analysis_queue
-from services.pair_analysis import format_match_summary_ar
+from services.telegram_inbox import (
+    format_paths_message,
+    get_inbox_status,
+    infer_next_role,
+    load_pair_bytes,
+    role_from_caption,
+    save_inbox_image,
+)
 from utils.runtime_platform import is_linux, telegram_stop_script_hint
 
 logger = logging.getLogger(__name__)
 
 SESSION_KEY = "fp_session"
+NEXT_ROLE_KEY = "fp_next_role"
 _embedded_app: Optional[Application] = None
 
 WELCOME_TEXT = (
-    "مرحبًا — بوت مطابقة البصمات\n\n"
-    "1) أرسل صورة البصمة الأصلية (مرجعية)\n"
-    "2) ثم أرسل صورة البصمة المقارنة (جزئية)\n\n"
-    "أو أرسل صورتين متتاليتين.\n"
-    "الأوامر: /start  /reset  /status\n"
-    "تسجيل قالب واحد: /register ثم صورة\n"
-    "مطابقة 1:1 مع قوالب مسجلة: /match ثم صورة\n\n"
-    "الواجهة: http://127.0.0.1:8000\n\n"
-    "التحليل عميق على الكمبيوتر (محاذاة تلقائية + تقرير PDF).\n"
-    "عند ازدحام الطلبات يُخبرك برقم دورك في الانتظار."
+    "مرحبًا — بوت رفع ومطابقة البصمات\n\n"
+    "📤 *رفع للكود (افتراضي):*\n"
+    "1) أرسل البصمة *المرجعية* (أو /ref ثم صورة)\n"
+    "2) ثم البصمة *المقارنة* (أو /qry ثم صورة)\n"
+    "تُحفظ الصور على القرص — تابع من الواجهة أو السكربتات.\n\n"
+    "أو أضف تعليقًا: `ref` / `qry` / `مرجع` / `مقارنة`\n\n"
+    "أوامر:\n"
+    "/paths — مسارات الملفات المحفوظة\n"
+    "/analyze — تشغيل التحليل العميق من البوت\n"
+    "/reset  /status  /ref  /qry\n"
+    "/register  /match — قوالب سريعة\n\n"
+    "الواجهة: http://127.0.0.1:8000\n"
+    "مثال: `python scripts/telegram_inbox_latest.py`"
 )
+
+
+def _telegram_auto_analyze() -> bool:
+    return (os.getenv("TELEGRAM_AUTO_ANALYZE") or "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
 
 
 def _allowed_chat_ids() -> Optional[Set[int]]:
@@ -143,10 +164,56 @@ async def cmd_reset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not _is_allowed(update):
         return
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    st = get_inbox_status(chat_id)
+    ref = "✅" if st["has_reference"] else "❌"
+    qry = "✅" if st["has_query"] else "❌"
+    lines = [f"المرجعية: {ref}", f"المقارنة: {qry}"]
+    if st["reference_path"]:
+        lines.append(f"ref: {st['reference_path']}")
+    if st["query_path"]:
+        lines.append(f"qry: {st['query_path']}")
+    await update.message.reply_text("\n".join(lines))
+
+
+async def cmd_paths(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    await update.message.reply_text(
+        format_paths_message(chat_id),
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+async def cmd_ref(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[NEXT_ROLE_KEY] = "reference"
+    await update.message.reply_text("📌 الصورة التالية = *المرجعية*.", parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_qry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    context.user_data[NEXT_ROLE_KEY] = "query"
+    await update.message.reply_text("📌 الصورة التالية = *المقارنة*.", parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_analyze(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_allowed(update):
+        return
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    ref_b, qry_b = load_pair_bytes(chat_id)
+    if not ref_b or not qry_b:
+        await update.message.reply_text(
+            "❌ الصورتان غير مكتملتين على القرص.\nأرسل المرجعية ثم المقارنة، أو /paths للتحقق."
+        )
+        return
     s = _get_session(context)
-    ref = "✅" if s.get("reference") else "❌"
-    qry = "✅" if s.get("query") else "❌"
-    await update.message.reply_text(f"المرجعية: {ref}\nالمقارنة: {qry}")
+    s["reference"] = ref_b
+    s["query"] = qry_b
+    await _run_analysis(update, context)
 
 
 TEMPLATE_MODE_KEY = "fp_template_mode"
@@ -206,14 +273,17 @@ async def _handle_template_mode(
 
 
 async def _run_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.effective_chat.id if update.effective_chat else 0
     s = _get_session(context)
     ref_b: bytes = s.get("reference")
     qry_b: bytes = s.get("query")
     if not ref_b or not qry_b:
+        ref_b, qry_b = load_pair_bytes(chat_id)
+    if not ref_b or not qry_b:
         await update.message.reply_text("لم تكتمل الصورتان بعد.")
         return
-
-    chat_id = update.effective_chat.id
+    s["reference"] = ref_b
+    s["query"] = qry_b
     user = update.effective_user
     operator = user.username or str(user.id) if user else "telegram"
 
@@ -256,8 +326,11 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     template_mode = context.user_data.get(TEMPLATE_MODE_KEY)
     raw = await _download_photo_bytes(update, context)
+    original_name = None
     if raw is None:
         raw = await _download_document_bytes(update, context)
+        if update.message and update.message.document:
+            original_name = update.message.document.file_name
     if raw is None:
         await update.message.reply_text("أرسل صورة (photo) أو ملف png/jpg.")
         return
@@ -266,16 +339,51 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await _handle_template_mode(update, context, raw, template_mode)
         return
 
-    s = _get_session(context)
-    if s.get("reference") is None:
-        s["reference"] = raw
-        await update.message.reply_text("✅ تم استلام البصمة *الأصلية*.\nأرسل الآن البصمة *المقارنة*.", parse_mode=ParseMode.MARKDOWN)
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    user_id = update.effective_user.id if update.effective_user else None
+    caption = update.message.caption if update.message else None
+
+    forced = context.user_data.pop(NEXT_ROLE_KEY, None)
+    role = role_from_caption(caption) or infer_next_role(chat_id, forced=forced)
+
+    try:
+        entry = save_inbox_image(
+            chat_id,
+            user_id,
+            role,
+            raw,
+            original_name=original_name,
+        )
+    except Exception as e:
+        logger.exception("telegram inbox save failed")
+        await update.message.reply_text(f"❌ فشل حفظ الصورة: {e}")
         return
 
-    if s.get("query") is None:
+    s = _get_session(context)
+    if role == "reference":
+        s["reference"] = raw
+    else:
         s["query"] = raw
-        await _run_analysis(update, context)
-        return
+
+    label = "المرجعية" if role == "reference" else "المقارنة"
+    st = get_inbox_status(chat_id)
+    lines = [
+        f"✅ تم حفظ *{label}* على القرص.",
+        f"`{entry['path']}`",
+    ]
+    if st["has_reference"] and st["has_query"]:
+        lines.append("")
+        lines.append("✅ الصورتان جاهزتان — تابع من الكود أو الواجهة.")
+        lines.append("/paths — المسارات  |  /analyze — تحليل من البوت")
+        if _telegram_auto_analyze():
+            await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+            await _run_analysis(update, context)
+            return
+    else:
+        other = "المقارنة" if role == "reference" else "المرجعية"
+        lines.append(f"أرسل الآن صورة *{other}* (أو /qry / /ref).")
+
+    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
 
 
 def _telegram_timeouts() -> tuple[float, float, float, float]:
@@ -444,6 +552,10 @@ def build_application(
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("paths", cmd_paths))
+    app.add_handler(CommandHandler("ref", cmd_ref))
+    app.add_handler(CommandHandler("qry", cmd_qry))
+    app.add_handler(CommandHandler("analyze", cmd_analyze))
     app.add_handler(CommandHandler("register", cmd_register))
     app.add_handler(CommandHandler("match", cmd_match))
     app.add_handler(
