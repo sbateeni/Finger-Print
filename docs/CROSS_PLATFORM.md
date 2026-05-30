@@ -61,5 +61,6 @@ sudo apt install -y python3-dev build-essential libjpeg-dev zlib1g-dev \
 ## اختبار بدون Telegram
 
 ```bash
-python run_app.py --no-telegram
+python run.py --no-telegram
+# أو: python scripts/run/run_app.py --no-telegram
 ```

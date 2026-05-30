@@ -1,5 +1,5 @@
 """
-Merge missing keys from .env.example into .env (never overwrite existing values).
+Merge missing keys from config/environment.example into .env (never overwrite existing values).
 Run automatically from run_dev.ps1 / run_dev.sh when AUTO_SYNC_ENV=1 (default).
 """
 
@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EXAMPLE = ROOT / ".env.example"
+EXAMPLE = ROOT / "config" / "environment.example"
 TARGET = ROOT / ".env"
 
 KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$")
@@ -43,7 +43,7 @@ def sync_env(*, dry_run: bool = False) -> list[str]:
     if TARGET.is_file():
         lines = TARGET.read_text(encoding="utf-8").splitlines()
     else:
-        lines = ["# Auto-created from .env.example — add your secrets below", ""]
+        lines = ["# Auto-created from config/environment.example — add your secrets below", ""]
 
     block = ["", "# --- added by scripts/sync_env_from_example.py ---"]
     for key in missing:
@@ -66,7 +66,7 @@ def main() -> None:
         msg = "Added keys: " + ", ".join(added)
         print(msg if not dry else f"[dry-run] {msg}")
     else:
-        print(".env is up to date with .env.example")
+        print(".env is up to date with config/environment.example")
 
 
 if __name__ == "__main__":

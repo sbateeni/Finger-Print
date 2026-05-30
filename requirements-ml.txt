@@ -1,5 +1,1 @@
-# Optional ML stack (pyfing LEADER minutiae). Not required for default pipeline.
--r requirements.txt
-pyfing>=0.6
-keras>=3.0
-tensorflow>=2.16
+-r requirements/ml.txt

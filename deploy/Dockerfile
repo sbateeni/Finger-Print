@@ -1,4 +1,5 @@
-# نسخة الجذر للمنصات (Render/Heroku). النسخة المرجعية: deploy/Dockerfile
+# استخدام صورة Python رسمية كقاعدة
+# البناء من جذر المستودع: docker build -f deploy/Dockerfile .
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1

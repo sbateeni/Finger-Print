@@ -25,7 +25,7 @@ pip install fingerprint-matcher # ❌ غير موجود على PyPI
 .\run_dev.ps1
 
 # أو بدون إعادة تحميل تلقائي (أقل مشاكل)
-$env:LIVE_RELOAD="0"; python run_app.py
+$env:LIVE_RELOAD="0"; python run.py
 ```
 
 ```bash

@@ -5,7 +5,7 @@
   python run.py --host 0.0.0.0 --port 8000
 
 Windows (PowerShell):
-  .\\run_dev.ps1
+  .\\run_dev.ps1  (→ scripts/run/)
 
 Kali / Linux:
   ./run_dev.sh
@@ -22,7 +22,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 from dotenv import load_dotenv

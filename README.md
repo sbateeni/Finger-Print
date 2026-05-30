@@ -43,28 +43,36 @@ pip install -r requirements.txt
 
 4. إعداد ملف البيئة:
 ```bash
-cp .env.example .env
+cp config/environment.example .env
+# أو: cp .env.example .env
 # تعديل المتغيرات في ملف .env
 ```
 
-5. تهيئة قاعدة البيانات:
+5. تهيئة قاعدة البيانات (اختياري):
 ```bash
-flask db init
-flask db migrate
-flask db upgrade
+python scripts/init_db.py
 ```
 
 ## التشغيل
 
-1. تشغيل الخادم المحلي:
-```bash
-python app.py
+Windows:
+```powershell
+.\run_dev.ps1
 ```
 
-2. فتح المتصفح على العنوان:
+Linux / Kali:
+```bash
+./run_dev.sh
 ```
-http://localhost:5000
+
+أو:
+```bash
+python run.py
 ```
+
+الواجهة: `http://127.0.0.1:8000` (Windows) أو `http://0.0.0.0:8000` (Linux)
+
+انظر [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) و [docs/CROSS_PLATFORM.md](docs/CROSS_PLATFORM.md).
 
 ## النشر على Render.com
 
@@ -77,20 +85,22 @@ http://localhost:5000
 ## هيكل المشروع
 
 ```
-fingerprint-matching/
-├── app.py                 # التطبيق الرئيسي
-├── requirements.txt       # متطلبات المشروع
-├── Procfile              # ملف تكوين Render
-├── .env                  # متغيرات البيئة
-├── .gitignore           # ملفات Git المستثناة
-├── database/            # نماذج قاعدة البيانات
-├── features/            # استخراج الميزات
-├── matching/            # خوارزميات المطابقة
-├── preprocessing/       # معالجة الصور
-├── static/             # الملفات الثابتة
-├── templates/          # قوالب HTML
-└── uploads/            # مجلد التحميلات
+Finger-Print/
+├── run.py, run_dev.*       # واجهات تشغيل → scripts/run/
+├── requirements*.txt       # → requirements/
+├── config/environment.example
+├── deploy/                 # Dockerfile, Procfile
+├── docs/plans/             # خطط التطوير
+├── scripts/run/            # run_app.py, run_telegram.py
+├── server/                 # FastAPI
+├── bot/                    # Telegram
+├── services/               # التحليل والتقارير
+├── matching/               # المطابقة
+├── templates/              # HTML
+└── static/                 # CSS/JS
 ```
+
+التفاصيل: [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)
 
 ## المساهمة
 
