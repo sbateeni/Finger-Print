@@ -115,7 +115,7 @@ def main() -> None:
     if _telegram_enabled(args.no_telegram):
         if embed_in_web:
             os.environ["TELEGRAM_EMBEDDED"] = "1"
-            print("Telegram bot: embedded in web server (طابور موحّد — بدون reload).")
+            print("Telegram bot: embedded in web server (unified queue - no reload).")
         elif spawn_bot_process:
             os.environ["TELEGRAM_EMBEDDED"] = "0"
             hint = telegram_stop_script_hint()
