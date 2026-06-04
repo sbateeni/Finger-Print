@@ -17,7 +17,7 @@ import ssl
 from typing import Optional, Set
 
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.constants import ParseMode
 from telegram.error import Conflict
 from telegram.ext import (
@@ -25,6 +25,7 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
 )
 from telegram.request import HTTPXRequest
@@ -151,7 +152,43 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await _reply_safe(update, "غير مصرح لك باستخدام هذا البوت.")
         return
     context.user_data.pop(SESSION_KEY, None)
-    await _reply_safe(update, WELCOME_TEXT)
+    
+    keyboard = [
+        [
+            InlineKeyboardButton("ضابط ميداني 👮‍♂️", callback_data='role_field'),
+            InlineKeyboardButton("ضابط مختبر 🔬", callback_data='role_lab')
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await _reply_safe(
+        update, 
+        "مرحباً بك في نظام مطابقة البصمات الجنائي.\n\nيرجى تحديد صفتك الوظيفية للبدء:",
+        markdown=False
+    )
+    if update.message:
+        await update.message.reply_text("اختر من القائمة أدناه:", reply_markup=reply_markup)
+
+async def handle_role_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    role = query.data
+    context.user_data['user_role'] = role
+    
+    if role == 'role_field':
+        msg = (
+            "✅ *تم تحديد الصلاحية: ضابط ميداني*\n\n"
+            "صلاحياتك تتيح لك رفع **البصمة المجهولة (بصمة مسرح الجريمة)** فقط لمطابقتها مع قاعدة بيانات المختبر.\n\n"
+            "الرجاء إرسال صورة البصمة المرفوعة من مسرح الجريمة الآن."
+        )
+    else:
+        msg = (
+            "✅ *تم تحديد الصلاحية: ضابط مختبر*\n\n"
+            "صلاحياتك كاملة. يمكنك رفع البصمة المرجعية، وبصمة مسرح الجريمة، وإجراء عمليات التحليل.\n\n"
+            "الرجاء إرسال البصمة المرجعية أولاً (أو استخدم /ref)، ثم بصمة المقارنة (أو استخدم /qry)."
+        )
+        
+    await query.edit_message_text(text=msg, parse_mode=ParseMode.MARKDOWN)
 
 
 async def cmd_reset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -188,6 +225,9 @@ async def cmd_paths(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_ref(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not _is_allowed(update):
+        return
+    if context.user_data.get('user_role') == 'role_field':
+        await update.message.reply_text("عذراً، رفع البصمة المرجعية مخصص لضباط المختبر فقط.")
         return
     context.user_data[NEXT_ROLE_KEY] = "reference"
     await update.message.reply_text("📌 الصورة التالية = *المرجعية*.", parse_mode=ParseMode.MARKDOWN)
@@ -324,6 +364,11 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text("غير مصرح.")
         return
 
+    user_role = context.user_data.get('user_role')
+    if not user_role:
+        await update.message.reply_text("الرجاء اختيار صفتك الوظيفية أولاً عبر الأمر /start")
+        return
+
     template_mode = context.user_data.get(TEMPLATE_MODE_KEY)
     raw = await _download_photo_bytes(update, context)
     original_name = None
@@ -345,6 +390,9 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     forced = context.user_data.pop(NEXT_ROLE_KEY, None)
     role = role_from_caption(caption) or infer_next_role(chat_id, forced=forced)
+    
+    if user_role == 'role_field':
+        role = "query"  # Field officer always uploads the crime scene query
 
     try:
         entry = save_inbox_image(
@@ -558,6 +606,7 @@ def build_application(
     app.add_handler(CommandHandler("analyze", cmd_analyze))
     app.add_handler(CommandHandler("register", cmd_register))
     app.add_handler(CommandHandler("match", cmd_match))
+    app.add_handler(CallbackQueryHandler(handle_role_selection, pattern='^role_'))
     app.add_handler(
         MessageHandler(filters.Regex(r"(?i)^(?:/start|start|بداية|البدء|ستارت)$"), cmd_start)
     )
