@@ -67,6 +67,29 @@ def grid_layout(divisions: int) -> tuple[int, int]:
     return 1, 1
 
 
+def resolve_grid_cells_for_crop(
+    grid_cells: str | None,
+    *,
+    grid_divisions: int = 1,
+    grid_cell: int = 0,
+    region_norm: str | None = None,
+) -> str:
+    """
+    Cells string passed to apply_fingerprint_region.
+
+    Empty ref_grid_cells must NOT fall back to grid_cell=0 (that cropped ~25% of
+    the reference and looked like unwanted zoom). Grid crop runs only when the
+    user explicitly selected sector(s) in grid mode.
+    """
+    cells_s = (grid_cells or "").strip()
+    if cells_s:
+        return cells_s
+    x, y, w, h = parse_norm_region(region_norm)
+    if not is_full_region(x, y, w, h):
+        return ""
+    return ""
+
+
 def parse_grid_cells(cells: str | None) -> list[int]:
     if not cells or not str(cells).strip():
         return []

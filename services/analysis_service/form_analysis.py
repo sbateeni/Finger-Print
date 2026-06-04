@@ -7,7 +7,7 @@ import hashlib
 from utils.image_utils import _decode_upload_type
 
 from .branch import _process_branch
-from .ref_grid import apply_fingerprint_region, region_audit_fields
+from .ref_grid import apply_fingerprint_region, region_audit_fields, resolve_grid_cells_for_crop
 from .transforms import (
     _apply_manual_transform,
     effective_preview_transform,
@@ -54,7 +54,12 @@ def process_form_analysis(
         dm = denoise_method if denoise_method in ("None", "fastNlMeans", "GaussianBlur") else "fastNlMeans"
         return same_file, sha_o, sha_p, qerr, qerr, dm
 
-    cells_ref = ref_grid_cells or (str(ref_grid_cell) if ref_grid_divisions > 1 else "")
+    cells_ref = resolve_grid_cells_for_crop(
+        ref_grid_cells,
+        grid_divisions=ref_grid_divisions,
+        grid_cell=ref_grid_cell,
+        region_norm=ref_region,
+    )
     o_gray = apply_fingerprint_region(
         o_gray, ref_region, grid_divisions=ref_grid_divisions, grid_cells=cells_ref
     )

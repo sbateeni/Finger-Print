@@ -44,6 +44,7 @@ from .results import (
 )
 from .ref_grid import (
     apply_fingerprint_region,
+    resolve_grid_cells_for_crop,
     is_full_region,
     normalize_ref_grid,
     parse_norm_region,
@@ -123,7 +124,12 @@ def analysis_event_generator(
 
         dm_pre = denoise_method if denoise_method in ("None", "fastNlMeans", "GaussianBlur") else "fastNlMeans"
         ref_grid_divisions, ref_grid_cell = normalize_ref_grid(ref_grid_divisions, ref_grid_cell)
-        cells_ref = ref_grid_cells or (str(ref_grid_cell) if ref_grid_divisions > 1 else "")
+        cells_ref = resolve_grid_cells_for_crop(
+            ref_grid_cells,
+            grid_divisions=ref_grid_divisions,
+            grid_cell=ref_grid_cell,
+            region_norm=ref_region,
+        )
         do_sweep = bool(auto_align_sweep) and is_deep_analysis(analysis_mode)
         if is_deep_analysis(analysis_mode):
             if do_sweep:

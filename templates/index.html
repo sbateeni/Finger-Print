@@ -187,12 +187,13 @@
                 <div id="ref-grid-divisions-wrap" class="region-divisions-wrap" hidden>
                   <label for="ref_grid_divisions">{{ trans.ref_grid_divisions }}</label>
                   <select id="ref_grid_divisions" name="ref_grid_divisions">
-                    <option value="4" selected>{{ trans.ref_grid_4 }}</option>
+                    <option value="1" selected>1</option>
+                    <option value="4">{{ trans.ref_grid_4 }}</option>
                     <option value="6">{{ trans.ref_grid_6 }}</option>
                   </select>
                 </div>
                 <input type="hidden" id="ref_region" name="ref_region" value="0,0,1,1" />
-                <input type="hidden" id="ref_grid_cells" name="ref_grid_cells" value="0" />
+                <input type="hidden" id="ref_grid_cells" name="ref_grid_cells" value="" />
                 <input type="hidden" id="ref_grid_cell" name="ref_grid_cell" value="0" />
                 <p class="small ref-grid-hint">{{ trans.ref_grid_hint_multi }}</p>
                 <p class="small preview-zoom-region-hint">{{ trans.preview_zoom_region_hint }}</p>

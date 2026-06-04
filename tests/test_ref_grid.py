@@ -5,6 +5,7 @@ from services.analysis_service.ref_grid import (
     crop_norm_region,
     normalize_ref_grid,
     parse_grid_cells,
+    resolve_grid_cells_for_crop,
     union_grid_cells_norm,
 )
 from services.analysis_service.transforms import _apply_manual_transform, effective_preview_transform
@@ -14,6 +15,20 @@ def test_normalize_ref_grid():
     assert normalize_ref_grid(1, 99) == (1, 0)
     assert normalize_ref_grid(4, 5) == (4, 3)
     assert normalize_ref_grid(6, 10) == (6, 5)
+
+
+def test_full_region_empty_cells_no_grid_crop():
+    """Regression: empty cells + divisions=4 must not crop to cell 0 (false zoom)."""
+    img = np.ones((120, 180), dtype=np.uint8) * 255
+    cells = resolve_grid_cells_for_crop(
+        "",
+        grid_divisions=4,
+        grid_cell=0,
+        region_norm="0,0,1,1",
+    )
+    assert cells == ""
+    out = apply_fingerprint_region(img, "0,0,1,1", grid_divisions=4, grid_cells=cells)
+    assert out.shape == img.shape
 
 
 def test_crop_and_union():

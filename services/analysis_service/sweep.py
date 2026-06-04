@@ -8,7 +8,7 @@ from utils.image_utils import _decode_upload_type
 from utils.matcher import match_fingerprints_with_partial_alignment
 
 from .branch import _process_branch
-from .ref_grid import apply_fingerprint_region, normalize_ref_grid
+from .ref_grid import apply_fingerprint_region, normalize_ref_grid, resolve_grid_cells_for_crop
 from .transforms import (
     _apply_manual_transform,
     effective_preview_transform,
@@ -49,7 +49,12 @@ def run_auto_sweep(
     dm = denoise_method if denoise_method in ("None", "fastNlMeans", "GaussianBlur") else "fastNlMeans"
 
     ref_grid_divisions, ref_grid_cell = normalize_ref_grid(ref_grid_divisions, ref_grid_cell)
-    cells_ref = ref_grid_cells or (str(ref_grid_cell) if ref_grid_divisions > 1 else "")
+    cells_ref = resolve_grid_cells_for_crop(
+        ref_grid_cells,
+        grid_divisions=ref_grid_divisions,
+        grid_cell=ref_grid_cell,
+        region_norm=ref_region,
+    )
     base_ref = apply_fingerprint_region(
         o_gray, ref_region, grid_divisions=ref_grid_divisions, grid_cells=cells_ref
     )
