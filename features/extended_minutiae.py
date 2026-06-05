@@ -226,6 +226,55 @@ def merge_by_distance(
     return merged
 
 
+def detect_islands(
+    skeleton: np.ndarray,
+    angle_fn,
+    *,
+    max_island_dist: float = 12.0,
+) -> list[dict[str, Any]]:
+    """Two endpoints facing each other with a short ridge → island (جزيرة)."""
+    eps = [(m["x"], m["y"], m.get("angle", 0)) for m in extract_cn_extras(skeleton, lambda *a: None)]
+    eps2 = [(x, y, a) for x, y, a in eps if _crossing_number(skeleton, x, y) == 1]
+    islands: list[dict[str, Any]] = []
+    used: set[int] = set()
+    for i, (x1, y1, a1) in enumerate(eps2):
+        if i in used:
+            continue
+        for j in range(i + 1, len(eps2)):
+            if j in used:
+                continue
+            x2, y2, a2 = eps2[j]
+            dist = np.hypot(x2 - x1, y2 - y1)
+            if dist > max_island_dist:
+                continue
+            angle_diff = abs((a1 - a2 + 180) % 360 - 180)
+            if angle_diff > 45:
+                continue
+            mx = int(round((x1 + x2) / 2))
+            my = int(round((y1 + y2) / 2))
+            islands.append({"x": mx, "y": my, "type": "island", "angle": a1})
+            used.add(i)
+            used.add(j)
+            break
+    return islands
+
+
+def detect_ridges(
+    skeleton: np.ndarray,
+    angle_fn,
+    *,
+    step: int = 5,
+) -> list[dict[str, Any]]:
+    """CN=2 → ridge continuation (شرطة / خط مستمر). Sampled sparsely."""
+    h, w = skeleton.shape
+    ridges: list[dict[str, Any]] = []
+    for y in range(step, h - step, step):
+        for x in range(step, w - step, step):
+            if skeleton[y, x] == 255 and _crossing_number(skeleton, x, y) == 2:
+                ridges.append({"x": x, "y": y, "type": "ridge", "angle": angle_fn(skeleton, x, y)})
+    return ridges[:50]  # cap to avoid overwhelming
+
+
 def augment_minutiae(
     base: list[dict[str, Any]],
     skeleton: np.ndarray,
@@ -240,5 +289,7 @@ def augment_minutiae(
     extra.extend(extract_cn_extras(skeleton, angle_fn))
     extra.extend(detect_lake_loops(skeleton, angle_fn))
     extra.extend(detect_dots_on_ridges(ridge_image, skeleton))
+    extra.extend(detect_islands(skeleton, angle_fn))
+    extra.extend(detect_ridges(skeleton, angle_fn))
     combined = merge_by_distance(list(base) + extra, min_distance=min_distance)
     return mark_divergences(combined, skeleton)

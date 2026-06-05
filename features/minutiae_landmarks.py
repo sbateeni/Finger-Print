@@ -77,49 +77,25 @@ class LandmarkAnalyzer:
         return enhanced_minutiae
 
     def _determine_landmark_type(self, minutia: dict[str, Any]) -> str:
-        """
-        Determine which of the 8 anatomical landmarks this minutia is.
-        
-        Mapping:
-        - endpoint → termination
-        - bifurcation → bifurcation
-        - island/dot → island or dot
-        - bridge → bridge
-        - lake → lake
-        - bifurcation (wide angle) → loop_eye
-        """
-        minutia_type = (minutia.get("type") or "unknown").lower().strip()
-        
-        # Direct mappings
-        if minutia_type in ["endpoint", "ending", "ending_ridge", "termination"]:
-            return "termination"
-        
-        if minutia_type == "bifurcation":
-            # Check angle - wide angles might be loops
-            angle = minutia.get("angle", 0)
-            if isinstance(angle, (int, float)):
-                # If angle difference between branches is > 150°, might be a loop
-                # This is a simplification; proper detection needs topology analysis
-                return "bifurcation"
-            return "bifurcation"
-        
-        if minutia_type in ["island", "short_ridge"]:
-            size = minutia.get("size", 0)
-            if size <= 2:
-                return "dot"
-            return "island"
-        
-        if minutia_type == "dot":
-            return "dot"
-        
-        if minutia_type == "bridge":
-            return "bridge"
-        
-        if minutia_type == "lake":
-            return "lake"
-        
-        # Default to termination for unknown
-        return "termination"
+        """Map extracted minutia type to one of the 8 anatomical landmarks."""
+        mtype = (minutia.get("type") or "unknown").lower().strip()
+
+        mapping = {
+            "endpoint": "termination",
+            "ending": "termination",
+            "ending_ridge": "termination",
+            "termination": "termination",
+            "bifurcation": "bifurcation",
+            "island": "island",
+            "short_ridge": "island",
+            "dot": "dot",
+            "bridge": "bridge",
+            "lake": "lake",
+            "loop_eye": "loop_eye",
+            "divergence": "loop_eye",
+            "ridge": "ridge",
+        }
+        return mapping.get(mtype, "termination")
 
     def _analyze_local_neighborhood(
         self,

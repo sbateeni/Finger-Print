@@ -179,6 +179,7 @@ def _iter_branch_live(
     minutiae, ext_note = enhance_minutiae_from_image(
         proc, minutiae, min_distance=float(min_distance)
     )
+    minutiae = extract_landmarks(minutiae, image=proc, ridge_image=ridges)
     vis = None
     if minutiae:
         vis = visualize_minutiae(skel, minutiae)
