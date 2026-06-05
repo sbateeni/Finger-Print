@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 import numpy as np
+import cv2
 from enum import Enum
 
 
@@ -171,19 +172,19 @@ class FingerprintClassifier:
         details["cores_found"] = len(sp_cores)
         details["deltas_found"] = len(sp_deltas)
 
-        # --- Detect finger type from metadata or minutiae distribution ---
+        # --- Detect finger type from metadata or ridge-density analysis ---
         finger_type = self._detect_finger_type_from_metadata(metadata)
-        if finger_type == FingerType.UNKNOWN and minutiae and height > 0:
-            finger_type, finger_conf = self._detect_finger_type_from_minutiae(
-                minutiae, height, width
+        if finger_type == FingerType.UNKNOWN:
+            finger_type, finger_conf = self._detect_finger_type_from_image(
+                image, minutiae, height, width
             )
-            details["finger_detection_method"] = "minutiae_analysis"
+            details["finger_detection_method"] = "ridge_density" if image is not None else "minutiae_only"
             details["finger_confidence"] = finger_conf
         else:
             details["finger_detection_method"] = "metadata"
             details["finger_confidence"] = 0.7 if finger_type != FingerType.UNKNOWN else 0.0
 
-        # --- Detect region ---
+        # --- Detect region via orientation field ---
         region, region_conf = self._detect_region(
             image=image,
             minutiae=minutiae,
@@ -281,74 +282,61 @@ class FingerprintClassifier:
         }
         return mapping.get(finger_hint, FingerType.UNKNOWN)
 
-    def _detect_finger_type_from_minutiae(
+    def _detect_finger_type_from_image(
         self,
-        minutiae: list[dict[str, Any]],
+        image: np.ndarray | None,
+        minutiae: list[dict[str, Any]] | None,
         height: int,
         width: int,
     ) -> tuple[FingerType, float]:
         """
-        Infer finger type from the spatial distribution of minutiae.
+        Infer finger type from ridge density and aspect ratio.
 
-        Key metrics:
-          - area_ratio : fraction of image covered by minutiae
-          - aspect     : width / height of minutiae bounding box
-          - density    : minutiae count per covered area
+        Metrics:
+          - ridge_density: fraction of white pixels (ridges) after Otsu threshold
+          - aspect_ratio : width / height of the image
+          - num_minutiae : count of detected minutiae
 
-        Finger proportions (typical):
-          Thumb  → small area, aspect ~0.8-1.2 (square-ish)
-          Index  → medium area, aspect ~0.5-0.7 (tall)
-          Middle → largest area, aspect ~0.4-0.6 (tallest)
-          Ring   → medium area, aspect ~0.5-0.7
-          Pinky  → smallest area, aspect ~0.6-0.9
+        Heuristics:
+          Thumb    → wide (aspect > 0.85), ridges spaced apart (density < 0.55)
+          Index    → narrow (aspect < 0.65), dense ridges
+          Middle   → narrow, many minutiae
+          Ring     → medium width
+          Pinky    → very small, narrow
         """
-        if not minutiae or height == 0 or width == 0:
+        ridge_density = 0.0
+        if image is not None:
+            try:
+                _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                total = height * width
+                ridge_pixels = cv2.countNonZero(thresh)
+                ridge_density = ridge_pixels / float(total) if total > 0 else 0.0
+            except Exception:
+                pass
+
+        aspect_ratio = width / float(height) if height > 0 else 0
+        num_minutiae = len(minutiae) if minutiae else 0
+
+        if height == 0 or width == 0:
             return FingerType.UNKNOWN, 0.0
 
-        positions = np.array([[m["x"], m["y"]] for m in minutiae])
-        x_min, x_max = positions[:, 0].min(), positions[:, 0].max()
-        y_min, y_max = positions[:, 1].min(), positions[:, 1].max()
-        bbox_w = x_max - x_min
-        bbox_h = y_max - y_min
-        bbox_area = bbox_w * bbox_h
-        image_area = width * height
+        # Thumb: wide, lower ridge density
+        if aspect_ratio > 0.85 and ridge_density < 0.55:
+            return FingerType.THUMB, 0.60
 
-        area_ratio = bbox_area / image_area if image_area > 0 else 0
-        aspect = bbox_w / (bbox_h + 1)
-        density = len(minutiae) / (bbox_area + 1)
+        # Index / pinky: narrow
+        if aspect_ratio < 0.65:
+            if ridge_density > 0.55 or num_minutiae > 35:
+                return FingerType.INDEX, 0.55
+            return FingerType.PINKY, 0.50
 
-        # Z-score-like thresholds derived from empirical finger proportions
-        if area_ratio < 0.08:
-            # Very small → Pinky
-            return FingerType.PINKY, 0.55
-        elif area_ratio < 0.15:
-            if aspect > 1.0:
-                # Square-ish small → Thumb
-                return FingerType.THUMB, 0.60
-            else:
-                # Could be thumb or pinky
-                if density > 0.001:
-                    return FingerType.THUMB, 0.50
-                return FingerType.PINKY, 0.45
-        elif area_ratio < 0.30:
-            if aspect > 1.0:
-                # Wide → likely Thumb
-                return FingerType.THUMB, 0.55
-            elif aspect > 0.65:
-                return FingerType.RING, 0.50
-            else:
-                return FingerType.INDEX, 0.55
-        else:
-            # Large area
-            if aspect > 0.8:
-                return FingerType.RING, 0.50
-            elif aspect > 0.55:
-                return FingerType.INDEX, 0.55
-            else:
-                return FingerType.MIDDLE, 0.60
+        # Middle / ring: medium aspect, use minutiae count as tiebreaker
+        if num_minutiae > 40:
+            return FingerType.MIDDLE, 0.55
+        return FingerType.RING, 0.50
 
     # ----------------------------------------------------------------
-    #  Region
+    #  Region (via orientation field)
     # ----------------------------------------------------------------
     def _detect_region(
         self,
@@ -374,40 +362,34 @@ class FingerprintClassifier:
         if region_hint in hint_map:
             return hint_map[region_hint], 0.80
 
-        if not minutiae or height == 0:
+        if image is None or height < 20 or width < 20:
             return FingerprintRegion.UNKNOWN, 0.20
 
-        # Spatial heuristics
-        positions = np.array([[m["x"], m["y"]] for m in minutiae])
-        y_center = positions[:, 1].mean()
-        y_norm = y_center / height  # 0 = top, 1 = bottom
+        try:
+            grad_x = cv2.Sobel(image, cv2.CV_32F, 1, 0, ksize=3)
+            grad_y = cv2.Sobel(image, cv2.CV_32F, 0, 1, ksize=3)
+            angles = cv2.phase(grad_x, grad_y, angleInDegrees=True)
 
-        endpoints = sum(1 for m in minutiae if m.get("type") == "endpoint")
-        bifurcations = sum(1 for m in minutiae if m.get("type") == "bifurcation")
-        n = len(minutiae)
-        end_ratio = endpoints / n if n > 0 else 0
+            top = angles[0:int(height * 0.35), :]
+            core = angles[int(height * 0.35):int(height * 0.70), :]
+            bottom = angles[int(height * 0.70):, :]
 
-        # Fingertip characteristics:
-        # - minutiae concentrated in upper portion (y_norm < 0.5)
-        # - many endpoints (ridge terminations at tip boundary)
-        # - higher endpoint-to-bifurcation ratio
-        if end_ratio > 0.35 and y_norm < 0.55:
-            return FingerprintRegion.FINGERTIP, 0.65
+            core_var = float(np.var(core))
+            top_var = float(np.var(top))
+            top_mean = float(np.mean(top))
 
-        # Palm characteristics:
-        # - minutiae spread across image
-        # - more bifurcations (continuous ridges)
-        if end_ratio < 0.25:
-            if y_norm > 0.6:
-                return FingerprintRegion.PALM_ROOT, 0.60
-            return FingerprintRegion.PALM_GENERAL, 0.55
+            # Core zone has highest orientation variance (ridge swirl)
+            if core_var > top_var and core_var > 1500:
+                return FingerprintRegion.FINGERTIP, 0.70
 
-        # Sub-index: specific region — hard to detect without reference
-        # Fall back to fingertip if top-heavy
-        if y_norm < 0.4:
-            return FingerprintRegion.FINGERTIP, 0.50
+            # Arch-like: ridges flow horizontally across the top
+            if top_mean > 180:
+                return FingerprintRegion.PALM_GENERAL, 0.60
 
-        return FingerprintRegion.UNKNOWN, 0.30
+            return FingerprintRegion.PALM_ROOT, 0.55
+
+        except Exception:
+            return FingerprintRegion.UNKNOWN, 0.20
 
 
 # Global classifier instance

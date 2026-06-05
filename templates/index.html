@@ -411,14 +411,15 @@
           <div class="card" style="margin-top: 1rem; background: var(--glass); border: 1px dashed var(--accent);">
             <h4>{{ trans.manual_edit_btn }}</h4>
             <p class="small" style="margin-bottom: 1rem;">{{ trans.manual_edit_hint }}</p>
+            {% set both_ids = '&original_id=' ~ (match.db_original_id or '') ~ '&partial_id=' ~ (match.db_partial_id or '') %}
             <div style="display: flex; gap: 0.5rem;">
               {% if match.db_original_id %}
-              <a href="/editor?fingerprint_id={{ match.db_original_id }}&amp;lang={{ lang }}" target="_blank" class="btn small" style="flex: 1; font-size: 0.85rem;">
+              <a href="/editor?fingerprint_id={{ match.db_original_id }}{{ both_ids }}&amp;lang={{ lang }}" target="_blank" class="btn small" style="flex: 1; font-size: 0.85rem;">
                 {{ trans.original_fp }}
               </a>
               {% endif %}
               {% if match.db_partial_id %}
-              <a href="/editor?fingerprint_id={{ match.db_partial_id }}&amp;lang={{ lang }}" target="_blank" class="btn small" style="flex: 1; font-size: 0.85rem;">
+              <a href="/editor?fingerprint_id={{ match.db_partial_id }}{{ both_ids }}&amp;lang={{ lang }}" target="_blank" class="btn small" style="flex: 1; font-size: 0.85rem;">
                 {{ trans.partial_fp }}
               </a>
               {% endif %}

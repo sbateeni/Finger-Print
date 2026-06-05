@@ -27,6 +27,23 @@ def get_db():
 
 
 def ensure_tables():
-    """Create all tables if they don't exist."""
+    """Create all tables if they don't exist + migrate schema for new columns."""
     import database.models  # noqa: E402, F811
     Base.metadata.create_all(bind=engine)
+
+    # Migrate existing tables: add any missing columns
+    _add_column_if_missing("fingerprints", "fingerprint_pattern", "VARCHAR(50)")
+
+
+def _add_column_if_missing(table: str, column: str, col_type: str):
+    """Add a column to an existing table if it doesn't already exist."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(engine)
+        existing = {c["name"] for c in inspector.get_columns(table)}
+        if column not in existing:
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+                conn.commit()
+    except Exception:
+        pass  # Table may not exist yet

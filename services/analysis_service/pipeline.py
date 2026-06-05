@@ -247,9 +247,14 @@ def run_matching_pipeline(
             
             with SessionLocal() as db:
                 # Save images and create fingerprints
-                filename_o = f"{sha_o[:16]}.png"
+                base_o = sha_o[:16]
+                filename_o = f"{base_o}.png"
                 if ro.get("processed") is not None:
                     cv2.imwrite(str(storage_dir / filename_o), ro["processed"])
+                if ro.get("ridges") is not None:
+                    cv2.imwrite(str(storage_dir / f"{base_o}_ridges.png"), ro["ridges"])
+                if ro.get("skeleton") is not None:
+                    cv2.imwrite(str(storage_dir / f"{base_o}_skeleton.png"), ro["skeleton"])
                 
                 fp_o = crud.create_fingerprint(
                     db,
@@ -266,9 +271,14 @@ def run_matching_pipeline(
                     fp_o.fingerprint_region = ro.get("classification").get("region")
                     fp_o.fingerprint_pattern = ro.get("classification").get("pattern_type")
                 
-                filename_p = f"{sha_p[:16]}.png"
+                base_p = sha_p[:16]
+                filename_p = f"{base_p}.png"
                 if rp.get("processed") is not None:
                     cv2.imwrite(str(storage_dir / filename_p), rp["processed"])
+                if rp.get("ridges") is not None:
+                    cv2.imwrite(str(storage_dir / f"{base_p}_ridges.png"), rp["ridges"])
+                if rp.get("skeleton") is not None:
+                    cv2.imwrite(str(storage_dir / f"{base_p}_skeleton.png"), rp["skeleton"])
                 
                 fp_p = crud.create_fingerprint(
                     db,

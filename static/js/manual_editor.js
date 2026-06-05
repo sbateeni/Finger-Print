@@ -9,6 +9,7 @@
         minutiae: [],
         landmarks: {},
         classification: {},
+        visualizations: {},
         selectedMinutiaIndex: -1,
         scale: 1,
         zoom: 1,
@@ -114,6 +115,7 @@
         editConfirmBtn: () => document.getElementById('edit-confirm-btn'),
         editCancelBtn: () => document.getElementById('edit-cancel-btn'),
         editOverlay: () => document.getElementById('edit-overlay'),
+        vizSelect: () => document.getElementById('viz-select'),
     };
 
     function renderNoIdMessage(urlParams) {
@@ -198,6 +200,9 @@
             state.minutiae = data.minutiae || [];
             state.landmarks = data.landmarks || {};
             state.classification = data.classification || {};
+            state.visualizations = data.visualizations || {};
+            
+            setupVizSelector(state.visualizations);
             
             state.image.onload = () => {
                 resizeCanvas();
@@ -210,6 +215,29 @@
             console.error('Error loading data:', error);
             alert('Error loading fingerprint data');
         }
+    }
+
+    function setupVizSelector(viz) {
+        var sel = elements.vizSelect();
+        if (!sel) return;
+        var keys = Object.keys(viz);
+        if (keys.length <= 1) { sel.style.display = 'none'; return; }
+        sel.style.display = '';
+        sel.innerHTML = '';
+        var labels = { processed: 'معالجة (Processed)', ridges: 'تموجات (Ridges)', skeleton: 'هيكل (Skeleton)' };
+        keys.forEach(function (k) {
+            var opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = labels[k] || k;
+            sel.appendChild(opt);
+        });
+        sel.value = 'processed';
+        sel.onchange = function () {
+            var url = viz[sel.value];
+            if (url) {
+                state.image.src = url;
+            }
+        };
     }
 
     function resizeCanvas() {

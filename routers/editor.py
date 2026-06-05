@@ -9,6 +9,7 @@ Provides endpoints for:
 
 from __future__ import annotations
 
+from pathlib import Path
 from fastapi import APIRouter, HTTPException, File, UploadFile, Form, Depends
 from pydantic import BaseModel
 from typing import Any
@@ -130,12 +131,22 @@ async def get_fingerprint_for_editing(fingerprint_id: int, db: Session = Depends
     if db_fingerprint.minutiae_data and isinstance(db_fingerprint.minutiae_data, dict):
         minutiae = db_fingerprint.minutiae_data.get('minutiae', [])
     
+    base_url = f"/static/fingerprints/{db_fingerprint.filename}" if db_fingerprint.filename else ""
+    viz = {"processed": base_url}
+    if db_fingerprint.filename:
+        stem = Path(db_fingerprint.filename).stem
+        storage = Path("static/fingerprints")
+        for suffix, label in [("_ridges", "تموجات (Ridges)"), ("_skeleton", "هيكل (Skeleton)")]:
+            p = storage / f"{stem}{suffix}.png"
+            if p.exists():
+                viz[suffix.lstrip("_")] = f"/static/fingerprints/{stem}{suffix}.png"
     return {
         "fingerprint_id": fingerprint_id,
         "minutiae": minutiae,
         "classification": db_fingerprint.fingerprint_classification or {},
         "landmarks": db_fingerprint.landmarks or {},
-        "image_url": f"/static/fingerprints/{db_fingerprint.filename}" if db_fingerprint.filename else "",
+        "image_url": base_url,
+        "visualizations": viz,
         "status": "ready"
     }
 
