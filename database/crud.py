@@ -121,3 +121,41 @@ def create_review(
     db.commit()
     db.refresh(db_review)
     return db_review
+
+
+# Phase 3: Manual Review operations
+def update_fingerprint_minutiae(db: Session, fingerprint_id: int, minutiae_data: dict) -> Optional[Fingerprint]:
+    db_fingerprint = get_fingerprint(db, fingerprint_id)
+    if db_fingerprint:
+        db_fingerprint.minutiae_data = minutiae_data
+        db_fingerprint.minutiae_count = len(minutiae_data.get('minutiae', [])) if isinstance(minutiae_data, dict) else 0
+        db.commit()
+        db.refresh(db_fingerprint)
+    return db_fingerprint
+
+
+def update_fingerprint_landmarks(db: Session, fingerprint_id: int, landmarks: dict) -> Optional[Fingerprint]:
+    db_fingerprint = get_fingerprint(db, fingerprint_id)
+    if db_fingerprint:
+        db_fingerprint.landmarks = landmarks
+        db.commit()
+        db.refresh(db_fingerprint)
+    return db_fingerprint
+
+
+def update_fingerprint_manual_review(
+    db: Session, 
+    fingerprint_id: int, 
+    is_reviewed: bool, 
+    reviewer_id: int, 
+    notes: str = ""
+) -> Optional[Fingerprint]:
+    db_fingerprint = get_fingerprint(db, fingerprint_id)
+    if db_fingerprint:
+        db_fingerprint.is_manually_reviewed = 1 if is_reviewed else 0
+        db_fingerprint.manual_review_timestamp = datetime.utcnow()
+        db_fingerprint.manual_review_by = reviewer_id
+        db_fingerprint.manual_review_notes = notes
+        db.commit()
+        db.refresh(db_fingerprint)
+    return db_fingerprint

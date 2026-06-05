@@ -18,7 +18,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from config import APP_VERSION
-from routers import pages, report, analysis
+from database import ensure_tables
+from routers import pages, report, analysis, editor
 from services.analysis_queue import start_analysis_queue, stop_analysis_queue
 from utils.git_updater import run_startup_auto_update, start_periodic_auto_update
 from utils.runtime_platform import is_linux, telegram_stop_script_hint
@@ -49,6 +50,7 @@ async def lifespan(app: FastAPI):
     load_dotenv()
     if is_linux():
         logger.info("Server starting on Linux — %s", __import__("platform").platform())
+    ensure_tables()
     run_startup_auto_update(echo=False)
     stop_event = threading.Event()
     start_periodic_auto_update(stop_event)
@@ -99,3 +101,4 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 app.include_router(pages.router)
 app.include_router(report.router)
 app.include_router(analysis.router)
+app.include_router(editor.router)

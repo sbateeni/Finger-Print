@@ -1,5 +1,7 @@
 """
 Forensic minutiae taxonomy — maps poster / PDF (Mosul paper) labels to engine types.
+
+PHASE 2 Enhancement: 8 Anatomical Landmarks (العلامات التشريحية الثمانية)
 """
 
 from __future__ import annotations
@@ -115,3 +117,150 @@ def count_by_type(minutiae: list) -> dict[str, int]:
         t = normalize_minutiae_type(str(m.get("type", "endpoint")))
         c[t] += 1
     return dict(c)
+
+
+# ============================================================================
+# PHASE 2: 8 Anatomical Landmarks (العلامات التشريحية الثمانية)
+# ============================================================================
+# These are the 8 primary landmarks used in fingerprint analysis and forensics.
+# Each has a specific visual signature and importance for identification.
+
+ANATOMICAL_LANDMARKS = {
+    "termination": {
+        "name_en": "Termination / Ridge Ending",
+        "name_ar": "نهاية الخط",
+        "symbol": "◇",
+        "icon": "ending",
+        "description_en": "Point where a ridge ends abruptly",
+        "description_ar": "نقطة تنتهي فيها خطوط البصمة بشكل مفاجئ",
+        "connectivity_number": 1,  # CN=1
+        "forensic_importance": "High",
+        "frequency_in_fingertip": "High",
+        "frequency_in_palm": "Low",
+        "detection_method": "Single pixel ridge endpoints",
+    },
+    "bifurcation": {
+        "name_en": "Bifurcation / Ridge Split",
+        "name_ar": "التفرع / التشعب",
+        "symbol": "⊢",
+        "icon": "bifurcation",
+        "description_en": "Point where a ridge splits into two branches",
+        "description_ar": "نقطة تنقسم فيها الخطوط إلى فرعين",
+        "connectivity_number": 3,  # CN=3
+        "forensic_importance": "High",
+        "frequency_in_fingertip": "High",
+        "frequency_in_palm": "Medium",
+        "detection_method": "Ridge skeleton tracing",
+    },
+    "island": {
+        "name_en": "Island / Short Ridge",
+        "name_ar": "الجزيرة / خط قصير",
+        "symbol": "⊗",
+        "icon": "island",
+        "description_en": "Small isolated ridge segment",
+        "description_ar": "خطوط قصيرة منعزلة ومنفصلة عن باقي الخطوط",
+        "connectivity_number": 2,  # CN=2 both ends
+        "forensic_importance": "Medium",
+        "frequency_in_fingertip": "Medium",
+        "frequency_in_palm": "Low",
+        "detection_method": "Connected component analysis",
+    },
+    "ridge": {
+        "name_en": "Ridge / Continuous Line",
+        "name_ar": "الشرطة / الخط المستمر",
+        "symbol": "─",
+        "icon": "ridge",
+        "description_en": "Main continuous ridge line",
+        "description_ar": "الخط الرئيسي المستمر للبصمة",
+        "connectivity_number": 0,  # CN=0 for normal continuation
+        "forensic_importance": "Medium",
+        "frequency_in_fingertip": "High",
+        "frequency_in_palm": "High",
+        "detection_method": "Ridge tracing",
+    },
+    "loop_eye": {
+        "name_en": "Loop / Eye / Circular Pattern",
+        "name_ar": "العين / الحلقة",
+        "symbol": "◯",
+        "icon": "loop",
+        "description_en": "Circular or oval closed pattern formed by ridges",
+        "description_ar": "منطقة دائرية مغلقة تشكلها الخطوط",
+        "connectivity_number": 0,  # CN=0 for closed loop
+        "forensic_importance": "High",
+        "frequency_in_fingertip": "Low",
+        "frequency_in_palm": "Medium",
+        "detection_method": "Contour detection, valley tracing",
+    },
+    "bridge": {
+        "name_en": "Bridge / Connector",
+        "name_ar": "الجسر / الوصلة",
+        "symbol": "⌢",
+        "icon": "bridge",
+        "description_en": "Short ridge segment connecting two main ridges",
+        "description_ar": "خط قصير يربط بين خطين رئيسيين",
+        "connectivity_number": 4,  # CN=4 (connects two ridges)
+        "forensic_importance": "Medium",
+        "frequency_in_fingertip": "Low",
+        "frequency_in_palm": "Medium",
+        "detection_method": "Ridge connectivity analysis",
+    },
+    "lake": {
+        "name_en": "Lake / Enclosed Area",
+        "name_ar": "البحيرة",
+        "symbol": "◈",
+        "icon": "lake",
+        "description_en": "Area completely enclosed by ridges",
+        "description_ar": "منطقة محاطة بشكل كامل بالخطوط",
+        "connectivity_number": 2,  # CN=2 for entry/exit
+        "forensic_importance": "Medium",
+        "frequency_in_fingertip": "Low",
+        "frequency_in_palm": "Medium",
+        "detection_method": "Contour filling, valley analysis",
+    },
+    "dot": {
+        "name_en": "Dot / Pixel / Small Point",
+        "name_ar": "النقطة / الدقة",
+        "symbol": "•",
+        "icon": "dot",
+        "description_en": "Very small isolated ridge point or single pixel",
+        "description_ar": "نقطة صغيرة جداً معزولة أو نقطة بيكسل واحدة",
+        "connectivity_number": 0,
+        "forensic_importance": "Low",
+        "frequency_in_fingertip": "Medium",
+        "frequency_in_palm": "Low",
+        "detection_method": "Blob detection, connected components",
+    },
+}
+
+
+def get_landmark_by_name(name: str) -> dict | None:
+    """Get landmark details by name (English or Arabic)."""
+    name_lower = name.lower().strip()
+    
+    # Direct key lookup
+    if name_lower in ANATOMICAL_LANDMARKS:
+        return ANATOMICAL_LANDMARKS[name_lower]
+    
+    # Search by name_ar or name_en
+    for key, landmark in ANATOMICAL_LANDMARKS.items():
+        if landmark["name_ar"].lower() == name_lower or landmark["name_en"].lower() == name_lower:
+            return landmark
+    
+    return None
+
+
+def get_all_landmarks() -> dict:
+    """Return all 8 anatomical landmarks."""
+    return ANATOMICAL_LANDMARKS.copy()
+
+
+def landmark_names(lang: str = "en") -> list[str]:
+    """Get list of all landmark names in specified language."""
+    lang_key = "name_ar" if lang.lower() in ["ar", "arabic"] else "name_en"
+    return [landmark[lang_key] for landmark in ANATOMICAL_LANDMARKS.values()]
+
+
+def is_high_importance_landmark(landmark_name: str) -> bool:
+    """Check if a landmark has high forensic importance."""
+    landmark = get_landmark_by_name(landmark_name)
+    return landmark and landmark.get("forensic_importance") == "High"

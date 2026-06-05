@@ -14,8 +14,8 @@ class User(Base):
     role = Column(String(20), nullable=False, default='user')
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    fingerprints = relationship("Fingerprint", back_populates="owner")
-    reviews = relationship("Review", back_populates="reviewer")
+    fingerprints = relationship("Fingerprint", foreign_keys="Fingerprint.user_id", back_populates="owner")
+    reviews = relationship("Review", foreign_keys="Review.reviewer_id", back_populates="reviewer")
 
 
 class Fingerprint(Base):
@@ -30,7 +30,21 @@ class Fingerprint(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'))
     
-    owner = relationship("User", back_populates="fingerprints")
+    # Classification fields (Phase 1)
+    fingerprint_type = Column(String(50))  # thumb, index, middle, ring, pinky, unknown
+    fingerprint_region = Column(String(50))  # fingertip, palm_root, sub_index, unknown
+    fingerprint_classification = Column(JSON)  # Full classification object (type, region, confidence, etc.)
+    
+    # Anatomical landmarks (Phase 2)
+    landmarks = Column(JSON)  # List of 8 landmark types: termination, bifurcation, island, etc.
+    
+    # Manual review fields (Phase 3)
+    is_manually_reviewed = Column(Integer, default=0)  # 0=no, 1=yes
+    manual_review_timestamp = Column(DateTime)
+    manual_review_by = Column(Integer, ForeignKey('users.id'))  # User who reviewed
+    manual_review_notes = Column(Text)  # Notes from manual review
+    
+    owner = relationship("User", foreign_keys=[user_id], back_populates="fingerprints")
     original_matches = relationship("Match", foreign_keys="Match.original_fingerprint_id", back_populates="original_fingerprint")
     partial_matches = relationship("Match", foreign_keys="Match.partial_fingerprint_id", back_populates="partial_fingerprint")
 
@@ -43,6 +57,11 @@ class Match(Base):
     operator_name = Column(String(255))
     original_fingerprint_id = Column(Integer, ForeignKey('fingerprints.id'))
     partial_fingerprint_id = Column(Integer, ForeignKey('fingerprints.id'))
+    
+    # Classification compatibility check (Phase 1)
+    classification_compatible = Column(Integer, default=1)  # 0=incompatible types, 1=compatible
+    classification_check_reason = Column(Text)  # Reason if incompatible
+    
     match_score = Column(Float)
     fused_score = Column(Float)
     matched_points = Column(Integer)
@@ -69,4 +88,4 @@ class Review(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     match = relationship("Match", back_populates="reviews")
-    reviewer = relationship("User", back_populates="reviews")
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews")

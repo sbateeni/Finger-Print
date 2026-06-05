@@ -181,21 +181,30 @@ def _fuse_scores(
     min_norm: float,
     mcc_norm: float,
     orb_norm: float,
+    landmark_norm: float,
     partial: bool,
     *,
     use_orb: bool = True,
 ) -> float:
+    # Weights (can be moved to config)
+    W_LANDMARK = 0.15 # 15% weight for anatomical landmarks
+    
     if partial:
         w_m, w_c, w_o = PARTIAL_FUSION_W_MINUTIAE, PARTIAL_FUSION_W_MCC, PARTIAL_FUSION_W_ORB
     else:
         w_m, w_c, w_o = FUSION_W_MINUTIAE, FUSION_W_MCC, FUSION_W_ORB
+    
+    # Adjust for landmarks
+    w_l = W_LANDMARK
+    
     if not use_orb:
         w_o = 0.0
-        w_sum = float(w_m + w_c) or 1.0
-        return (min_norm * float(w_m) + mcc_norm * float(w_c)) / w_sum
-    w_sum = float(w_m + w_c + w_o) or 1.0
+        w_sum = float(w_m + w_c + w_l) or 1.0
+        return (min_norm * float(w_m) + mcc_norm * float(w_c) + landmark_norm * float(w_l)) / w_sum
+    
+    w_sum = float(w_m + w_c + w_o + w_l) or 1.0
     return (
-        min_norm * float(w_m) + mcc_norm * float(w_c) + orb_norm * float(w_o)
+        min_norm * float(w_m) + mcc_norm * float(w_c) + orb_norm * float(w_o) + landmark_norm * float(w_l)
     ) / w_sum
 
 
@@ -204,6 +213,7 @@ def combined_verdict(
     orb_confidence: str,
     mcc_score: float = 0.0,
     orb_score: float = 0.0,
+    landmark_score: float = 0.0,
     *,
     partial_verify: bool = False,
     matched_points: int = 0,
@@ -245,6 +255,7 @@ def combined_verdict(
     min_norm = _clamp_pct(minutiae_score)
     mcc_norm = _clamp_pct(mcc_score)
     orb_norm = _clamp_pct(orb_score if orb_score > 0 else _orb_conf_to_score(orb_confidence))
+    land_norm = _clamp_pct(landmark_score)
 
     is_partial = _is_partial_case(
         partial_verify,
@@ -255,7 +266,7 @@ def combined_verdict(
         mcc_score,
         matched_points,
     )
-    fused_score = _fuse_scores(min_norm, mcc_norm, orb_norm, is_partial, use_orb=use_orb)
+    fused_score = _fuse_scores(min_norm, mcc_norm, orb_norm, land_norm, is_partial, use_orb=use_orb)
 
     # عتبات القرار — للجزئية نستخدم حدوداً مخصصة
     th_high = FUSED_THRESHOLD_HIGH
@@ -326,12 +337,14 @@ def combined_verdict(
             "minutiae": PARTIAL_FUSION_W_MINUTIAE,
             "mcc": PARTIAL_FUSION_W_MCC,
             "orb": PARTIAL_FUSION_W_ORB,
+            "landmark": 0.15,
         }
         if is_partial
         else {
             "minutiae": FUSION_W_MINUTIAE,
             "mcc": FUSION_W_MCC,
             "orb": FUSION_W_ORB,
+            "landmark": 0.15,
         }
     )
 
@@ -348,5 +361,6 @@ def combined_verdict(
             "minutiae_score": round(min_norm, 2),
             "mcc_score": round(mcc_norm, 2),
             "orb_score": round(orb_norm, 2),
+            "landmark_score": round(land_norm, 2),
         },
     }

@@ -68,6 +68,20 @@ REPORT_STRINGS = {
         "stats_gabor": "بكسل أبيض (Gabor)",
         "stats_skel": "بكسل أبيض (هيكل)",
         "stats_min": "نقاط بعد الفلترة",
+        "classification_title": "تصنيف البصمات (Phase 1)",
+        "landmarks_title": "العلامات التشريحية (Phase 2)",
+        "landmark_type": "نوع العلامة",
+        "original": "المرجع",
+        "partial": "العينة",
+        "field": "الحقل",
+        "compatibility": "التوافق",
+        "compatible": "متوافق",
+        "incompatible": "غير متوافق",
+        "reason": "السبب",
+        "finger_type": "نوع الإصبع",
+        "region": "المنطقة",
+        "confidence": "الثقة",
+        "total": "المجموع",
     },
     "en": {
         "html_lang": "en",
@@ -134,6 +148,20 @@ REPORT_STRINGS = {
         "stats_gabor": "Gabor white pixels",
         "stats_skel": "Skeleton white pixels",
         "stats_min": "Filtered minutiae",
+        "classification_title": "Fingerprint Classification (Phase 1)",
+        "landmarks_title": "Anatomical Landmarks (Phase 2)",
+        "landmark_type": "Landmark Type",
+        "original": "Reference",
+        "partial": "Query",
+        "field": "Field",
+        "compatibility": "Compatibility",
+        "compatible": "Compatible",
+        "incompatible": "Incompatible",
+        "reason": "Reason",
+        "finger_type": "Finger Type",
+        "region": "Region",
+        "confidence": "Confidence",
+        "total": "Total",
     },
 }
 
@@ -181,7 +209,8 @@ def report_lang(code: str | None) -> str:
     return c if c in REPORT_STRINGS else "ar"
 
 
-def s(lang: str, key: str) -> str:
+def s(lang: str, key: str, *args, **kwargs) -> str:
+    """Get translated string. Accepts extra args for backward compatibility."""
     return REPORT_STRINGS[report_lang(lang)].get(key, key)
 
 

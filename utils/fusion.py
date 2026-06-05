@@ -8,6 +8,7 @@ import os
 from typing import Any
 
 from utils.orb_matcher import combined_verdict, match_with_orb
+from matching.landmark_matcher import LandmarkMatcher
 
 
 def use_orb_fusion() -> bool:
@@ -16,12 +17,15 @@ def use_orb_fusion() -> bool:
 
 def apply_fusion_to_match(
     match_result: dict[str, Any],
-    ref_processed,
-    query_processed,
+    ro: dict[str, Any],
+    rp: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    Run ORB (optional) and combined verdict; merge into match_result.
+    Run ORB (optional), Landmark Matcher, and combined verdict; merge into match_result.
     """
+    ref_processed = ro.get("processed")
+    query_processed = rp.get("processed")
+    
     mcc_score = float(match_result.get("mcc_score") or 0.0)
     orb_res: dict[str, Any] = {
         "orb_matches": 0,
@@ -37,11 +41,22 @@ def apply_fusion_to_match(
         except Exception:
             pass
 
+    # 1. Landmark Matching (Phase 4)
+    landmark_matcher = LandmarkMatcher()
+    landmark_res = landmark_matcher.compare_landmarks(
+        ro.get("minutiae") or [],
+        rp.get("minutiae") or []
+    )
+    
+    match_result.update(landmark_res)
+    landmark_score = float(landmark_res.get("landmark_similarity") or 0.0)
+
     verdict = combined_verdict(
         float(match_result.get("match_score") or 0.0),
         orb_res.get("orb_confidence", "INSUFFICIENT"),
         mcc_score=mcc_score,
         orb_score=float(orb_res.get("orb_score") or 0.0),
+        landmark_score=landmark_score,
         partial_verify=bool(match_result.get("partial_verify")),
         matched_points=int(match_result.get("matched_points") or 0),
         alignment_gain_matches=int(match_result.get("alignment_gain_matches") or 0),

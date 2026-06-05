@@ -16,7 +16,7 @@ def resolve_ui_lang(code: str | None) -> str:
     return c if c in TRANSLATIONS else "ar"
 
 
-def _render(request: Request, context: dict):
+def _render(request: Request, context: dict, template_name: str = "index.html"):
     lang = resolve_ui_lang(request.query_params.get("lang"))
     
     context = {
@@ -26,4 +26,4 @@ def _render(request: Request, context: dict):
         "lang": lang,
         "trans": TRANSLATIONS[lang],
     }
-    return templates.TemplateResponse(request, "index.html", context)
+    return templates.TemplateResponse(request, template_name, context)

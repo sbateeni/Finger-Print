@@ -1,13 +1,18 @@
 # خطة تطوير جوهر البرنامج
 
-## ترتيب تنفيذ الخطة (الأهمية الأولى):
-1. تحسين استخراج منطقة البصمة (Segmentation)
-2. تقليل الأخطاء في استخراج النقاط الدقيقة
-3. تنفيذ قاعدة البيانات الأساسية
-4. تحسين دمج ORB مع Minutiae
-5. إضافة اختبارات وحدة
-6. Batch Matching
-7. اختبارات دقة المطابقة على FVC2004
+> الحالة: [ROADMAP.md](ROADMAP.md) · التكامل: [PHASE_6_INTEGRATION.md](PHASE_6_INTEGRATION.md)
+
+## ترتيب تنفيذ الخطة (الأهمية الأولى)
+
+| # | البند | الحالة |
+|---|--------|--------|
+| 1 | Segmentation | ✅ `segment_fingerprint` في `utils/image_processing.py` |
+| 2 | تقليل أخطاء minutiae | ✅ `features/minutiae_filter.py` + مرشحات |
+| 3 | قاعدة البيانات | 🟡 `database/` + CRUD؛ حفظ من `/analyze` ⬜ |
+| 4 | دمج ORB / Bozorth | ✅ `utils/fusion.py`؛ ORB افتراضيًا off |
+| 5 | اختبارات وحدة | ✅ `tests/` (12+ ملف) |
+| 6 | Batch Matching | ⬜ |
+| 7 | FVC2004 | 🟡 `tests/test_on_fvc.py` |
 
 ---
 
@@ -15,94 +20,74 @@
 
 ### المرحلة 1: تحسين المعالجة المسبقة للصور
 
-#### 1.1 تحسين استخراج منطقة البصمة (Segmentation)
-- **الملفات المطلوبة**: `utils/image_processing.py`
-- **الخطوات**:
-  1. إضافة دالة `segment_fingerprint()` باستخدام تحويل مسافة (Distance Transform)
-  2. دمجها في `preprocess_image()`
-  3. اختبارها على صور مختلفة
+#### 1.1 تحسين استخراج منطقة البصمة (Segmentation) ✅
+- **الملف**: `utils/image_processing.py` — `segment_fingerprint()` + `preprocess_image()`
+- **اختبار مقترح**: `tests/test_preprocess.py`
 
-#### 1.2 Auto-tuning للمعالجة
-- **الملفات المطلوبة**: `utils/image_quality.py` أو `utils/image_processing.py`
+#### 1.2 Auto-tuning للمعالجة ⬜
+- **الملفات**: `preprocessing/quality.py`
 - **الخطوات**:
-  1. إنشاء دالة `auto_tune_parameters(img)` تقوم ب:
-     - حساب جودة الصورة
-     - ضبط `fast_denoise_h`، `gauss_ksize` تلقائياً
-  2. إضافة خيار "Auto" في واجهة المستخدم
+  1. `auto_tune_parameters(img)` → `fast_denoise_h`, `gauss_ksize`
+  2. خيار «Auto» في `templates/index.html`
 
 ---
 
 ### المرحلة 2: تحسين استخراج النقاط الدقيقة
 
-#### 2.1 تقليل الأخطاء (False Minutiae)
-- **الملفات المطلوبة**: `utils/minutiae_extractor.py`
-- **الخطوات**:
-  1. إضافة مرشحات جديدة:
-     - مرشح للنقاط القريبة جداً من الحواف
-     - مرشح للنقاط المتشابهة جداً
-  2. تعديل دالة `extract_minutiae()` لتتضمن هذه المرشحات
+#### 2.1 تقليل الأخطاء (False Minutiae) ✅
+- `features/minutiae_filter.py` + `utils/minutiae_extractor.py`
+- اختبارات: `tests/test_minutiae_filter.py`
 
-#### 2.2 إضافة أنواع نقاط جديدة
-- **الملفات المطلوبة**: `utils/minutiae_extractor.py`، `database/models.py`
-- **الخطوات**:
-  1. تحديث النوع enum ليعرف `DOT` و `ISLAND`
-  2. إضافة منطق اكتشاف هذه الأنواع
-  3. تحديث النماذج في `database/models.py`
+#### 2.2 إضافة أنواع نقاط جديدة 🟡
+- `features/minutiae_taxonomy.py` — dot, lake, bridge, …
+- اختبارات: `tests/test_extended_minutiae.py`, `tests/test_minutiae_taxonomy.py`
 
 ---
 
 ### المرحلة 3: تحسين المطابقة
 
-#### 3.1 تحسين دمج ORB مع Minutiae
-- **الملفات المطلوبة**: `utils/orb_matcher.py`، `utils/matcher.py`
-- **الخطوات**:
-  1. تعديل دالة `combined_verdict()` لاستخدام وزن ديناميكي حسب جودة الصورة
-  2. إضافة خيار تعيين الأوزان يدوياً في الإعدادات
+#### 3.1 تحسين دمج ORB / MCC / Bozorth ✅
+- `utils/fusion.py`, `utils/orb_matcher.py`, `config/config.py`
+- `USE_ORB_FUSION=0` افتراضي؛ `USE_BOZORTH_MATCHER=1`
+- معايرة: `scripts/calibrate_thresholds.py`
 
-#### 3.2 Batch Matching
-- **الملفات المطلوبة**: `services/analysis_service/` (مثلاً `pipeline.py`)، `routers/analysis.py`
-- **الخطوات**:
-  1. إنشاء دالة `batch_match_fingerprints()` في `services/analysis_service/pipeline.py`
-  2. إضافة مسار `/batch-analyze` في `routers/analysis.py`
-  3. دعم رفع ملف ZIP يحتوي على بصمات متعددة
+#### 3.2 Batch Matching ⬜
+- `services/analysis_service/batch.py` (جديد)
+- `POST /batch-analyze` — ZIP مرجع + عدة queries
 
 ---
 
 ### المرحلة 4: تنفيذ قاعدة البيانات
 
-#### 4.1 إعداد SQLAlchemy
-- **الملفات المطلوبة**: `database/__init__.py`، `database/models.py`
-- **الخطوات**:
-  1. إعداد URL قاعدة البيانات في `config/config.py`
-  2. إنشاء محرك SQLAlchemy في `database/__init__.py`
-  3. تحديث `database/models.py` ليعرف الجداول:
-     - `Case`: للاحالات
-     - `Fingerprint`: للبصمات
-     - `Minutia`: للنقاط الدقيقة
-     - `MatchResult`: للنتائج
+#### 4.1 إعداد SQLAlchemy ✅
+- `database/__init__.py`, `database/models.py` (User, Fingerprint, Match, Review)
+- `fingerprint.db` في جذر المشروع
 
-#### 4.2 دوال CRUD
-- **الملفات المطلوبة**: `database/crud.py` (جديد)
-- **الخطوات**:
-  1. إنشاء دوال لإضافة واسترجاع الحالات
-  2. إنشاء دوال لإضافة واسترجاع البصمات
-  3. إنشاء فهرس للنقاط الدقيقة لاسترجاع سريع
+#### 4.2 دوال CRUD ✅ / حفظ من التحليل ⬜
+- `database/crud.py` موجود
+- **متبقٍ:** استدعاء من `pipeline.py` بعد كل تحليل — Sprint 6.4
 
 ---
 
 ### المرحلة 5: اختبارات الأداء والتصحيح
 
-#### 5.1 اختبارات وحدة (Unit Tests)
-- **الملفات المطلوبة**: `tests/` (جديد)
-- **الخطوات**:
-  1. إنشاء مجلد `tests/`
-  2. إضافة اختبارات لـ `utils/image_processing.py`
-  3. إضافة اختبارات لـ `utils/minutiae_extractor.py`
-  4. إضافة اختبارات لـ `utils/matcher.py`
+#### 5.1 اختبارات وحدة ✅
+- `tests/test_matching_pipeline.py`, `test_ref_grid.py`, `test_report_pdf.py`, …
+- تشغيل: `python -m pytest tests/ -q`
 
-#### 5.2 اختبارات دقة المطابقة
-- **الملفات المطلوبة**: `scripts/test_fvc.py` (جديد)
-- **الخطوات**:
-  1. إضافة دالة لتحميل مجموعة بيانات FVC2004
-  2. تشغيل المطابقة على جميع الأزواج
-  3. حساب دقة المطابقة (Accuracy)، EER، AUC
+#### 5.2 اختبارات دقة المطابقة 🟡
+- `evaluation/run_baseline.py`, `tests/test_on_fvc.py`
+- **متبقٍ:** `scripts/run_fvc_evaluation.py` + توثيق `FVC2004_PATH` في `.env.example`
+- مخرجات: تحديث `evaluation/baseline_metrics.json`, `evaluation/GAP_REPORT.md`
+
+---
+
+## إضافات منفذة خارج هذه الخطة الأصلية
+
+| الميزة | الملفات |
+|--------|---------|
+| بث SSE مباشر | `services/analysis_service/streaming.py` |
+| منطقة كاملة/مربع/شبكة | `static/region_select.js`, `ref_grid.py` |
+| تيليجرام inbox | `services/telegram_inbox.py` |
+| تقرير عربي HTML | `utils/report_pdf.py` |
+| Gabor + Bozorth (Kali) | `preprocessing/enhancer.py`, `matching/bozorth_matcher.py` |

@@ -58,3 +58,16 @@ async def favicon():
         return FileResponse(str(icon_path))
     # Avoid noisy 404 in browser console when favicon is absent.
     return Response(status_code=204)
+
+
+@router.get("/editor", response_class=HTMLResponse)
+async def editor_page(request: Request, fingerprint_id: int = None):
+    return _render(
+        request,
+        {
+            "fingerprint_id": fingerprint_id,
+            "software_name": SOFTWARE_NAME,
+            "app_version": APP_VERSION,
+        },
+        template_name="manual_editor.html",
+    )

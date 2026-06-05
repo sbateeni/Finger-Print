@@ -2,7 +2,8 @@
 import os
 
 # المسارات
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(CONFIG_DIR)
 ASSETS_DIR = os.path.join(BASE_DIR, 'assets')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
 

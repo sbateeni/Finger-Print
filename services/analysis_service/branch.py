@@ -9,6 +9,7 @@ import numpy as np
 
 from features.extractor import enhance_minutiae_from_image
 from features.minutiae_taxonomy import count_by_type
+from features.minutiae_landmarks import LandmarkAnalyzer, extract_landmarks, landmark_statistics
 from utils.image_processing import (
     assess_fingerprint_quality,
     detect_edges,
@@ -81,7 +82,16 @@ def _process_branch(
         proc, minutiae, min_distance=float(min_distance)
     )
     out["minutiae_extraction"] = ext_note
+    
+    # Anatomical Landmarks (Phase 2)
+    minutiae = extract_landmarks(
+        minutiae, 
+        image=proc, 
+        ridge_image=ridges
+    )
     out["minutiae"] = minutiae
+    out["landmarks"] = landmark_statistics(minutiae)
+    
     out["minutiae_count"] = len(minutiae)
     out["minutiae_by_type"] = count_by_type(minutiae)
     if minutiae:

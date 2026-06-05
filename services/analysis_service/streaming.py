@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
+import os
+import cv2
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -36,6 +39,8 @@ from .mode import (
     resolve_auto_align_sweep,
 )
 from .reports import should_generate_pdf, _ensure_pdf_from_html
+from database import SessionLocal
+from database import crud
 from .results import (
     _apply_partial_verify_step_audit,
     _make_inconclusive_result,
@@ -471,7 +476,7 @@ def analysis_event_generator(
                         }
                     )
                     del orb_res["visualization"]
-            match_result = apply_fusion_to_match(match_result, ro["processed"], rp["processed"])
+            match_result = apply_fusion_to_match(match_result, ro, rp)
             match_result = enrich_match_for_forensics(match_result)
         except Exception as fusion_err:
             logger.error("Fusion failed: %s", fusion_err)
@@ -504,11 +509,93 @@ def analysis_event_generator(
             sha_o, sha_p, operator_name, case_reference, form_params, report_lang
         )
 
+        # 3. SQL Storage (Phase 6 Integration)
+        if os.getenv("WRITE_TO_DB", "1") == "1":
+            try:
+                logger.info("Writing results to database...")
+                storage_dir = Path("static/fingerprints")
+                storage_dir.mkdir(parents=True, exist_ok=True)
+                
+                with SessionLocal() as db:
+                    # Save images and create fingerprints
+                    filename_o = f"{sha_o[:16]}.png"
+                    if ro.get("processed") is not None:
+                        cv2.imwrite(str(storage_dir / filename_o), ro["processed"])
+                    
+                    fp_o = crud.create_fingerprint(
+                        db,
+                        filename=filename_o,
+                        filepath=str(storage_dir / filename_o),
+                        quality_score=ro.get("quality_score"),
+                        minutiae_count=len(ro.get("minutiae") or []),
+                        minutiae_data={"minutiae": ro.get("minutiae") or []}
+                    )
+                    crud.update_fingerprint_landmarks(db, fp_o.id, ro.get("landmarks") or {})
+                    if ro.get("classification"):
+                        fp_o.fingerprint_classification = ro.get("classification")
+                        fp_o.fingerprint_type = ro.get("classification").get("finger_type")
+                        fp_o.fingerprint_region = ro.get("classification").get("region")
+                    
+                    filename_p = f"{sha_p[:16]}.png"
+                    if rp.get("processed") is not None:
+                        cv2.imwrite(str(storage_dir / filename_p), rp["processed"])
+                    
+                    fp_p = crud.create_fingerprint(
+                        db,
+                        filename=filename_p,
+                        filepath=str(storage_dir / filename_p),
+                        quality_score=rp.get("quality_score"),
+                        minutiae_count=len(rp.get("minutiae") or []),
+                        minutiae_data={"minutiae": rp.get("minutiae") or []}
+                    )
+                    crud.update_fingerprint_landmarks(db, fp_p.id, rp.get("landmarks") or {})
+                    if rp.get("classification"):
+                        fp_p.fingerprint_classification = rp.get("classification")
+                        fp_p.fingerprint_type = rp.get("classification").get("finger_type")
+                        fp_p.fingerprint_region = rp.get("classification").get("region")
+                    
+                    # Create match
+                    # Sanitize match_result for DB JSON storage (remove non-serializable objects)
+                    db_match_details = json.loads(json.dumps(match_result, default=str))
+                    
+                    db_match = crud.create_match(
+                        db,
+                        case_reference=case_reference,
+                        operator_name=operator_name,
+                        original_fingerprint_id=fp_o.id,
+                        partial_fingerprint_id=fp_p.id,
+                        match_score=float(match_result.get("match_score") or 0.0),
+                        fused_score=float(match_result.get("fused_score") or 0.0),
+                        matched_points=int(match_result.get("matched_points") or 0),
+                        status=match_result.get("status", "UNKNOWN"),
+                        match_details=db_match_details
+                    )
+                    db_match.classification_compatible = match_result.get("classification_compatible", 1)
+                    db_match.classification_check_reason = match_result.get("classification_check_reason")
+                    db.commit()
+                    
+                    # Store IDs for UI links
+                    match_result["db_match_id"] = db_match.id
+                    match_result["db_original_id"] = fp_o.id
+                    match_result["db_partial_id"] = fp_p.id
+                    
+                    # YIELD IDs IMMEDIATELY for the UI to show buttons
+                    yield _sse_line({
+                        "type": "db_ids",
+                        "db_original_id": fp_o.id,
+                        "db_partial_id": fp_p.id,
+                        "db_match_id": db_match.id
+                    })
+                    logger.info("Database records created and IDs yielded")
+            except Exception as db_err:
+                logger.error("SQL storage failed in stream: %s", db_err)
+
         yield _sse_line({"type": "log", "message": "جاري توليد التقرير…"})
         pipeline = build_report_pipeline(ro, rp, matches_vis=matches_vis, include_singular=True)
         report_rel = _write_stream_report(
             sk_o, sk_p, match_result, audit, pipeline, report_lang
         )
+        logger.info("Report generated: %s", report_rel)
 
         append_audit_record(
             build_audit_record(
@@ -521,6 +608,7 @@ def analysis_event_generator(
                 report_filename=report_rel,
             )
         )
+        logger.info("Audit record appended")
 
         low_n = min(ro["minutiae_count"], rp["minutiae_count"])
         yield _sse_line(

@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import AsyncIterator
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from config import (
@@ -178,8 +178,96 @@ async def analyze_stream(request: Request):
     )
 
 
-@router.post("/analyze-sweep")
-async def analyze_sweep(request: Request):
+from sqlalchemy.orm import Session
+from database import get_db
+from database.crud import get_fingerprint
+import cv2
+import numpy as np
+
+@router.post("/re-compare")
+async def re_compare(request: Request, db: Session = Depends(get_db)):
+    """
+    Re-run matching pipeline using saved fingerprints from database.
+    This uses manually edited minutiae if available.
+    """
+    try:
+        body = await request.json()
+        id_o = body.get("original_id")
+        id_p = body.get("partial_id")
+        lang = body.get("lang", "ar")
+        
+        if not id_o or not id_p:
+            raise HTTPException(status_code=400, detail="Missing IDs")
+            
+        fp_o = get_fingerprint(db, id_o)
+        fp_p = get_fingerprint(db, id_p)
+        
+        if not fp_o or not fp_p:
+            raise HTTPException(status_code=404, detail="Fingerprint not found")
+            
+        # Load images
+        img_o = cv2.imread(fp_o.filepath)
+        img_p = cv2.imread(fp_p.filepath)
+        
+        if img_o is None or img_p is None:
+            raise HTTPException(status_code=500, detail="Could not load images")
+            
+        # Prepare mock "branch" results using DB data
+        # We need skeleton for visualization, but for now we'll re-extract if missing
+        # A better way is to store skeletons in static too, but we can re-process
+        # since we want to run the pipeline with the MANUALLY EDITED minutiae.
+        
+        # We'll use a simplified pipeline call or prepare the dicts
+        ro = {
+            "processed": img_o,
+            "skeleton": img_o, # Mock skeleton for now
+            "ridges": img_o,
+            "minutiae": (fp_o.minutiae_data or {}).get("minutiae", []),
+            "quality_score": fp_o.quality_score,
+            "minutiae_count": fp_o.minutiae_count,
+            "landmarks": fp_o.landmarks,
+            "classification": fp_o.fingerprint_classification,
+            "white_pre": None,
+            "white_ridges": None,
+            "white_skel": None,
+            "vis_minutiae": None,
+            "quality_map": None,
+        }
+        
+        rp = {
+            "processed": img_p,
+            "skeleton": img_p,
+            "ridges": img_p,
+            "minutiae": (fp_p.minutiae_data or {}).get("minutiae", []),
+            "quality_score": fp_p.quality_score,
+            "minutiae_count": fp_p.minutiae_count,
+            "landmarks": fp_p.landmarks,
+            "classification": fp_p.fingerprint_classification,
+            "white_pre": None,
+            "white_ridges": None,
+            "white_skel": None,
+            "vis_minutiae": None,
+            "quality_map": None,
+        }
+        
+        # Run matching
+        match_result, matches_vis, report_rel, audit, warning = run_matching_pipeline(
+            ro, rp, "re-compare-o", "re-compare-p", "deep", 
+            {"report_lang": lang}, "Expert", "Manual Review",
+            12, 14, 20, 12, 10, 3,
+            write_report_and_audit=True
+        )
+        
+        return {
+            "status": "success",
+            "match": _sanitize_match_for_json(match_result),
+            "report_url": f"/download-report/{report_rel}" if report_rel else None,
+            "forensic_quality_warning": warning
+        }
+        
+    except Exception as e:
+        logger.exception("Re-compare failed")
+        raise HTTPException(status_code=500, detail=str(e))
     form = await request.form()
     orig = form.get("original")
     part = form.get("partial")

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محرر البصمات اليدوي | Manual Fingerprint Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .panel h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        /* Canvas Panel */
+        #canvas-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        canvas#fingerprint-canvas {
+            max-width: 100%;
+            max-height: 500px;
+            cursor: crosshair;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* Controls Panel */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            color: #555;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+        }
+
+        .btn-approve {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #0b7dda;
+        }
+
+        .btn-reject {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #e68900;
+        }
+
+        .btn-undo {
+            background: #9C27B0;
+            color: white;
+        }
+
+        .btn-undo:hover {
+            background: #7b1fa2;
+        }
+
+        .btn-reset {
+            background: #607D8B;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #455A64;
+        }
+
+        /* Landmarks List */
+        .landmarks-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .landmark-badge {
+            padding: 8px 12px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            border-radius: 3px;
+            font-size: 13px;
+            color: #1565c0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .landmark-badge:hover {
+            background: #bbdefb;
+            transform: translateX(5px);
+        }
+
+        .landmark-badge.selected {
+            background: #2196F3;
+            color: white;
+            border-left-color: #1565c0;
+        }
+
+        /* Status Panel */
+        .status-box {
+            background: white;
+            border-radius: 5px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .status-box strong {
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .status-box span {
+            color: #666;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .status-label {
+            font-weight: 500;
+        }
+
+        .status-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* Minutiae List */
+        .minutiae-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background: white;
+        }
+
+        .minutia-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .minutia-item:hover {
+            background: #f5f5f5;
+            padding-right: 10px;
+        }
+
+        .minutia-item.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+
+        .minutia-info {
+            flex: 1;
+        }
+
+        .minutia-type {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .minutia-coords {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .minutia-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: none;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: #ff5252;
+        }
+
+        .action-btn.edit {
+            background: #4CAF50;
+        }
+
+        .action-btn.edit:hover {
+            background: #45a049;
+        }
+
+        .action-btn.edit-type {
+            background: #FF9800;
+            color: white;
+        }
+
+        .action-btn.edit-type:hover {
+            background: #F57C00;
+        }
+
+        /* Legend */
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-symbol {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            width: auto;
+            padding: 10px 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .landmarks-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 20px;
+            }
+
+            .panel {
+                padding: 15px;
+            }
+
+            .landmarks-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        .fp-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .fp-select-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #555;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .fp-select-btn:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .fp-select-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .info-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>محرر البصمات اليدوي</h1>
+            <p>Manual Fingerprint Editor - حذف وإضافة النقاط والعلامات التشريحية</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Canvas Panel -->
+            <div class="panel">
+                <h2>البصمة | Fingerprint</h2>
+                <div class="fp-selector" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;"></div>
+                <div class="info-box">
+                    <strong>التعليمات | Instructions:</strong>
+                    <div>➕ إضافة: اختر نوع العلامة ← **زر أيسر** على البصمة | Select type → **Left-click** on fingerprint</div>
+                    <div>✏️ تعديل: اختر وضع "تعديل نوع" ← **زر أيسر** على النقطة | "Edit Type" mode → **Left-click** point</div>
+                    <div>🗑️ حذف: اختر وضع "حذف" ← **زر أيسر** على النقطة | "Delete" mode → **Left-click** point</div>
+                    <div>✋ تحريك: **زر أيمن** واسحب في أي وضع | **Right-click** and drag in any mode</div>
+                    <div>🔍 Zoom: عجلة الفأرة أو الأزرار أدناه | Mouse wheel or buttons below</div>
+                </div>
+                <div id="canvas-container">
+                    <canvas id="fingerprint-canvas" width="400" height="500"></canvas>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:0.75rem;align-items:center;justify-content:center;flex-wrap:wrap;">
+                    <button id="btn-zoom-out" style="padding:6px 14px;background:#667eea;color:white;border:none;border-radius:5px;cursor:pointer;font-size:16px;font-weight:bold;">−</button>
+                    <span id="zoom-level" style="font-size:14px;color:#555;min-width:50px;text-align:center;">100%</span>
+                    <button id="btn-zoom-in" style="padding:6px 14px;background:#667eea;color:white;border:none;border-radius:5px;cursor:pointer;font-size:16px;font-weight:bold;">+</button>
+                    <button id="btn-zoom-reset" style="padding:6px 12px;background:#607D8B;color:white;border:none;border-radius:5px;cursor:pointer;font-size:12px;">⟲ إعادة | Reset</button>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="panel">
+                <h2>التحكم | Controls</h2>
+
+                <!-- Mode Selection -->
+                <div class="control-group">
+                    <label>الوضع | Mode:</label>
+                    <select id="mode-select">
+                        <option value="view">عرض فقط | View Only</option>
+                        <option value="add" selected>إضافة نقطة | Add Point</option>
+                        <option value="delete">حذف نقطة | Delete Point</option>
+                        <option value="edit">تعديل نوع | Edit Type</option>
+                    </select>
+                </div>
+
+                <!-- Landmark Type Selection -->
+                <div class="control-group">
+                    <label>نوع العلامة | Landmark Type:</label>
+                    <select id="landmark-select">
+                        <option value="termination">نهاية الخط | Termination</option>
+                        <option value="bifurcation">التفرع | Bifurcation</option>
+                        <option value="island">الجزيرة | Island</option>
+                        <option value="ridge">الشرطة | Ridge</option>
+                        <option value="loop_eye">العين | Loop/Eye</option>
+                        <option value="bridge">الجسر | Bridge</option>
+                        <option value="lake">البحيرة | Lake</option>
+                        <option value="dot">النقطة | Dot</option>
+                    </select>
+                </div>
+
+                <!-- Angle Input -->
+                <div class="control-group">
+                    <label>الزاوية | Angle (0-360):</label>
+                    <input type="number" id="angle-input" min="0" max="360" value="0">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button class="btn-add" id="btn-add-manual">إضافة | Add</button>
+                    <button class="btn-delete" id="btn-delete-selected">حذف | Delete</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-undo" id="btn-undo">تراجع | Undo</button>
+                    <button class="btn-reset" id="btn-reset">إعادة تعيين | Reset</button>
+                </div>
+
+                <!-- Status -->
+                <div class="status-box">
+                    <strong>الحالة | Status:</strong>
+                    <div class="status-item">
+                        <span class="status-label">عدد النقاط | Points:</span>
+                        <span class="status-value" id="status-count">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">إضافة | Added:</span>
+                        <span class="status-value" id="status-added">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">حذف | Deleted:</span>
+                        <span class="status-value" id="status-deleted">0</span>
+                    </div>
+                    <div class="status-item" style="background:#e8eaf6;border-left-color:#3f51b5;">
+                        <span class="status-label" style="font-weight:700;">🖐️ نوع البصمة | Finger Type:</span>
+                        <span class="status-value" id="status-class" style="font-weight:700;color:#3f51b5;font-size:15px;">N/A</span>
+                    </div>
+                    <div class="status-item" style="background:#fff3e0;border-left-color:#FF9800;margin-top:6px;">
+                        <span class="status-label">💡 تعليمات:</span>
+                        <span class="status-value" style="font-size:12px;color:#666;">
+                            زر أيسر ← نقاط | زر أيمن + عجلة ← تحريك/Zoom
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px;">وسيلة إيضاح | Legend (8 أنواع):</h3>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #FF6B6B; color: white;">◇</div>
+                        <span>نهاية خط | Termination</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #4ECDC4; color: white;">⊢</div>
+                        <span>تفرع | Bifurcation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #FFD93D; color: #333;">⊗</div>
+                        <span>جزيرة | Island</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #A8E6CF; color: #333;">─</div>
+                        <span>شرطة | Ridge</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #FF8B94; color: white;">◯</div>
+                        <span>عين | Loop/Eye</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #C7CEEA; color: #333;">⌢</div>
+                        <span>جسر | Bridge</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #B5EAD7; color: #333;">◈</div>
+                        <span>بحيرة | Lake</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #95E1D3; color: #333;">•</div>
+                        <span>نقطة | Dot</span>
+                    </div>
+                </div>
+
+                <!-- Final Actions -->
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="btn-approve" id="btn-approve">موافقة | Approve</button>
+                    <button class="btn-reject" id="btn-reject">رفض | Reject</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Minutiae List -->
+        <div style="padding: 30px; border-top: 1px solid #e0e0e0;">
+            <h2 style="margin-bottom: 15px;">قائمة النقاط | Minutiae List</h2>
+            <div class="minutiae-list" id="minutiae-list">
+                <div style="padding: 20px; text-align: center; color: #999;">
+                    لم يتم تحميل أي نقاط | No minutiae loaded
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve Modal -->
+    <div class="modal" id="approve-modal">
+        <div class="modal-content">
+            <div class="modal-title">الموافقة على البصمة | Approve Fingerprint</div>
+            <div class="modal-body">
+                <textarea id="approve-notes" placeholder="أضف ملاحظاتك | Add your notes..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('approve-modal')" style="background: #999; color: white;">إلغاء | Cancel</button>
+                <button id="confirm-approve" class="btn-approve">تأكيد | Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal" id="reject-modal">
+        <div class="modal-content">
+            <div class="modal-title">رفض البصمة | Reject Fingerprint</div>
+            <div class="modal-body">
+                <textarea id="reject-reason" placeholder="اذكر السبب | Specify reason..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('reject-modal')" style="background: #999; color: white;">إلغاء | Cancel</button>
+                <button id="confirm-reject" class="btn-reject">تأكيد | Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Type Overlay -->
+    <div class="modal" id="edit-overlay">
+        <div class="modal-content" style="max-width: 380px;">
+            <div class="modal-title">تعديل نوع العلامة | Edit Landmark Type</div>
+            <div class="modal-body">
+                <label style="display:block;margin-bottom:8px;color:#555;font-size:14px;">
+                    اختر النوع الجديد | Select new type:
+                </label>
+                <select id="edit-type-select" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;"></select>
+            </div>
+            <div class="modal-footer">
+                <button id="edit-cancel-btn" style="background: #999; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">إلغاء | Cancel</button>
+                <button id="edit-confirm-btn" class="btn-approve" style="border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">تأكيد | Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/manual_editor.js"></script>
+</body>
+</html>

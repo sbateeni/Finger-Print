@@ -131,18 +131,36 @@
 
 ## 6) قرار البدء
 
-البدء الصحيح: **Sprint 0 أولاً** (تصحيح الاتساق + الترميز).  
-أي تطوير إضافي قبل ذلك سيبني على أساس غير موثوق.
+Sprint 0–3 **منجزة** للمسار الرئيسي `/analyze`.  
+الخطوة التالية: **[PHASE_6_INTEGRATION.md](PHASE_6_INTEGRATION.md)** (ربط المراحل 1–5 + editor + DB).
 
 ---
 
 ## تحديث التنفيذ (منجز)
 
-- تم تنفيذ Sprint 0 (اتساق baseline + تحسين الترميز).
-- تم تنفيذ Sprint 1 (دمج درجات Minutiae + MCC + ORB وإخراج `fused_score`).
-- تمت إضافة أداة Sprint 2 للمعايرة:
-  - `calibrate_thresholds.py`
-  - تُدخل ملفًا موسومًا (CSV/JSON) وتنتج:
-    - `output/calibration_report.json`
-    - عتبات مقترحة: `FUSED_THRESHOLD_HIGH/MEDIUM/LOW`
-    - قياسات: `AUC`, `EER`, `EER threshold`
+| Sprint | الحالة | ملاحظات |
+|--------|--------|---------|
+| 0 baseline + ترميز | ✅ | `utils/matcher.py`, `report_generator` |
+| 1 fused_score | ✅ | Minutiae + MCC + ORB(opt) + Bozorth |
+| 2 معايرة | 🟡 | `scripts/calibrate_thresholds.py` — يحتاج dataset موسوم |
+| 3 quality gate | ✅ | `INCONCLUSIVE` في pipeline |
+
+### Sprint 4 (مقترح — بعد Phase 6)
+
+- [ ] ربط `classification` + `landmarks` في pipeline
+- [ ] اعتماد عتبات من `calibration_report.json` في `config`
+- [ ] تقرير ROC/EER في `evaluation/`
+
+### إصلاحات حديثة 🔧
+
+- قصّ المرجعية التلقائي (قطاع شبكة 0): `resolve_grid_cells_for_crop` في `ref_grid.py`
+- عربي PDF → HTML: `resolve_report_download`
+- تيليجرام: حفظ صور في `output/telegram_inbox/`
+
+---
+
+## روابط
+
+- [ROADMAP.md](ROADMAP.md)
+- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)
+- [PHASE_6_INTEGRATION.md](PHASE_6_INTEGRATION.md)

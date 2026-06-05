@@ -133,6 +133,54 @@ def generate_report(
         case_ref = html.escape((audit or {}).get("case_reference") or "-")
         sha_o = html.escape((audit or {}).get("sha256_original") or "-")
         sha_p = html.escape((audit or {}).get("sha256_partial") or "-")
+
+        # Classification Table (Phase 1)
+        classification_html = ""
+        if "classification" in match_result or (pipeline and (pipeline.get("reference") or {}).get("classification")):
+            class_ro = (pipeline or {}).get("reference", {}).get("classification") or match_result.get("classification_ro")
+            class_rp = (pipeline or {}).get("query", {}).get("classification") or match_result.get("classification_rp")
+            if class_ro and class_rp:
+                compatible = match_result.get("classification_compatible", 1)
+                comp_text = s(lg, "compatible") if compatible else s(lg, "incompatible")
+                comp_class = "success" if compatible else "highlight"
+                reason_row = ""
+                if not compatible:
+                    reason = match_result.get("classification_check_reason", "")
+                    reason_row = f'<tr><td>{html.escape(s(lg, "reason"))}</td><td colspan="2" class="highlight">{html.escape(reason)}</td></tr>'
+                
+                classification_html = f"""
+    <h3 class="section-h">{html.escape(s(lg, "classification_title"))}</h3>
+    <table class="params">
+      <tr><th>{html.escape(s(lg, "field"))}</th><th>{html.escape(s(lg, "original"))}</th><th>{html.escape(s(lg, "partial"))}</th></tr>
+      <tr><td>{html.escape(s(lg, "finger_type"))}</td><td>{html.escape(str(class_ro.get("finger_type", "")))}</td><td>{html.escape(str(class_rp.get("finger_type", "")))}</td></tr>
+      <tr><td>{html.escape(s(lg, "region"))}</td><td>{html.escape(str(class_ro.get("region", "")))}</td><td>{html.escape(str(class_rp.get("region", "")))}</td></tr>
+      <tr><td>{html.escape(s(lg, "confidence"))}</td><td>{float(class_ro.get("confidence", 0)):.1%}</td><td>{float(class_rp.get("confidence", 0)):.1%}</td></tr>
+      <tr><td>{html.escape(s(lg, "compatibility"))}</td><td colspan="2" class="{comp_class}">{html.escape(comp_text)}</td></tr>
+      {reason_row}
+    </table>"""
+
+        # Anatomical Landmarks (Phase 2)
+        landmarks_html = ""
+        if "ref_landmark_distribution" in match_result or (pipeline and (pipeline.get("reference") or {}).get("landmarks")):
+            landmarks_ro = (pipeline or {}).get("reference", {}).get("landmarks") or match_result.get("ref_landmark_distribution")
+            landmarks_rp = (pipeline or {}).get("query", {}).get("landmarks") or match_result.get("qry_landmark_distribution")
+            if landmarks_ro and landmarks_rp:
+                all_types = sorted(list(set(landmarks_ro.get("landmark_counts", {}).keys()) | set(landmarks_rp.get("landmark_counts", {}).keys())))
+                rows = ""
+                for lt in all_types:
+                    count_ro = landmarks_ro.get("landmark_counts", {}).get(lt, 0)
+                    count_rp = landmarks_rp.get("landmark_counts", {}).get(lt, 0)
+                    rows += f'<tr><td>{html.escape(lt)}</td><td>{count_ro}</td><td>{count_rp}</td></tr>'
+                total_ro = landmarks_ro.get("total_landmarks", 0)
+                total_rp = landmarks_rp.get("total_landmarks", 0)
+                landmarks_html = f"""
+    <h3 class="section-h">{html.escape(s(lg, "landmarks_title"))}</h3>
+    <table class="params">
+      <tr><th>{html.escape(s(lg, "landmark_type"))}</th><th>{html.escape(s(lg, "original"))}</th><th>{html.escape(s(lg, "partial"))}</th></tr>
+      {rows}
+      <tr><td><strong>{html.escape(s(lg, "total"))}</strong></td><td><strong>{total_ro}</strong></td><td><strong>{total_rp}</strong></td></tr>
+    </table>"""
+
         status = str(match_result.get("status") or "")
         tier_lbl = html.escape(tier_text(lg, status))
         verdict_lbl = html.escape(verdict_text(lg, match_result))
@@ -280,6 +328,9 @@ def generate_report(
       <p><strong>{html.escape(s(lg, 'sha_ref'))}:</strong><br/>{sha_o}</p>
       <p><strong>{html.escape(s(lg, 'sha_query'))}:</strong><br/>{sha_p}</p>
     </div>
+
+    {classification_html}
+    {landmarks_html}
 
     <div class="result-box">
       <h3>{html.escape(s(lg, 'methodology_title'))}</h3>

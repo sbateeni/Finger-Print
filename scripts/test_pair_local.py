@@ -84,7 +84,7 @@ def main() -> None:
         cores_ref=ro.get("cores"),
         cores_qry=rp.get("cores"),
     )
-    mr = apply_fusion_to_match(mr, ro["processed"], rp["processed"])
+    mr = apply_fusion_to_match(mr, ro, rp)
 
     print("\n=== نتيجة المطابقة ===")
     print(f"match_score: {mr.get('match_score', 0):.2f}%")

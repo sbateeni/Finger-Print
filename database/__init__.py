@@ -24,3 +24,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def ensure_tables():
+    """Create all tables if they don't exist."""
+    import database.models  # noqa: E402, F811
+    Base.metadata.create_all(bind=engine)
