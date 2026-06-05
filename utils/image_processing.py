@@ -127,9 +127,9 @@ def preprocess_image(image, denoise_method="fastNlMeans", fast_denoise_h=10, gau
         binary = cv2.adaptiveThreshold(
             image, 255,
             cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV,  # استخدمنا INV لأننا نريد التلال سوداء والخلفية بيضاء للهيكلة
-            blockSize=25,          # رُفع الحجم لتقليل الحساسية للضوضاء الصغيرة
-            C=8                    # رُفع الثابت لتنظيف الخلفية أكثر
+            cv2.THRESH_BINARY_INV,
+            blockSize=11,
+            C=2
         )
         
         # عكس الألوان إذا لزم الأمر (الهيكلة تتطلب تلالاً بيضاء 255)
@@ -189,13 +189,14 @@ def detect_edges(image):
 def enhance_image(image):
     """تهليل الهيكل العظمي للتلال"""
     try:
+        # سد الفواصل في التموجات قبل التهليل (نواة 5×5)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        closed = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
         # Prefer OpenCV contrib thinning when available.
         if hasattr(cv2, "ximgproc") and hasattr(cv2.ximgproc, "thinning"):
-            skeleton = cv2.ximgproc.thinning(image)
+            skeleton = cv2.ximgproc.thinning(closed)
         else:
-            # Fallback morphological skeletonization for environments
-            # where opencv-contrib is not installed.
-            _, work = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+            _, work = cv2.threshold(closed, 127, 255, cv2.THRESH_BINARY)
             skel = np.zeros_like(work)
             kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
 

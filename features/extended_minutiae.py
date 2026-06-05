@@ -149,16 +149,20 @@ def detect_dots_on_ridges(
     ridge_image: np.ndarray | None,
     skeleton: np.ndarray,
     *,
-    min_area: int = 2,
-    max_area: int = 14,
+    min_area: int = 12,
+    max_area: int = 60,
+    min_intensity: float = 90.0,
+    max_dist_from_skeleton: float = 3.0,
 ) -> list[dict[str, Any]]:
     """Isolated ridge blobs (نقطة PDF) — not already on skeleton junction."""
     if ridge_image is None:
         thick = cv2.dilate((skeleton > 0).astype(np.uint8) * 255, np.ones((3, 3), np.uint8))
+        orig_gray = None
     else:
-        thick = ridge_image if len(ridge_image.shape) == 2 else cv2.cvtColor(ridge_image, cv2.COLOR_BGR2GRAY)
-        thick = (thick > 127).astype(np.uint8) * 255
+        orig_gray = ridge_image if len(ridge_image.shape) == 2 else cv2.cvtColor(ridge_image, cv2.COLOR_BGR2GRAY)
+        thick = (orig_gray > 127).astype(np.uint8) * 255
 
+    sk_dist = cv2.distanceTransform((skeleton == 255).astype(np.uint8), cv2.DIST_L2, 3)
     sk_set = set(zip(*np.where(skeleton == 255)))
     num, labels, stats, _ = cv2.connectedComponentsWithStats(thick, connectivity=8)
     dots: list[dict[str, Any]] = []
@@ -166,10 +170,20 @@ def detect_dots_on_ridges(
         area = int(stats[i, cv2.CC_STAT_AREA])
         if area < min_area or area > max_area:
             continue
+        if orig_gray is not None:
+            mask = (labels == i).astype(np.uint8)
+            mean_val = cv2.mean(orig_gray, mask=mask)[0]
+            if mean_val < min_intensity:
+                continue
         cx = int(stats[i, cv2.CC_STAT_LEFT] + stats[i, cv2.CC_STAT_WIDTH] / 2)
         cy = int(stats[i, cv2.CC_STAT_TOP] + stats[i, cv2.CC_STAT_HEIGHT] / 2)
         if (cx, cy) in sk_set:
             continue
+        if max_dist_from_skeleton > 0:
+            mask = (labels == i).astype(np.uint8)
+            min_dist = np.min(sk_dist[mask > 0])
+            if min_dist > max_dist_from_skeleton:
+                continue
         dots.append({"x": cx, "y": cy, "type": "dot", "angle": 0.0})
     return dots
 

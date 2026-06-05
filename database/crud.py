@@ -125,12 +125,13 @@ def create_review(
 
 # Phase 3: Manual Review operations
 def update_fingerprint_minutiae(db: Session, fingerprint_id: int, minutiae_data: dict) -> Optional[Fingerprint]:
+    from sqlalchemy.orm.attributes import flag_modified
     db_fingerprint = get_fingerprint(db, fingerprint_id)
     if db_fingerprint:
         db_fingerprint.minutiae_data = minutiae_data
+        flag_modified(db_fingerprint, 'minutiae_data')
         db_fingerprint.minutiae_count = len(minutiae_data.get('minutiae', [])) if isinstance(minutiae_data, dict) else 0
         db.commit()
-        db.refresh(db_fingerprint)
     return db_fingerprint
 
 

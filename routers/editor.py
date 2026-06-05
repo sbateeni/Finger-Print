@@ -78,6 +78,14 @@ class UpdateMinutiaRequest(BaseModel):
     reason: str = ""
 
 
+class MoveMinutiaRequest(BaseModel):
+    """Request to move a minutia point."""
+    fingerprint_id: int
+    minutia_index: int
+    x: float
+    y: float
+
+
 class ApproveRequest(BaseModel):
     """Request to approve a fingerprint."""
     fingerprint_id: int
@@ -148,6 +156,30 @@ async def get_fingerprint_for_editing(fingerprint_id: int, db: Session = Depends
         "image_url": base_url,
         "visualizations": viz,
         "status": "ready"
+    }
+
+
+@router.get("/match-data/{original_id}/{partial_id}")
+async def get_match_data(original_id: int, partial_id: int, db: Session = Depends(get_db)):
+    """Return match details (pairs) between original and partial fingerprints."""
+    match = db.query(Match).filter(
+        Match.original_fingerprint_id == original_id,
+        Match.partial_fingerprint_id == partial_id
+    ).order_by(Match.created_at.desc()).first()
+    if not match:
+        return {"matched_details": []}
+    details = []
+    if match.match_details and isinstance(match.match_details, dict):
+        details = match.match_details.get("matched_details", [])
+    return {
+        "match_id": match.id,
+        "matched_points": match.matched_points or 0,
+        "match_score": match.match_score or 0,
+        "fused_score": match.fused_score or 0,
+        "status": match.status or "UNKNOWN",
+        "matched_details": details,
+        "original_id": original_id,
+        "partial_id": partial_id,
     }
 
 
@@ -257,6 +289,36 @@ async def update_landmark_endpoint(request: UpdateMinutiaRequest, db: Session = 
             "action": AnnotationAction.UPDATE_LANDMARK.value,
             "minutia_index": request.minutia_index,
             "new_type": request.new_landmark_type,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Invalid minutia index")
+
+
+@router.post("/move-minutia")
+async def move_minutia_endpoint(request: MoveMinutiaRequest, db: Session = Depends(get_db)):
+    """
+    Move a minutia point to new coordinates.
+    """
+    db_fingerprint = get_fingerprint(db, request.fingerprint_id)
+    if not db_fingerprint:
+        raise HTTPException(status_code=404, detail="Fingerprint not found")
+
+    minutiae_data = db_fingerprint.minutiae_data or {"minutiae": []}
+    minutiae = minutiae_data.get("minutiae", [])
+
+    if 0 <= request.minutia_index < len(minutiae):
+        m = minutiae[request.minutia_index]
+        m["x"] = request.x
+        m["y"] = request.y
+        update_fingerprint_minutiae(db, request.fingerprint_id, {"minutiae": minutiae})
+        return {
+            "status": "success",
+            "message": "Minutia moved",
+            "fingerprint_id": request.fingerprint_id,
+            "minutia_index": request.minutia_index,
+            "x": request.x,
+            "y": request.y,
             "timestamp": datetime.utcnow().isoformat(),
         }
     else:

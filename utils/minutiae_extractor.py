@@ -116,8 +116,10 @@ def remove_false_minutiae(skeleton, minutiae, min_ridge_length=10, island_min_le
 
 def filter_minutiae(minutiae, image_shape, border_margin=10, min_distance=10, original_image=None, min_contrast=15, min_angle_diff=10):
     """فلترة النقاط الدقيقة: تجاهل النقاط القريبة من الحواف أو المتقاربة جداً أو في مناطق قليلة التباين"""
+    TYPE_PRIORITY = {"bifurcation": 3, "endpoint": 2, "island": 1}
+    sorted_pts = sorted(minutiae, key=lambda m: -TYPE_PRIORITY.get(m.get("type", ""), 0))
     filtered = []
-    for m in minutiae:
+    for m in sorted_pts:
         x, y = m['x'], m['y']
         # تجاهل النقاط القريبة من الحواف
         if x < border_margin or y < border_margin or x > image_shape[1] - border_margin or y > image_shape[0] - border_margin:
