@@ -33,6 +33,7 @@ class Fingerprint(Base):
     # Classification fields (Phase 1)
     fingerprint_type = Column(String(50))  # thumb, index, middle, ring, pinky, unknown
     fingerprint_region = Column(String(50))  # fingertip, palm_root, sub_index, unknown
+    fingerprint_pattern = Column(String(50))  # arch, tented_arch, left_loop, right_loop, whorl
     fingerprint_classification = Column(JSON)  # Full classification object (type, region, confidence, etc.)
     
     # Anatomical landmarks (Phase 2)

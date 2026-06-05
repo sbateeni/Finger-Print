@@ -128,8 +128,10 @@ def run_matching_pipeline(
     meta_o = {"finger_type": (form_ctx or {}).get("original_finger_type")}
     meta_p = {"finger_type": (form_ctx or {}).get("partial_finger_type")}
     
-    class_o = classifier.classify(image=img_o, minutiae=mo, metadata=meta_o)
-    class_p = classifier.classify(image=img_p, minutiae=mp, metadata=meta_p)
+    class_o = classifier.classify(image=img_o, minutiae=mo, metadata=meta_o,
+                                   cores=ro.get("cores"), deltas=ro.get("deltas"))
+    class_p = classifier.classify(image=img_p, minutiae=mp, metadata=meta_p,
+                                   cores=rp.get("cores"), deltas=rp.get("deltas"))
     
     # Store classification in results for report
     ro["classification"] = class_o.to_dict()
@@ -262,6 +264,7 @@ def run_matching_pipeline(
                     fp_o.fingerprint_classification = ro.get("classification")
                     fp_o.fingerprint_type = ro.get("classification").get("finger_type")
                     fp_o.fingerprint_region = ro.get("classification").get("region")
+                    fp_o.fingerprint_pattern = ro.get("classification").get("pattern_type")
                 
                 filename_p = f"{sha_p[:16]}.png"
                 if rp.get("processed") is not None:
@@ -280,6 +283,7 @@ def run_matching_pipeline(
                     fp_p.fingerprint_classification = rp.get("classification")
                     fp_p.fingerprint_type = rp.get("classification").get("finger_type")
                     fp_p.fingerprint_region = rp.get("classification").get("region")
+                    fp_p.fingerprint_pattern = rp.get("classification").get("pattern_type")
                 
                 # Create match
                 db_match = crud.create_match(

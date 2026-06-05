@@ -59,6 +59,14 @@
         dot: 'نقطة'
     };
 
+    const PATTERN_NAMES_AR = {
+        arch: 'قوس',
+        tented_arch: 'قوس خيمي',
+        left_loop: 'أنشوطة يسرى',
+        right_loop: 'أنشوطة يمنى',
+        whorl: 'دوامة',
+    };
+
     const FINGER_TYPE_NAMES_AR = {
         thumb: 'إبهام',
         index: 'سبابة',
@@ -306,16 +314,19 @@
         elements.statusCount().textContent = state.minutiae.length;
         elements.statusAdded().textContent = state.minutiae.filter(m => m.manually_added).length;
         
-        if (state.classification && state.classification.finger_type) {
-            var ft = state.classification.finger_type;
+        if (state.classification && (state.classification.finger_type || state.classification.pattern_type)) {
+            var ft = state.classification.finger_type || 'unknown';
+            var pattern = state.classification.pattern_type || '';
             var region = state.classification.region || 'unknown';
-            var confidence = state.classification.confidence || state.classification.finger_confidence || 0;
+            var confidence = state.classification.confidence || 0;
             var ftName = FINGER_TYPE_NAMES_AR[ft] || ft;
             var regionName = REGION_NAMES_AR[region] || region;
-            elements.statusClass().textContent = ftName
-                + ' (' + ft + ')'
-                + ' | ' + regionName
-                + ' | ثقة: ' + Math.round(confidence * 100) + '%';
+            var patternName = pattern ? (PATTERN_NAMES_AR[pattern] || pattern) : '';
+            var text = ftName + ' (' + ft + ')';
+            if (patternName) text += ' | ' + patternName;
+            text += ' | ' + regionName;
+            text += ' | ثقة: ' + Math.round(confidence * 100) + '%';
+            elements.statusClass().textContent = text;
         } else {
             elements.statusClass().textContent = 'غير متوفر | N/A';
         }
